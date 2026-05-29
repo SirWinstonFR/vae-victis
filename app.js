@@ -497,8 +497,11 @@ function renderDock() {
     return `<div class="dchip${isActive ? ' active' : ''}${locked ? ' locked' : ''}" data-id="${d.id}" title="${d.name} · ${d.pi}PI">
       ${n > 0 ? `<div class="abadge">${n}</div>` : ''}
       <div class="av" style="background:${d.color}22;color:${d.color};border-color:${isActive ? d.color : 'transparent'}">
-        ${d.avatar ? `<img src="${d.avatar}" alt="${d.name}" onerror="this.style.display='none'">` : ''}
-        <span>${d.name.slice(0, 2).toUpperCase()}</span>
+        ${d.avatar
+          ? `<img src="${d.avatar}" alt="${d.name}" style="position:absolute;width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.remove()">`
+          : `<span style="position:relative;z-index:1">${d.name.slice(0, 2).toUpperCase()}</span>`
+        }
+        ${d.avatar ? '' : ''}
       </div>
       <div class="dn" style="color:${isActive ? d.color : '#3a6a8a'}">${d.name}</div>
       <div class="dp">${d.pi}PI</div>
@@ -920,7 +923,11 @@ async function init() {
   initMap(world);
   buildDots();
   buildBadges();
-  applyZoom(1);
+  // Start centered on Europe/Atlantic area
+  const initT = d3.zoomIdentity.translate(W * 0.08, H * 0.04).scale(1.15);
+  svgSel.call(zoomBeh.transform, initT);
+  curK = 1.15;
+  applyZoom(1.15);
   renderDock();
   showPrompt();
 
