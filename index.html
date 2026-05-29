@@ -16,9 +16,15 @@
       <div class="sync-wrap"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">Chargement…</span></div>
       <span class="cycle-badge" id="cycle-badge">CYCLE —</span>
       <div class="faction-filters">
-        <button class="faction-btn" data-faction="Sovereign" title="Sovereign">🔵</button>
-        <button class="faction-btn" data-faction="Olympiens" title="Olympiens">🟡</button>
-        <button class="faction-btn" data-faction="Shemning" title="Shemning">🔴</button>
+        <button class="faction-btn faction-sovereign" data-faction="Sovereign" title="Filtrer Sovereign">
+          <span class="faction-dot"></span>Sovereign
+        </button>
+        <button class="faction-btn faction-olympien" data-faction="Olympiens" title="Filtrer Olympiens">
+          <span class="faction-dot"></span>Olympiens
+        </button>
+        <button class="faction-btn faction-shemning" data-faction="Shemning" title="Filtrer Shemning">
+          <span class="faction-dot"></span>Shemning
+        </button>
       </div>
       <button class="btn icon-btn" id="btn-fandom" title="Wiki Fandom"><i class="ti ti-book" aria-hidden="true"></i></button>
       <button class="btn icon-btn" id="btn-refresh" title="Rafraîchir"><i class="ti ti-refresh" aria-hidden="true"></i></button>
@@ -44,7 +50,7 @@
   </div>
 
   <div id="warning-ticker" style="display:none">
-    <div class="ticker-icon">⚠️</div>
+    <div class="ticker-icon">!</div>
     <div class="ticker-track"><span class="ticker-content"></span></div>
   </div>
 
