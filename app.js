@@ -8,7 +8,7 @@
 const CFG = {
   SHEET_PUB_ID: '2PACX-1vS3YihqiaMrry5ksybGNmpyn3zsFVlztk6hAtdZLQj55bkxCgXhLBr29ap_tFmNq__M7Nvjt6f5ZPxQ',
   SHEET_ID:     '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
-  APPS_SCRIPT:  'https://script.google.com/macros/s/AKfycbxzrk3x8qu0LZLT7-MIxkwa9DsoRhUiSl7LlYul-oTYnzD4kG6-vs_OQZVbIbU6or95uw/exec',
+  APPS_SCRIPT:  'https://script.google.com/macros/s/AKfycbyCaQI2c5ds2uCmoeCw6_fALjh-8ii05fkOVgZmWPhbY64vyYbrNcFvqbFKRb7rUwyxwQ/exec',
   REFRESH_MIN:  5,
   // GIDs des onglets — visible dans l'URL du sheet après #gid=
   GIDS: {
@@ -141,6 +141,9 @@ async function loadData() {
         if (p) COUNTRY_MAP[p] = r.zone.trim();
       });
     });
+  // Fallback pays manquants
+  const FB = {'Austria':'Allemagne','Switzerland':'Allemagne','Ireland':'Royaume-Uni','Portugal':'Espagne','Iceland':'Scandinavie','Belarus':'Ruthenie','Moldova':'Ruthenie','Romania':'Ruthenie','Estonia':'Ruthenie','Lithuania':'Ruthenie','Bulgaria':'Grèce & Balkans','Albania':'Grèce & Balkans','Slovenia':'Grèce & Balkans','Montenegro':'Grèce & Balkans','North Macedonia':'Grèce & Balkans','Bosnia and Herzegovina':'Grèce & Balkans','Croatia':'Grèce & Balkans','El Salvador':'Amérique Centrale','Belize':'Amérique Centrale','Honduras':'Amérique Centrale','Nicaragua':'Amérique Centrale','Costa Rica':'Amérique Centrale','Cuba':'Amérique Centrale','Haiti':'Amérique Centrale','Dominican Republic':'Amérique Centrale','Jamaica':'Amérique Centrale','Pakistan':'Inde','Bangladesh':'Inde','Sri Lanka':'Inde','Nepal':'Inde','Afghanistan':'Perse','Kuwait':'Arabie','Qatar':'Arabie','United Arab Emirates':'Arabie','Oman':'Arabie','Syria':'Arabie','Lebanon':'Arabie','Israel':'Arabie','Libya':'Maghreb','Sudan':'Maghreb','Ethiopia':'Maghreb','Somalia':'Maghreb','Kenya':'Maghreb','Tanzania':'Maghreb','Nigeria':'Maghreb','Ghana':'Maghreb','Senegal':'Maghreb','Congo':'Maghreb','Dem. Rep. Congo':'Maghreb','South Africa':'Maghreb','Cameroon':'Maghreb','Angola':'Maghreb','Mozambique':'Maghreb','Zimbabwe':'Maghreb','Zambia':'Maghreb','Argentina':'Brésil','Bolivia':'Brésil','Paraguay':'Brésil','Uruguay':'Brésil','Chile':'Brésil','Colombia':'Brésil','Venezuela':'Brésil','Peru':'Brésil','Ecuador':'Brésil','North Korea':'Chine','Mongolia':'Chine','South Korea':'Japon','Philippines':'Japon','Vietnam':'Japon','Thailand':'Japon','Myanmar':'Japon','Cambodia':'Japon','Laos':'Japon','Malaysia':'Japon','Indonesia':'Océanie','Papua New Guinea':'Océanie','Kazakhstan':'Russie','Uzbekistan':'Russie','Kyrgyzstan':'Russie','Tajikistan':'Russie','Turkmenistan':'Russie','Georgia':'Ruthenie','Armenia':'Ruthenie','Azerbaijan':'Ruthenie'};
+  Object.entries(FB).forEach(([c,z])=>{ if(!COUNTRY_MAP[c]) COUNTRY_MAP[c]=z; });
 
     // Territoires
     const newZones = {};
@@ -195,12 +198,12 @@ async function loadData() {
 // ---- APPS SCRIPT — WRITE -----------------------------------
 async function postScript(payload) {
   try {
-    const r = await fetch(CFG.APPS_SCRIPT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const d = await r.json();
+    // Apps Script CORS fix: encode as URL params via GET
+    const params = new URLSearchParams({ data: JSON.stringify(payload) });
+    const url = CFG.APPS_SCRIPT + '?' + params.toString();
+    const r = await fetch(url, { method: 'GET' });
+    const text = await r.text();
+    const d = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] || text);
     if (!d.success) throw new Error(d.error || 'Erreur inconnue');
     return { ok: true };
   } catch (e) {
@@ -223,8 +226,7 @@ function initMap(world) {
     .style('display', 'block');
 
   svgSel.append('rect').attr('width', W).attr('height', H).attr('fill', '#060d1a');
-  svgSel.append('path').datum({ type: 'Sphere' })
-    .attr('d', path).attr('fill', '#070f1c').attr('stroke', '#182840').attr('stroke-width', .5);
+  // Pas de sphère — fond plat uniquement
 
   gMap    = svgSel.append('g');
   gDots   = svgSel.append('g');
@@ -353,11 +355,14 @@ function refreshDotColors() {
 
 function highlightZone(name) {
   if (!gMap) return;
-  gMap.selectAll('.country').classed('active', false);
+  gMap.selectAll('.country').classed('active', false).classed('zone-member', false);
   if (!name) return;
   const targets = Object.entries(COUNTRY_MAP).filter(([, z]) => z === name).map(([c]) => c);
-  (targets.length ? targets : [name]).forEach(cn =>
-    gMap.selectAll('.country').filter(d => d.properties?.name === cn).classed('active', true)
+  const list = targets.length ? targets : [name];
+  list.forEach(cn =>
+    gMap.selectAll('.country').filter(d => d.properties?.name === cn)
+      .classed('active', true)
+      .classed('zone-member', true)
   );
 }
 
@@ -498,26 +503,42 @@ function terrCard(t) {
   const isMyT   = me && t.owner === me.id;
   const canA    = me && owner && owner.id !== me.id && myAtks().length < 2 && atkOn(owner.id) < 2;
   const dc      = dotColor(t);
+  const isCity  = t.type === 'city';
 
-  return `<div class="terr-card${isAtked ? ' under-attack' : ''}">
-    ${t.img
-      ? `<img class="terr-img" src="${t.img}" alt="${t.name}" loading="lazy">`
-      : `<div class="terr-ph"><i class="ti ${t.type === 'city' ? 'ti-building-skyscraper' : 'ti-building-bank'}"></i></div>`
-    }
-    <div class="terr-body">
-      <div class="terr-row">
-        <div style="display:flex;align-items:center;gap:4px;min-width:0">
-          <div class="dot" style="background:${dc};box-shadow:0 0 3px ${dc}77"></div>
-          <span class="terr-name">${t.name}</span>
-          <span class="tag ${t.type === 'city' ? 'tag-city' : 'tag-org'}">${t.type === 'city' ? 'VILLE' : 'ORG.'}</span>
-          ${t.pi > 1 ? `<span class="pi-badge">×${t.pi}</span>` : ''}
+  // Villes : carte avec image
+  if (isCity) {
+    return `<div class="terr-card${isAtked ? ' under-attack' : ''}">
+      ${t.img
+        ? `<img class="terr-img" src="${t.img}" alt="${t.name}" loading="lazy">`
+        : `<div class="terr-ph"><i class="ti ti-building-skyscraper"></i></div>`
+      }
+      <div class="terr-body">
+        <div class="terr-row">
+          <div style="display:flex;align-items:center;gap:4px;min-width:0">
+            <div class="dot" style="background:${dc};box-shadow:0 0 4px ${dc}88"></div>
+            <span class="terr-name">${t.name}</span>
+            <span class="tag tag-city">VILLE</span>
+            ${t.pi > 1 ? `<span class="pi-badge">×${t.pi}</span>` : ''}
+          </div>
+          ${canA ? `<button class="atk-btn" data-owner="${owner.id}" data-terr="${t.id}"><i class="ti ti-sword"></i>ATK</button>` : ''}
         </div>
-        ${canA ? `<button class="atk-btn" data-owner="${owner.id}" data-terr="${t.id}"><i class="ti ti-sword"></i>ATK</button>` : ''}
+        <div class="terr-owner" style="color:${owner ? owner.color : 'var(--text3)'}">${owner ? owner.name : 'Neutre'}</div>
+        ${isAtked && !isCap ? `<div class="terr-status" style="color:${isMyT ? 'var(--def-color)' : '#d4a020'}">${isMyT ? '⚔ Défense auto' : '⚔ Sous attaque'}</div>` : ''}
+        ${isCap ? `<div class="terr-status" style="color:var(--atk-color)">⚑ Capitulation</div>` : ''}
       </div>
-      <div class="terr-owner" style="color:${owner ? owner.color : 'var(--text3)'}">${owner ? owner.name : 'Neutre'}</div>
-      ${isAtked && !isCap ? `<div class="terr-status" style="color:${isMyT ? 'var(--def-color)' : '#d4a020'}">${isMyT ? '⚔ Défense auto' : '⚔ Sous attaque'}</div>` : ''}
-      ${isCap ? `<div class="terr-status" style="color:var(--atk-color)">⚑ Capitulation</div>` : ''}
+    </div>`;
+  }
+
+  // Organisations : chip coloré
+  return `<div class="org-chip" style="border-color:${dc}44;background:${dc}11">
+    <div class="org-dot" style="background:${dc};box-shadow:0 0 5px ${dc}99"></div>
+    <div style="flex:1;min-width:0">
+      <div class="org-name">${t.name}${t.pi > 1 ? ` <span class="org-pi">×${t.pi}PI</span>` : ''}</div>
+      <div class="org-owner" style="color:${owner ? owner.color : 'var(--text3)'}">${owner ? owner.name : 'Neutre'}</div>
+      ${isAtked && !isCap ? `<div class="terr-status" style="color:${isMyT ? 'var(--def-color)' : '#d4a020'};font-size:9px">${isMyT ? '⚔ Défense auto' : '⚔ Sous attaque'}</div>` : ''}
+      ${isCap ? `<div class="terr-status" style="color:var(--atk-color);font-size:9px">⚑ Capitulation</div>` : ''}
     </div>
+    ${canA ? `<button class="atk-btn" data-owner="${owner.id}" data-terr="${t.id}"><i class="ti ti-sword"></i>ATK</button>` : ''}
   </div>`;
 }
 
