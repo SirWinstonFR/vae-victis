@@ -566,3 +566,105 @@ html, body {
   stroke-width: 0.6;
 }
 .country.trans-member:hover { fill: #224a6a !important; }
+
+/* ---- WARNING TICKER ---- */
+#warning-ticker {
+  background: linear-gradient(90deg, #1a0505, #2a0808, #1a0505);
+  border-bottom: 1px solid #5a1010;
+  padding: 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  overflow: hidden;
+  animation: ticker-pulse 2s ease-in-out infinite;
+}
+@keyframes ticker-pulse {
+  0%,100% { border-color: #5a1010; }
+  50%      { border-color: #f07070; box-shadow: 0 0 8px #f0707044; }
+}
+.ticker-icon { font-size: 14px; padding: 0 12px; flex-shrink: 0; animation: ticker-pulse 1s infinite; }
+.ticker-track { flex: 1; overflow: hidden; white-space: nowrap; }
+.ticker-content {
+  display: inline-block;
+  font-size: 11px;
+  color: #f07070;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  animation: ticker-scroll 30s linear infinite;
+  white-space: nowrap;
+}
+@keyframes ticker-scroll {
+  0%   { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
+}
+
+/* ---- FACTION FILTERS ---- */
+.faction-filters {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--bg2);
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+.faction-btn {
+  width: 24px; height: 24px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .12s;
+  opacity: 0.5;
+  filter: grayscale(0.5);
+}
+.faction-btn:hover { opacity: 0.85; background: var(--bg3); filter: none; }
+.faction-btn.active { opacity: 1; background: var(--bg3); filter: none; box-shadow: 0 0 6px currentColor; }
+
+/* ---- DOCK — logo on hover, blue uniform ---- */
+.dchip .av {
+  background: #0d2040 !important;
+  color: #5ab8f5 !important;
+  position: relative;
+  overflow: hidden;
+}
+.dchip .av-avatar {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; border-radius: 50%;
+  opacity: 1;
+  transition: opacity .2s;
+}
+.dchip .av-logo {
+  position: absolute; inset: 4px;
+  width: calc(100% - 8px); height: calc(100% - 8px);
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity .2s;
+}
+.dchip .av-initials {
+  position: relative; z-index: 1;
+  font-size: 10px; font-weight: 500; color: #5ab8f5;
+}
+.dchip:hover .av-logo { opacity: 1; }
+.dchip:hover .av-avatar { opacity: 0; }
+.dchip:hover .av-initials { opacity: 0; }
+
+/* ---- DOCK — alert badge ---- */
+.dchip .alert-badge {
+  position: absolute; top: 2px; left: 2px;
+  font-size: 10px; line-height: 1;
+  animation: alert-flash 1s ease-in-out infinite;
+}
+@keyframes alert-flash { 0%,100%{opacity:1}50%{opacity:.3} }
+.dchip.attacking-me .av { box-shadow: 0 0 8px #f0707088; }
+
+/* ---- DOCK dp faction color ---- */
+.dchip .dp { font-size: 8px; }
+
+/* ---- RULES bigger ---- */
+.rule-block { padding: 10px 12px; }
+.rule-text { font-size: 11px; line-height: 1.8; }
