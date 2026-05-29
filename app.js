@@ -7,6 +7,7 @@
 // ---- CONFIG ------------------------------------------------
 const CFG = {
   SHEET_PUB_ID: '2PACX-1vS3YihqiaMrry5ksybGNmpyn3zsFVlztk6hAtdZLQj55bkxCgXhLBr29ap_tFmNq__M7Nvjt6f5ZPxQ',
+  SHEET_ID:     '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
   APPS_SCRIPT:  'https://script.google.com/macros/s/AKfycbxzrk3x8qu0LZLT7-MIxkwa9DsoRhUiSl7LlYul-oTYnzD4kG6-vs_OQZVbIbU6or95uw/exec',
   REFRESH_MIN:  5,
   // GIDs des onglets — visible dans l'URL du sheet après #gid=
@@ -74,33 +75,26 @@ function dotColor(t) {
 }
 
 // ---- GOOGLE SHEETS — READ ----------------------------------
-function csvUrl(tab) {
-  return `https://docs.google.com/spreadsheets/d/e/${CFG.SHEET_PUB_ID}/pub?output=csv&gid=${CFG.GIDS[tab] || '0'}`;
+// gviz/tq supporte CORS nativement — pas besoin de proxy
+function gvizUrl(tab) {
+  return `https://docs.google.com/spreadsheets/d/${CFG.SHEET_ID}/gviz/tq?tqx=out:json&gid=${CFG.GIDS[tab] || '0'}`;
 }
 
-function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim());
-  return lines.slice(1).map(line => {
-    const cols = [];
-    let cur = '', q = false;
-    for (const ch of line) {
-      if (ch === '"')          q = !q;
-      else if (ch === ',' && !q) { cols.push(cur); cur = ''; }
-      else                       cur += ch;
-    }
-    cols.push(cur);
-    return Object.fromEntries(
-      headers.map((h, i) => [h, (cols[i] || '').replace(/^"|"$/g, '').trim()])
-    );
-  });
+function parseGviz(raw) {
+  const match = raw.match(/setResponse\(([\s\S]*)\)/);
+  if (!match) throw new Error('Format gviz invalide');
+  const data = JSON.parse(match[1]);
+  const cols = data.table.cols.map(c => (c.label || c.id || '').trim());
+  return (data.table.rows || []).map(r =>
+    Object.fromEntries(cols.map((col, i) => [col, String(r?.c?.[i]?.v ?? '').trim()]))
+  );
 }
 
 async function fetchTab(tab) {
   try {
-    const r = await fetch(csvUrl(tab));
-    return parseCSV(await r.text());
+    const r = await fetch(gvizUrl(tab));
+    const text = await r.text();
+    return parseGviz(text);
   } catch (e) {
     console.warn(`[Sheets] Erreur onglet "${tab}":`, e);
     return [];
