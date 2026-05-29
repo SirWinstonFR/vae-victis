@@ -1,568 +1,130 @@
-/* ============================================================
-   VAE VICTIS — app.css
-   ============================================================ */
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vae Victis — Salle de Guerre</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<div id="app">
+  <header id="header">
+    <div class="logo"><i class="ti ti-sword" aria-hidden="true"></i>Vae Victis</div>
+    <div class="header-right">
+      <div class="sync-wrap"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">Chargement…</span></div>
+      <span class="cycle-badge" id="cycle-badge">CYCLE —</span>
+      <div class="faction-filters">
+        <button class="faction-btn faction-sovereign" data-faction="Sovereign" title="Filtrer Sovereign">
+          <span class="faction-dot"></span>Sovereign
+        </button>
+        <button class="faction-btn faction-olympien" data-faction="Olympiens" title="Filtrer Olympiens">
+          <span class="faction-dot"></span>Olympiens
+        </button>
+        <button class="faction-btn faction-shemning" data-faction="Shemning" title="Filtrer Shemning">
+          <span class="faction-dot"></span>Shemning
+        </button>
+      </div>
+      <button class="btn icon-btn" id="btn-fandom" title="Wiki Fandom"><i class="ti ti-book" aria-hidden="true"></i></button>
+      <button class="btn icon-btn" id="btn-refresh" title="Rafraîchir"><i class="ti ti-refresh" aria-hidden="true"></i></button>
+      <button class="btn" id="btn-login"><i class="ti ti-user" aria-hidden="true"></i> Connexion</button>
+      <button class="btn btn-warn" id="btn-admin" style="display:none"><i class="ti ti-shield" aria-hidden="true"></i> Admin</button>
+    </div>
+  </header>
 
-:root {
-  --bg0: #060d1a;
-  --bg1: #08111f;
-  --bg2: #0a1628;
-  --bg3: #0d1e30;
-  --border: #1a2e4a;
-  --border2: #1a3a5a;
-  --text1: #7aaed4;
-  --text2: #4a7aaa;
-  --text3: #2a4a6a;
-  --text4: #1a3a5a;
-  --danger: #f07070;
-  --danger-bg: #0a0404;
-  --danger-border: #2a0e0e;
-  --info: #5ab8f5;
-  --info-bg: #06182a;
-  --info-border: #1a4a7a;
-  --warn: #f0c060;
-  --warn-bg: #0f0e00;
-  --warn-border: #3a2800;
-  --success: #2a9a6a;
-  --neutral: #2a4a6a;
-  --atk-color: #d44040;
-  --def-color: #4a9ad4;
-}
+  <div id="transbar">
+    <span class="trans-label">Organisations Internationales</span>
+    <div class="tchip tchip-ue" data-zone="UE">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Flag_of_Europe.svg/60px-Flag_of_Europe.svg.png" class="tchip-flag" alt="UE">
+      <div class="tchip-info"><span class="tchip-name">Union Européenne</span><span class="tchip-sub">27 membres</span></div>
+    </div>
+    <div class="tchip tchip-otan" data-zone="OTAN">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Flag_of_NATO.svg/60px-Flag_of_NATO.svg.png" class="tchip-flag" alt="OTAN">
+      <div class="tchip-info"><span class="tchip-name">OTAN</span><span class="tchip-sub">Alliance militaire</span></div>
+    </div>
+    <div class="tchip tchip-onu" data-zone="ONU">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Emblem_of_the_United_Nations.svg/60px-Emblem_of_the_United_Nations.svg.png" class="tchip-flag" alt="ONU">
+      <div class="tchip-info"><span class="tchip-name">ONU</span><span class="tchip-sub">Nations Unies</span></div>
+    </div>
+  </div>
 
-html, body {
-  height: 100%;
-  background: var(--bg0);
-  color: var(--text1);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 15px;
-}
+  <div id="warning-ticker" style="display:none">
+    <div class="ticker-icon">ALERTE</div>
+    <div class="ticker-track"><span class="ticker-content"></span></div>
+  </div>
 
-/* ---- APP LAYOUT ---- */
-#app {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  max-height: 100vh;
-  overflow: hidden;
-}
+  <div id="body-grid">
+    <div id="map-wrap">
+      <div id="map-loading"><i class="ti ti-world"></i><span>Chargement de la carte…</span></div>
+      <svg id="world-svg"></svg>
+      <div id="map-tt"></div>
+      <div id="zoom-controls">
+        <button class="zbtn" id="zoom-in">+</button>
+        <button class="zbtn" id="zoom-out">−</button>
+        <button class="zbtn" id="zoom-reset"><i class="ti ti-home" aria-hidden="true"></i></button>
+      </div>
+      <div id="legend">
+        <div class="li"><div class="ld" style="background:#2a9a6a"></div>Votre divinité</div>
+        <div class="li"><div class="ld" style="background:#4a8ad4"></div>Autre divinité</div>
+        <div class="li"><div class="ld" style="background:#2a4a6a"></div>Neutre</div>
+        <div class="li"><div class="ld" style="background:#d4a020"></div>Sous attaque</div>
+        <div class="li"><div class="ld" style="background:#d44040"></div>Capitulation</div>
+        <div class="li"><div class="ld org-diamond"></div>Organisation</div>
+        <div class="li"><div class="ld" style="background:#7aaed4"></div>Ville</div>
+      </div>
+      <div id="map-hint">Scroll · Glisser pour naviguer</div>
+    </div>
 
-/* ---- HEADER ---- */
-#header {
-  background: var(--bg1);
-  border-bottom: 0.5px solid var(--border);
-  padding: 12px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-  gap: 12px;
-}
-.logo {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--text1);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: nowrap;
-}
-.sync-wrap { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text3); }
-.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); transition: background .3s; flex-shrink: 0; }
-.sync-dot.ok { background: var(--success); }
-.sync-dot.loading { background: var(--warn); animation: pulse 1s infinite; }
-.sync-dot.error { background: var(--danger); }
-@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
-.cycle-badge {
-  font-size: 13px;
-  background: #0a1e34;
-  color: #4a9ad4;
-  padding: 5px 14px;
-  border-radius: 4px;
-  border: 0.5px solid #1a4070;
-  white-space: nowrap;
-}
+    <aside id="panel">
+      <div id="panel-inner">
+        <div class="prompt"><i class="ti ti-login"></i><span>Chargement des données…</span></div>
+      </div>
+    </aside>
+  </div>
 
-/* ---- BUTTONS ---- */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 8px 14px;
-  border-radius: 5px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  border: 0.5px solid var(--border2);
-  background: var(--bg3);
-  color: var(--text1);
-  transition: background .12s, border-color .12s;
-  white-space: nowrap;
-  font-family: inherit;
-}
-.btn:hover { background: #142840; }
-.btn:disabled { opacity: .35; cursor: not-allowed; }
-.btn.icon-btn { padding: 5px 8px; }
-.btn-danger { border-color: var(--danger-border); color: var(--danger); background: var(--danger-bg); }
-.btn-danger:hover { background: #1a0a0a; }
-.btn-info { border-color: var(--info-border); color: var(--info); background: var(--info-bg); }
-.btn-info:hover { background: #0a2040; }
-.btn-warn { border-color: var(--warn-border); color: var(--warn); background: var(--warn-bg); }
-.btn-warn:hover { background: #1a1400; }
-.btn-full { width: 100%; }
+  <div id="dock"></div>
+</div>
 
-/* ---- TRANSBAR ---- */
-#transbar {
-  background: #070f1c;
-  border-bottom: 0.5px solid var(--border);
-  padding: 9px 18px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-#transbar::-webkit-scrollbar { display: none; }
-.trans-label { font-size: 10px; color: var(--text3); letter-spacing: .06em; text-transform: uppercase; flex-shrink: 0; margin-right: 8px; white-space: nowrap; }
-.tchip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 14px 5px 6px;
-  border-radius: 8px;
-  border: 0.5px solid var(--border);
-  background: var(--bg2);
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all .15s;
-  color: var(--text2);
-  position: relative;
-  overflow: hidden;
-}
-.tchip::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, transparent 60%, rgba(255,255,255,.03));
-  pointer-events: none;
-}
-.tchip:hover { border-color: #2a4a7a; background: #0d1e30; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.3); }
-.tchip.active { border-color: #3a6aaa; background: #0d2040; box-shadow: 0 0 12px rgba(58,106,170,.3); }
-.tchip-flag {
-  width: 34px;
-  height: 24px;
-  object-fit: cover;
-  border-radius: 3px;
-  flex-shrink: 0;
-  border: 0.5px solid rgba(255,255,255,.1);
-}
-.tchip-info {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-.tchip-name {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text1);
-  white-space: nowrap;
-}
-.tchip-sub {
-  font-size: 10px;
-  color: var(--text3);
-  white-space: nowrap;
-}
-.tchip.active .tchip-name { color: var(--info); }
-.tchip-ue.active { border-color: #2a4a9a; box-shadow: 0 0 12px rgba(42,74,154,.4); }
-.tchip-otan.active { border-color: #1a5a8a; box-shadow: 0 0 12px rgba(26,90,138,.4); }
-.tchip-onu.active { border-color: #1a6a5a; box-shadow: 0 0 12px rgba(26,106,90,.4); }
+<!-- Modal login -->
+<div class="modal-bg" id="modal-login">
+  <div class="modal">
+    <h2><i class="ti ti-key" aria-hidden="true"></i>Connexion divine</h2>
+    <select id="login-sel"><option value="">— Votre divinité —</option></select>
+    <input type="password" id="login-pw" placeholder="Code secret" autocomplete="current-password"/>
+    <div id="login-err"></div>
+    <div class="modal-foot">
+      <button class="btn" data-close="modal-login">Annuler</button>
+      <button class="btn btn-info" id="login-submit"><i class="ti ti-login" aria-hidden="true"></i> Entrer</button>
+    </div>
+  </div>
+</div>
 
-/* ---- BODY GRID ---- */
-#body-grid {
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  flex: 1;
-  overflow: hidden;
-  min-height: 0;
-}
+<!-- Modal attaque -->
+<div class="modal-bg" id="modal-atk">
+  <div class="modal">
+    <h2 id="atk-title"></h2>
+    <div id="atk-body"></div>
+    <div class="modal-foot">
+      <button class="btn" data-close="modal-atk">Annuler</button>
+      <button class="btn btn-danger" id="atk-confirm"><i class="ti ti-sword" aria-hidden="true"></i> Confirmer l'attaque</button>
+    </div>
+  </div>
+</div>
 
-/* ---- MAP ---- */
-#map-wrap {
-  position: relative;
-  background: var(--bg0);
-  overflow: hidden;
-  cursor: grab;
-}
-#map-wrap:active { cursor: grabbing; }
-#world-svg { width: 100%; height: 100%; display: none; }
+<!-- Modal admin -->
+<div class="modal-bg" id="modal-admin">
+  <div class="modal">
+    <h2><i class="ti ti-shield" aria-hidden="true"></i>Panneau admin</h2>
+    <div id="admin-body"></div>
+    <div class="modal-foot">
+      <button class="btn" data-close="modal-admin">Fermer</button>
+    </div>
+  </div>
+</div>
 
-#map-loading {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  color: #2a5a8a;
-  font-size: 11px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-#map-loading i { font-size: 28px; }
-
-#map-tt {
-  position: absolute;
-  background: rgba(2,6,16,.97);
-  color: var(--text1);
-  font-size: 10px;
-  padding: 4px 9px;
-  border-radius: 4px;
-  pointer-events: none;
-  display: none;
-  z-index: 50;
-  white-space: nowrap;
-  border: 0.5px solid var(--border2);
-}
-
-/* Map SVG paths */
-.country { fill: #0e1c2e; stroke: #1a3050; stroke-width: .3; }
-.country.has-zone { cursor: pointer; transition: fill .15s; }
-.country.has-zone:hover { fill: #172438; }
-.country.active { fill: #1e3a60 !important; }
-
-/* ---- ZOOM ---- */
-#zoom-controls {
-  position: absolute;
-  top: 10px; right: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  z-index: 20;
-}
-.zbtn {
-  width: 32px; height: 32px;
-  background: var(--bg1);
-  border: 0.5px solid var(--border2);
-  border-radius: 5px;
-  color: var(--text2);
-  font-size: 15px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all .12s;
-  font-family: inherit;
-}
-.zbtn:hover { background: #0d2040; color: var(--text1); }
-
-/* ---- LEGEND ---- */
-#legend {
-  position: absolute;
-  bottom: 8px; left: 8px;
-  background: rgba(6,13,26,.92);
-  border-radius: 5px;
-  padding: 6px 9px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  z-index: 10;
-  border: 0.5px solid #111e2e;
-}
-.li { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text3); }
-.ld { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-#map-hint { position: absolute; bottom: 8px; right: 10px; font-size: 11px; color: var(--text4); z-index: 10; }
-
-/* ---- PANEL ---- */
-#panel {
-  background: var(--bg1);
-  border-left: 0.5px solid var(--border);
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border2) transparent;
-  min-width: 300px;
-}
-#panel-inner { padding: 14px; }
-
-.prompt {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 200px;
-  color: var(--text4);
-  font-size: 10px;
-  gap: 8px;
-  text-align: center;
-}
-.prompt i { font-size: 28px; }
-
-.sec {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text3);
-  text-transform: uppercase;
-  letter-spacing: .07em;
-  margin: 0 0 8px;
-  padding-bottom: 4px;
-  border-bottom: 0.5px solid #111e2e;
-}
-.divider { border: none; border-top: 0.5px solid #111e2e; margin: 8px 0; }
-.info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; }
-.ik { color: var(--text3); }
-.iv { color: var(--text1); font-weight: 500; }
-.back-btn {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 9px;
-  color: #2a5a8a;
-  cursor: pointer;
-  margin-bottom: 8px;
-  padding: 2px 0;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-  background: none;
-  border: none;
-  font-family: inherit;
-}
-.back-btn:hover { color: var(--info); }
-
-/* ---- ATTACK SLOTS ---- */
-.slot {
-  border: 0.5px dashed var(--border);
-  border-radius: 4px;
-  padding: 5px 8px;
-  margin-bottom: 3px;
-  min-height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-}
-.slot.atk { border-style: solid; border-color: var(--danger-border); background: var(--danger-bg); }
-.slot.def { border-style: solid; border-color: var(--info-border); background: var(--info-bg); }
-.slot-text { font-size: 12px; color: var(--text3); }
-.slot-text.atk { color: var(--danger); }
-.slot-text.def { color: var(--info); }
-.xbtn { background: none; border: none; color: var(--text3); cursor: pointer; padding: 2px; font-size: 12px; display: flex; align-items: center; font-family: inherit; }
-.xbtn:hover { color: var(--danger); }
-
-/* ---- NOTIFS ---- */
-.notif { border-radius: 4px; padding: 8px 10px; font-size: 11px; margin-bottom: 8px; }
-.notif-warn { background: var(--warn-bg); border: 0.5px solid var(--warn-border); color: var(--warn); }
-.notif-info { background: var(--info-bg); border: 0.5px solid var(--info-border); color: var(--info); }
-.cap-choice {
-  border: 0.5px solid var(--border);
-  border-radius: 4px;
-  padding: 5px;
-  margin-bottom: 4px;
-  cursor: pointer;
-  font-size: 10px;
-  color: var(--text2);
-  transition: all .12s;
-  background: none;
-  width: 100%;
-  text-align: left;
-  font-family: inherit;
-}
-.cap-choice:hover, .cap-choice.chosen { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn); }
-
-/* ---- TERRITORY CARDS ---- */
-.terr-card {
-  border-radius: 5px;
-  overflow: hidden;
-  margin-bottom: 6px;
-  border: 0.5px solid var(--border);
-  transition: border-color .15s;
-}
-.terr-card.under-attack { border-color: #2a1e00; }
-.terr-img { width: 100%; height: 54px; object-fit: cover; display: block; }
-.terr-ph { width: 100%; height: 54px; background: var(--bg2); display: flex; align-items: center; justify-content: center; color: var(--text4); font-size: 18px; }
-.terr-body { padding: 7px 9px; background: #0a1220; }
-.terr-row { display: flex; align-items: center; justify-content: space-between; gap: 5px; }
-.terr-name { font-size: 12px; font-weight: 500; color: var(--text1); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.terr-owner { font-size: 11px; margin-top: 2px; }
-.terr-status { font-size: 8px; margin-top: 2px; display: flex; align-items: center; gap: 3px; }
-.pi-badge { font-size: 8px; padding: 1px 5px; border-radius: 3px; background: #0a1e30; color: #3a7aaa; border: 0.5px solid var(--border2); flex-shrink: 0; }
-.tag { font-size: 9px; padding: 2px 6px; border-radius: 3px; flex-shrink: 0; }
-.tag-city { background: #0a2a1a; color: #2a9a6a; border: 0.5px solid #1a3a2a; }
-.tag-org { background: #1a1400; color: #b08020; border: 0.5px solid #2a2800; }
-.atk-btn {
-  display: flex; align-items: center; gap: 3px;
-  font-size: 9px; padding: 3px 7px; border-radius: 3px;
-  cursor: pointer;
-  border: 0.5px solid var(--danger-border);
-  background: var(--danger-bg);
-  color: var(--danger);
-  transition: all .12s;
-  flex-shrink: 0;
-  font-family: inherit;
-}
-.atk-btn:hover { background: #180808; }
-
-/* ---- HENTRY ---- */
-.hentry {
-  padding: 6px 0;
-  border-bottom: 0.5px solid #0d1a28;
-  font-size: 12px;
-  color: var(--text2);
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.hentry:last-child { border-bottom: none; }
-
-/* ---- DEITY AVATAR ---- */
-.d-avatar {
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 1.5px solid transparent;
-  flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 500;
-}
-.d-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-/* ---- RULE BLOCK ---- */
-.rule-block { background: var(--bg2); border-radius: 5px; padding: 6px 9px; margin-top: 8px; border: 0.5px solid #111e2e; }
-.rule-text { font-size: 9px; color: var(--text3); line-height: 1.6; }
-.rule-text b { font-weight: 500; color: var(--text2); }
-
-/* ---- DOCK ---- */
-#dock {
-  background: #070f1c;
-  border-top: 0.5px solid var(--border);
-  flex-shrink: 0;
-  height: 116px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
-  gap: 6px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border2) #070f1c;
-}
-#dock::-webkit-scrollbar { height: 3px; }
-#dock::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
-.dchip {
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-  cursor: pointer; flex-shrink: 0; width: 60px; padding: 5px 3px;
-  border-radius: 6px; border: 0.5px solid transparent;
-  transition: all .15s; position: relative;
-}
-.dchip:hover { background: #0d1e34; border-color: var(--border2); }
-.dchip.active { background: #0d2040; border-color: #2a5a9a; }
-.dchip.locked { opacity: .28; cursor: not-allowed; }
-.dchip .av {
-  width: 44px; height: 44px; border-radius: 50%;
-  border: 2px solid transparent; flex-shrink: 0;
-  background: var(--bg3);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 500; overflow: hidden;
-  position: relative;
-}
-.dchip.active .av { border-color: #3a7abf; }
-.dchip .av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.dchip .dn { font-size: 11px; font-weight: 500; color: var(--text2); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
-.dchip .dp { font-size: 9px; color: var(--text3); }
-.dchip .abadge {
-  position: absolute; top: 2px; right: 2px;
-  width: 13px; height: 13px; background: #2a0808;
-  border-radius: 50%; border: 0.5px solid var(--danger);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 8px; color: var(--danger); font-weight: 500;
-}
-
-/* ---- MODALS ---- */
-.modal-bg {
-  position: fixed; inset: 0;
-  background: rgba(0,3,10,.82);
-  z-index: 1000;
-  display: none;
-  align-items: center; justify-content: center;
-  backdrop-filter: blur(3px);
-}
-.modal-bg.open { display: flex; }
-.modal {
-  background: var(--bg1);
-  border-radius: 8px;
-  border: 0.5px solid var(--border2);
-  padding: 20px;
-  width: 340px;
-  max-width: 92vw;
-  box-shadow: 0 20px 60px rgba(0,0,0,.7);
-}
-.modal h2 { font-size: 12px; font-weight: 500; margin-bottom: 12px; color: var(--text1); display: flex; align-items: center; gap: 6px; }
-.modal select, .modal input {
-  width: 100%; margin-bottom: 8px;
-  padding: 6px 9px; font-size: 11px;
-  border: 0.5px solid var(--border2);
-  border-radius: 4px;
-  background: var(--bg0); color: var(--text1);
-  font-family: inherit;
-}
-.modal select:focus, .modal input:focus { outline: none; border-color: var(--info); }
-#login-err { font-size: 9px; color: var(--danger); min-height: 12px; margin-bottom: 4px; }
-.modal-foot { display: flex; gap: 6px; margin-top: 12px; }
-.modal-foot .btn { flex: 1; }
-
-/* ---- DOT ---- */
-.dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-
-/* ---- SVG MAP ZONES ---- */
-.zone-badge-circle { transition: opacity .3s; }
-
-/* Zone member highlight */
-.country.zone-member { fill: #1e3a60; }
-.country.zone-member:hover { fill: #264a78; }
-
-/* Org chip style in panel */
-.org-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  margin-bottom: 5px;
-  width: 100%;
-  cursor: default;
-  font-size: 11px;
-  font-weight: 500;
-  border: 0.5px solid var(--border);
-  background: var(--bg2);
-  transition: all .15s;
-}
-.org-chip .org-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.org-chip .org-name { flex: 1; color: var(--text1); }
-.org-chip .org-owner { font-size: 10px; }
-.org-chip .org-pi { font-size: 9px; padding: 1px 5px; border-radius: 3px; background: #0a1e30; color: #3a7aaa; border: 0.5px solid var(--border2); }
-.org-chip:has(.atk-btn) { cursor: default; }
-
-/* Org diamond in legend */
-.ld.org-diamond {
-  background: #7aaed4;
-  border-radius: 0;
-  transform: rotate(45deg);
-  width: 7px;
-  height: 7px;
-}
-
-/* Transnational member highlight */
-.country.trans-member {
-  fill: #1a3a5a !important;
-  stroke: #3a6aaa;
-  stroke-width: 0.6;
-}
-.country.trans-member:hover { fill: #224a6a !important; }
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
