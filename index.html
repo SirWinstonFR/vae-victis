@@ -5,807 +5,98 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vae Victis — Salle de Guerre</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{--bg0:#060d1a;--bg1:#08111f;--bg2:#0a1628;--bg3:#0d1e30;--border:#1a2e4a;--border2:#1a3a5a;--text1:#7aaed4;--text2:#4a7aaa;--text3:#2a4a6a;--text4:#1a3a5a;--danger:#f07070;--dangerbg:#0a0404;--dangerborder:#2a0e0e;--info:#5ab8f5;--infobg:#06182a;--infoborder:#1a4a7a;--warn:#f0c060;--warnbg:#0f0e00;--warnborder:#3a2800;--atk:#d44040;--def:#4a9ad4;--neutral:#2a4a6a;--success:#2a9a6a}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg0);color:var(--text1)}
-.app{background:var(--bg0);border-radius:10px;overflow:hidden;border:0.5px solid var(--border);display:flex;flex-direction:column;height:700px;max-width:1200px;margin:0 auto}
-.header{background:var(--bg1);border-bottom:0.5px solid var(--border);padding:8px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.logo{font-size:13px;font-weight:500;color:var(--text1);display:flex;align-items:center;gap:8px;letter-spacing:.06em;text-transform:uppercase}
-.cycle-badge{font-size:10px;background:#0a1e34;color:#4a9ad4;padding:3px 10px;border-radius:4px;border:0.5px solid #1a4070}
-.sync-indicator{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--text3)}
-.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);transition:background 0.3s}
-.sync-dot.ok{background:var(--success)}
-.sync-dot.loading{background:var(--warn);animation:pulse 1s infinite}
-.sync-dot.error{background:var(--danger)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-.tbar{background:#070f1c;border-bottom:0.5px solid var(--border);padding:5px 12px;display:flex;align-items:center;gap:6px;flex-shrink:0;overflow-x:auto;scrollbar-width:none}
-.tbar::-webkit-scrollbar{display:none}
-.tlabel{font-size:9px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;flex-shrink:0;margin-right:4px}
-.tchip{display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;border:0.5px solid var(--border);background:var(--bg2);cursor:pointer;flex-shrink:0;transition:all .12s}
-.tchip:hover{border-color:#2a4a7a;background:var(--bg3)}
-.tchip.active{border-color:#3a6aaa;background:#0d2040}
-.tchip .tn{font-size:10px;font-weight:500;color:var(--text2)}
-.tchip .tc{font-size:9px;color:var(--text3);margin-left:2px}
-.body{display:grid;grid-template-columns:1fr 272px;flex:1;overflow:hidden;min-height:0}
-.map-wrap{position:relative;background:var(--bg0);overflow:hidden;cursor:grab}
-.map-wrap:active{cursor:grabbing}
-.panel-right{background:var(--bg1);border-left:0.5px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
-.pri{padding:10px;flex:1}
-.dock{background:#070f1c;border-top:0.5px solid var(--border);flex-shrink:0;height:92px;overflow-x:auto;overflow-y:hidden;display:flex;align-items:center;padding:0 10px;gap:6px;scrollbar-width:thin;scrollbar-color:#1a3a5a #070f1c}
-.dock::-webkit-scrollbar{height:3px}
-.dock::-webkit-scrollbar-thumb{background:#1a3a5a;border-radius:2px}
-.dchip{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;flex-shrink:0;width:60px;padding:5px 3px;border-radius:6px;border:0.5px solid transparent;transition:all .15s;position:relative}
-.dchip:hover{background:#0d1e34;border-color:var(--border2)}
-.dchip.active{background:#0d2040;border-color:#2a5a9a}
-.dchip.locked{opacity:.28;cursor:not-allowed}
-.dchip .av{width:32px;height:32px;border-radius:50%;border:1.5px solid transparent;flex-shrink:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;overflow:hidden}
-.dchip.active .av{border-color:#3a7abf}
-.dchip .dn{font-size:9px;font-weight:500;color:var(--text2);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
-.dchip .dpi{font-size:8px;color:var(--text3)}
-.dchip .abadge{position:absolute;top:2px;right:2px;width:13px;height:13px;background:#2a0808;border-radius:50%;border:0.5px solid var(--danger);display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--danger);font-weight:500}
-.zoom-controls{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:4px;z-index:20}
-.zbtn{width:28px;height:28px;background:var(--bg1);border:0.5px solid var(--border2);border-radius:5px;color:var(--text2);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s}
-.zbtn:hover{background:#0d2040;color:var(--text1)}
-.legend{position:absolute;bottom:8px;left:8px;background:rgba(6,13,26,0.92);border-radius:5px;padding:6px 9px;display:flex;flex-direction:column;gap:3px;z-index:10;border:0.5px solid #111e2e}
-.li{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--text3)}
-.ld{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.zoom-hint{position:absolute;bottom:8px;right:10px;font-size:9px;color:var(--text4);z-index:10}
-.map-tt{position:absolute;background:rgba(2,6,16,.97);color:var(--text1);font-size:10px;padding:4px 9px;border-radius:4px;pointer-events:none;display:none;z-index:50;white-space:nowrap;border:0.5px solid var(--border2)}
-.sec{font-size:9px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:0 0 7px;padding-bottom:4px;border-bottom:0.5px solid #111e2e}
-.btn{display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 10px;border-radius:5px;font-size:10px;font-weight:500;cursor:pointer;border:0.5px solid var(--border2);background:var(--bg3);color:var(--text1);width:100%;transition:all .12s}
-.btn:hover{background:#142840}
-.btn:disabled{opacity:.35;cursor:not-allowed}
-.btn-danger{border-color:var(--dangerborder);color:var(--danger);background:var(--dangerbg)}
-.btn-danger:hover{background:#1a0a0a}
-.btn-info{border-color:var(--infoborder);color:var(--info);background:var(--infobg)}
-.btn-warn{border-color:var(--warnborder);color:var(--warn);background:var(--warnbg)}
-.divider{border:none;border-top:0.5px solid #111e2e;margin:8px 0}
-.slot{border:0.5px dashed var(--border);border-radius:4px;padding:5px 8px;margin-bottom:3px;min-height:32px;display:flex;align-items:center;justify-content:space-between;gap:4px}
-.slot.atk{border-style:solid;border-color:var(--dangerborder);background:var(--dangerbg)}
-.slot.def{border-style:solid;border-color:var(--infoborder);background:var(--infobg)}
-.st{font-size:10px;color:var(--text3)}
-.st.atk{color:var(--danger)}
-.st.def{color:var(--info)}
-.xbtn{background:none;border:none;color:var(--text3);cursor:pointer;padding:2px;font-size:11px;display:flex;align-items:center}
-.xbtn:hover{color:var(--danger)}
-.info-row{display:flex;justify-content:space-between;padding:2px 0;font-size:10px}
-.ik{color:var(--text3)}.iv{color:var(--text1);font-weight:500}
-.pi-bar{height:2px;border-radius:2px;background:var(--bg2);margin:2px 0 7px;overflow:hidden}
-.pi-fill{height:100%;border-radius:2px}
-.rule-block{background:var(--bg2);border-radius:5px;padding:6px 9px;margin-top:8px;border:0.5px solid #111e2e}
-.rule-text{font-size:9px;color:var(--text3);line-height:1.6}
-.rule-text b{font-weight:500;color:var(--text2)}
-.modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,3,10,.82);z-index:300;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
-.modal-bg.open{display:flex}
-.modal{background:var(--bg1);border-radius:8px;border:0.5px solid var(--border2);padding:18px;width:340px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.7)}
-.modal h2{font-size:12px;font-weight:500;margin-bottom:12px;color:var(--text1)}
-.modal select,.modal input{width:100%;margin-bottom:7px;padding:6px 9px;font-size:11px;border:0.5px solid var(--border2);border-radius:4px;background:var(--bg0);color:var(--text1)}
-.mfoot{display:flex;gap:6px;margin-top:12px}
-.mfoot .btn{flex:1}
-.tag{font-size:8px;padding:1px 4px;border-radius:3px;flex-shrink:0}
-.tag-city{background:#0a2a1a;color:#2a9a6a;border:0.5px solid #1a3a2a}
-.tag-org{background:#1a1400;color:#b08020;border:0.5px solid #2a2800}
-.terr-card{border-radius:5px;overflow:hidden;margin-bottom:6px;border:0.5px solid var(--border)}
-.terr-img{width:100%;height:56px;object-fit:cover;display:block}
-.terr-placeholder{width:100%;height:56px;background:var(--bg2);display:flex;align-items:center;justify-content:center}
-.terr-body{padding:7px 9px;background:#0a1220}
-.terr-row{display:flex;align-items:center;justify-content:space-between;gap:5px}
-.terr-name{font-size:10px;font-weight:500;color:var(--text1);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.terr-owner{font-size:9px;margin-top:2px}
-.pi-badge{font-size:8px;padding:1px 5px;border-radius:3px;background:#0a1e30;color:#3a7aaa;border:0.5px solid var(--border2);flex-shrink:0}
-.atk-btn{display:flex;align-items:center;gap:3px;font-size:9px;padding:3px 7px;border-radius:3px;cursor:pointer;border:0.5px solid var(--dangerborder);background:var(--dangerbg);color:var(--danger);transition:all .12s;flex-shrink:0}
-.atk-btn:hover{background:#180808}
-.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.hentry{padding:4px 0;border-bottom:0.5px solid #0d1a28;font-size:10px;color:var(--text2);display:flex;align-items:center;gap:5px}
-.hentry:last-child{border-bottom:none}
-.login-prompt{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text4);font-size:10px;gap:8px;text-align:center;padding:20px}
-.notif-warn{background:var(--warnbg);border:0.5px solid var(--warnborder);border-radius:4px;padding:6px 8px;font-size:9px;color:var(--warn);margin-bottom:8px}
-.notif-info{background:var(--infobg);border:0.5px solid var(--infoborder);border-radius:4px;padding:5px 8px;font-size:9px;color:var(--info);margin-bottom:8px}
-.cap-choice{border:0.5px solid var(--border);border-radius:4px;padding:5px;margin-bottom:4px;cursor:pointer;font-size:10px;color:var(--text2);transition:all .12s}
-.cap-choice:hover,.cap-choice.chosen{background:var(--warnbg);border-color:var(--warnborder);color:var(--warn)}
-.country-hit{fill:#0e1c2e;stroke:#1a3050;stroke-width:.3;transition:fill .12s}
-.country-hit.clickable{cursor:pointer}
-.country-hit.clickable:hover{fill:#172438}
-.country-active{fill:#182f55 !important}
-#map-loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#2a5a8a;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:8px;z-index:5}
-.back-btn{display:flex;align-items:center;gap:5px;font-size:9px;color:#2a5a8a;cursor:pointer;margin-bottom:8px;padding:2px 0;text-transform:uppercase;letter-spacing:.05em}
-.back-btn:hover{color:var(--info)}
-.loading-overlay{position:absolute;inset:0;background:rgba(6,13,26,.8);display:flex;align-items:center;justify-content:center;z-index:100;font-size:11px;color:var(--text2);flex-direction:column;gap:8px}
-</style>
+<link rel="stylesheet" href="app.css">
 </head>
 <body>
-<div class="app">
-  <div class="header">
+
+<div id="app">
+  <header id="header">
     <div class="logo"><i class="ti ti-sword" aria-hidden="true"></i>Vae Victis</div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <div class="sync-indicator"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">Chargement…</span></div>
-      <span class="cycle-badge" id="cycle-badge">CYCLE — · —</span>
-      <button class="btn" id="btn-refresh" style="width:auto;padding:4px 8px;font-size:10px" title="Rafraîchir"><i class="ti ti-refresh" aria-hidden="true"></i></button>
-      <button class="btn" id="btn-login" style="width:auto;padding:4px 9px;font-size:10px"><i class="ti ti-user" aria-hidden="true"></i> Connexion</button>
-      <button class="btn btn-warn" id="btn-admin" style="width:auto;padding:4px 9px;font-size:10px;display:none"><i class="ti ti-shield" aria-hidden="true"></i> Admin</button>
+    <div class="header-right">
+      <div class="sync-wrap"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">Chargement…</span></div>
+      <span class="cycle-badge" id="cycle-badge">CYCLE —</span>
+      <button class="btn icon-btn" id="btn-refresh" title="Rafraîchir"><i class="ti ti-refresh" aria-hidden="true"></i></button>
+      <button class="btn" id="btn-login"><i class="ti ti-user" aria-hidden="true"></i> Connexion</button>
+      <button class="btn btn-warn" id="btn-admin" style="display:none"><i class="ti ti-shield" aria-hidden="true"></i> Admin</button>
     </div>
+  </header>
+
+  <div id="transbar">
+    <span class="trans-label">Transnationales</span>
+    <div class="tchip" data-zone="UE"><span>🇪🇺</span><span class="tn">Union Européenne</span></div>
+    <div class="tchip" data-zone="OTAN"><span>🛡️</span><span class="tn">OTAN</span></div>
+    <div class="tchip" data-zone="ONU"><span>🌐</span><span class="tn">ONU</span></div>
   </div>
-  <div class="tbar">
-    <span class="tlabel">Transnationales</span>
-    <div class="tchip" onclick="showTransZone('UE')" id="tc-UE"><span style="font-size:11px">🇪🇺</span><span class="tn">Union Européenne</span></div>
-    <div class="tchip" onclick="showTransZone('OTAN')" id="tc-OTAN"><span style="font-size:11px">🛡️</span><span class="tn">OTAN</span></div>
-    <div class="tchip" onclick="showTransZone('ONU')" id="tc-ONU"><span style="font-size:11px">🌐</span><span class="tn">ONU</span></div>
-  </div>
-  <div class="body">
-    <div class="map-wrap" id="map-wrap">
-      <div id="map-loading"><i class="ti ti-world" style="font-size:28px"></i><span>Chargement…</span></div>
-      <svg id="world-svg" style="display:none"></svg>
-      <div class="map-tt" id="map-tt"></div>
-      <div class="zoom-controls">
-        <button class="zbtn" onclick="zoomIn()">+</button>
-        <button class="zbtn" onclick="zoomOut()">−</button>
-        <button class="zbtn" onclick="zoomReset()"><i class="ti ti-home" style="font-size:12px" aria-hidden="true"></i></button>
+
+  <div id="body-grid">
+    <div id="map-wrap">
+      <div id="map-loading"><i class="ti ti-world"></i><span>Chargement de la carte…</span></div>
+      <svg id="world-svg"></svg>
+      <div id="map-tt"></div>
+      <div id="zoom-controls">
+        <button class="zbtn" id="zoom-in">+</button>
+        <button class="zbtn" id="zoom-out">−</button>
+        <button class="zbtn" id="zoom-reset"><i class="ti ti-home" aria-hidden="true"></i></button>
       </div>
-      <div class="legend">
-        <div class="li"><div class="ld" style="background:var(--success)"></div>Votre divinité</div>
+      <div id="legend">
+        <div class="li"><div class="ld" style="background:#2a9a6a"></div>Votre divinité</div>
         <div class="li"><div class="ld" style="background:#4a8ad4"></div>Autre divinité</div>
-        <div class="li"><div class="ld" style="background:var(--neutral)"></div>Neutre</div>
+        <div class="li"><div class="ld" style="background:#2a4a6a"></div>Neutre</div>
         <div class="li"><div class="ld" style="background:#d4a020"></div>Sous attaque</div>
-        <div class="li"><div class="ld" style="background:var(--atk)"></div>Capitulation</div>
+        <div class="li"><div class="ld" style="background:#d44040"></div>Capitulation</div>
       </div>
-      <div class="zoom-hint">Scroll · Glisser pour naviguer</div>
+      <div id="map-hint">Scroll · Glisser pour naviguer</div>
     </div>
-    <div class="panel-right"><div class="pri" id="panel-inner">
-      <div class="login-prompt"><i class="ti ti-login" style="font-size:28px"></i><span>Chargement des données…</span></div>
-    </div></div>
+
+    <aside id="panel">
+      <div id="panel-inner">
+        <div class="prompt"><i class="ti ti-login"></i><span>Chargement des données…</span></div>
+      </div>
+    </aside>
   </div>
-  <div class="dock" id="dock"></div>
+
+  <div id="dock"></div>
 </div>
 
-<!-- Modals -->
+<!-- Modal login -->
 <div class="modal-bg" id="modal-login">
   <div class="modal">
-    <h2><i class="ti ti-key" style="font-size:12px;vertical-align:-2px;margin-right:5px" aria-hidden="true"></i>Connexion divine</h2>
+    <h2><i class="ti ti-key" aria-hidden="true"></i>Connexion divine</h2>
     <select id="login-sel"><option value="">— Votre divinité —</option></select>
-    <input type="password" id="login-pw" placeholder="Code secret" onkeydown="if(event.key==='Enter')doLogin()"/>
-    <div id="login-err" style="font-size:9px;color:var(--danger);min-height:12px;margin-bottom:4px"></div>
-    <div class="mfoot">
-      <button class="btn" onclick="closeModal('modal-login')">Annuler</button>
-      <button class="btn btn-info" onclick="doLogin()"><i class="ti ti-login" aria-hidden="true"></i> Entrer</button>
+    <input type="password" id="login-pw" placeholder="Code secret" autocomplete="current-password"/>
+    <div id="login-err"></div>
+    <div class="modal-foot">
+      <button class="btn" data-close="modal-login">Annuler</button>
+      <button class="btn btn-info" id="login-submit"><i class="ti ti-login" aria-hidden="true"></i> Entrer</button>
     </div>
   </div>
 </div>
+
+<!-- Modal attaque -->
 <div class="modal-bg" id="modal-atk">
-  <div class="modal"><h2 id="atk-title"></h2><div id="atk-body"></div>
-    <div class="mfoot"><button class="btn" onclick="closeModal('modal-atk')">Annuler</button>
-    <button class="btn btn-danger" id="btn-confirm-atk" onclick="confirmAttack()"><i class="ti ti-sword" aria-hidden="true"></i> Confirmer</button></div>
+  <div class="modal">
+    <h2 id="atk-title"></h2>
+    <div id="atk-body"></div>
+    <div class="modal-foot">
+      <button class="btn" data-close="modal-atk">Annuler</button>
+      <button class="btn btn-danger" id="atk-confirm"><i class="ti ti-sword" aria-hidden="true"></i> Confirmer l'attaque</button>
+    </div>
   </div>
 </div>
+
+<!-- Modal admin -->
 <div class="modal-bg" id="modal-admin">
-  <div class="modal"><h2><i class="ti ti-shield" style="font-size:12px;vertical-align:-2px;margin-right:5px" aria-hidden="true"></i>Panneau admin</h2>
-    <div id="admin-body"></div><div class="mfoot"><button class="btn" onclick="closeModal('modal-admin')">Fermer</button></div>
+  <div class="modal">
+    <h2><i class="ti ti-shield" aria-hidden="true"></i>Panneau admin</h2>
+    <div id="admin-body"></div>
+    <div class="modal-foot">
+      <button class="btn" data-close="modal-admin">Fermer</button>
+    </div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
-<script>
-// ============================================================
-// CONFIG
-// ============================================================
-const CONFIG = {
-  SHEET_ID: '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxzrk3x8qu0LZLT7-MIxkwa9DsoRhUiSl7LlYul-oTYnzD4kG6-vs_OQZVbIbU6or95uw/exec',
-  REFRESH_MIN: 5,
-  CYCLE: 7,
-  ADMIN_PASS: 'vaevictis_admin',
-};
-
-// ============================================================
-// STATE
-// ============================================================
-let DEITIES = [];
-let ZONES = {};
-let TRANS_ZONES = { UE:{icon:'🇪🇺',name:'Union Européenne',territories:[]}, OTAN:{icon:'🛡️',name:'OTAN',territories:[]}, ONU:{icon:'🌐',name:'ONU',territories:[]} };
-let COUNTRY_TO_ZONE = {};
-let me = null, attacks = [], selectedDeity = null, pendingAtk = null, capitulation = null;
-let proj, svgSel, gMap, gDots, gBadges, zoomBeh, curK = 1, isDragging = false;
-let selectedZone = null, selectedTrans = null;
-let refreshTimer = null;
-
-const N = 'neutral';
-const BADGE_FADE = 1.8, BADGE_HIDE = 2.8, DOT_SHOW = 2.0;
-
-// ============================================================
-// GOOGLE SHEETS — LECTURE
-// ============================================================
-function sheetUrl(tab) {
-  return `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(tab)}`;
-}
-
-function parseGviz(raw) {
-  const json = raw.replace(/^[^\[{]*/, '').replace(/\s*\)\s*;?\s*$/, '');
-  const clean = json.startsWith('(') ? json.slice(1, -1) : json;
-  const data = JSON.parse(clean);
-  const cols = data.table.cols.map(c => c.label || c.id);
-  return (data.table.rows || []).map(r =>
-    Object.fromEntries(cols.map((col, i) => [col, r?.c?.[i]?.v ?? '']))
-  );
-}
-
-async function fetchTab(tab) {
-  try {
-    const res = await fetch(sheetUrl(tab));
-    const text = await res.text();
-    return parseGviz(text);
-  } catch(e) { console.warn(`Erreur onglet ${tab}:`, e); return []; }
-}
-
-function setSyncState(state, label) {
-  const dot = document.getElementById('sync-dot');
-  const lbl = document.getElementById('sync-label');
-  dot.className = 'sync-dot ' + state;
-  lbl.textContent = label;
-}
-
-async function loadData() {
-  setSyncState('loading', 'Synchronisation…');
-  try {
-    const [divinites, territoires, attaquesRaw, cycles, zonesConfig] = await Promise.all([
-      fetchTab('divinites'), fetchTab('territoires'), fetchTab('attaques'),
-      fetchTab('cycles'), fetchTab('zones_config')
-    ]);
-
-    // Divinités
-    DEITIES = divinites.filter(r => r.id).map(r => ({
-      id: String(r.id).trim(),
-      name: String(r.nom || r.id).trim(),
-      player: String(r.joueur || '').trim(),
-      pi: Number(r.pi) || 0,
-      color: String(r.couleur || '#4a8ad4').trim(),
-      pass: String(r.pass || '').trim(),
-      avatar: String(r.avatar_url || '').trim(),
-    }));
-
-    // Zones config
-    COUNTRY_TO_ZONE = {};
-    const zoneCx = {}, zoneCy = {};
-    zonesConfig.filter(r => r.zone).forEach(r => {
-      zoneCx[r.zone] = Number(r.cx) || 0;
-      zoneCy[r.zone] = Number(r.cy) || 0;
-      if (r.pays_associes) {
-        String(r.pays_associes).split(',').forEach(p => {
-          const trimmed = p.trim();
-          if (trimmed) COUNTRY_TO_ZONE[trimmed] = String(r.zone).trim();
-        });
-      }
-    });
-
-    // Territoires
-    const newZones = {};
-    const transKeys = ['UE', 'OTAN', 'ONU'];
-    territoires.filter(r => r.id && r.zone).forEach(r => {
-      const zone = String(r.zone).trim();
-      const t = {
-        id: String(r.id).trim(),
-        name: String(r.nom || r.id).trim(),
-        type: String(r.type || 'org').trim(),
-        owner: String(r.proprietaire || N).trim(),
-        pi: Number(r.pi_valeur) || 1,
-        lon: Number(r.lon) || 0,
-        lat: Number(r.lat) || 0,
-        img: String(r.image_url || '').trim(),
-      };
-      if (transKeys.includes(zone)) {
-        if (TRANS_ZONES[zone]) TRANS_ZONES[zone].territories.push(t);
-      } else {
-        if (!newZones[zone]) newZones[zone] = { cx: zoneCx[zone]||0, cy: zoneCy[zone]||0, territories: [] };
-        newZones[zone].territories.push(t);
-      }
-    });
-    ZONES = newZones;
-
-    // Attaques cycle actif
-    const cycle = cycles.find(r => String(r.statut).trim() === 'actif');
-    if (cycle) CONFIG.CYCLE = Number(cycle.numero);
-    document.getElementById('cycle-badge').textContent = `CYCLE ${CONFIG.CYCLE}`;
-
-    attacks = attaquesRaw
-      .filter(r => Number(r.cycle) === CONFIG.CYCLE && String(r.statut).trim() === 'déclarée')
-      .map(r => ({
-        attacker: String(r.attaquant).trim(),
-        target: String(r.cible).trim(),
-        territory: String(r.territoire_id).trim(),
-      }));
-
-    setSyncState('ok', `Sync ${new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'})}`);
-    return true;
-  } catch(e) {
-    console.error('Erreur loadData:', e);
-    setSyncState('error', 'Erreur sync');
-    return false;
-  }
-}
-
-// ============================================================
-// APPS SCRIPT — ÉCRITURE
-// ============================================================
-async function postScript(payload) {
-  try {
-    const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'Erreur');
-    return { ok: true };
-  } catch(e) { return { ok: false, error: e.message }; }
-}
-
-// ============================================================
-// HELPERS
-// ============================================================
-const getD = id => DEITIES.find(d => d.id === id) || { id, name: id, color: '#3a5a7a', pi: 0, avatar: '' };
-const getAllT = () => [...Object.values(ZONES).flatMap(z => z.territories), ...Object.values(TRANS_ZONES).flatMap(z => z.territories)];
-const getT = id => getAllT().find(t => t.id === id);
-const countAtkOn = did => attacks.filter(a => a.target === did).length;
-const myAtkCount = () => me ? attacks.filter(a => a.attacker === me.id).length : 0;
-const T_TO_ZONE = () => {
-  const m = {};
-  Object.entries(ZONES).forEach(([zn, zd]) => zd.territories.forEach(t => { m[t.id] = zn; }));
-  return m;
-};
-
-function getDotColor(t) {
-  const isMe = me && t.owner === me.id;
-  const isAtked = attacks.some(a => a.territory === t.id);
-  const isCap = capitulation === t.id;
-  const owner = t.owner && t.owner !== N ? getD(t.owner) : null;
-  if (isCap) return '#d44040';
-  if (isAtked && isMe) return '#4a9ad4';
-  if (isAtked) return '#d4a020';
-  if (owner) return isMe ? '#2a9a6a' : owner.color;
-  return '#2a4a6a';
-}
-
-// ============================================================
-// DOCK
-// ============================================================
-function renderDock() {
-  document.getElementById('dock').innerHTML = DEITIES.map(d => {
-    const n = countAtkOn(d.id), locked = n >= 2 && (!me || d.id !== me.id), isActive = selectedDeity === d.id;
-    const initials = d.name.slice(0, 2).toUpperCase();
-    return `<div class="dchip${isActive?' active':''}${locked?' locked':''}" onclick="${locked?'':`selectDeity('${d.id}')`}" title="${d.name} · ${d.pi}PI">
-      ${n > 0 ? `<div class="abadge">${n}</div>` : ''}
-      <div class="av" style="background:${d.color}22;color:${d.color};border-color:${isActive?d.color:'transparent'}">
-        ${d.avatar ? `<img src="${d.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display='none'">` : ''}
-        ${initials}
-      </div>
-      <div class="dn" style="color:${isActive?d.color:'#3a6a8a'}">${d.name}</div>
-      <div class="dpi">${d.pi}PI</div>
-    </div>`;
-  }).join('');
-}
-
-// ============================================================
-// PANELS
-// ============================================================
-function selectDeity(id) {
-  if (countAtkOn(id) >= 2 && me && id !== me.id) return;
-  selectedDeity = id; selectedZone = null; selectedTrans = null;
-  highlightZone(null);
-  document.querySelectorAll('.tchip').forEach(c => c.classList.remove('active'));
-  renderDock();
-  if (me && id === me.id) { renderPlayerPanel(); return; }
-  renderDeityPanel(getD(id));
-}
-
-function renderDeityPanel(d) {
-  const myT = getAllT().filter(t => t.owner === d.id);
-  const n = countAtkOn(d.id);
-  const canAtk = me && d.id !== me.id && myAtkCount() < 2 && n < 2;
-  document.getElementById('panel-inner').innerHTML = `
-    <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px">
-      <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:${d.color}22;border:1.5px solid ${d.color}44;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:${d.color}">
-        ${d.avatar ? `<img src="${d.avatar}" style="width:100%;height:100%;object-fit:cover">` : d.name.slice(0,2).toUpperCase()}
-      </div>
-      <div>
-        <div style="font-size:12px;font-weight:500;color:var(--text1)">${d.name}</div>
-        <div style="font-size:9px;color:var(--text3)">${d.player ? d.player+' · ' : ''}${d.pi}PI · ${myT.length} territoires</div>
-      </div>
-    </div>
-    <div class="info-row"><span class="ik">Attaques reçues</span><span class="iv" style="color:${n>0?'var(--danger)':'var(--text1)'}">${n}/2</span></div>
-    ${n >= 2 ? `<div style="font-size:9px;background:var(--dangerbg);border:0.5px solid var(--dangerborder);border-radius:4px;padding:5px 7px;color:var(--danger);margin:5px 0"><i class="ti ti-lock" style="font-size:9px" aria-hidden="true"></i> Verrouillé — 2 attaques reçues</div>` : ''}
-    ${canAtk ? `<button class="btn btn-danger" style="margin-top:9px" onclick="openAtkModal('${d.id}')"><i class="ti ti-sword" aria-hidden="true"></i> Déclarer une attaque</button>` : ''}
-    ${!me ? `<div style="font-size:9px;color:var(--text4);margin-top:9px;text-align:center">Connectez-vous pour interagir</div>` : ''}
-    <div class="divider"></div>
-    <div class="sec">Territoires (${myT.length})</div>
-    ${myT.map(t => `<div class="hentry"><span class="tag ${t.type==='city'?'tag-city':'tag-org'}">${t.type==='city'?'V':'O'}</span>${t.name}${t.pi>1?`<span style="color:var(--text3);font-size:8px;margin-left:auto">×${t.pi}</span>`:''}</div>`).join('')}
-  `;
-}
-
-function showTransZone(key) {
-  selectedTrans = key; selectedZone = null; selectedDeity = null;
-  highlightZone(null);
-  document.querySelectorAll('.tchip').forEach(c => c.classList.remove('active'));
-  document.getElementById('tc-' + key)?.classList.add('active');
-  renderDock();
-  const z = TRANS_ZONES[key];
-  document.getElementById('panel-inner').innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px">
-      <span style="font-size:22px">${z.icon}</span>
-      <div><div style="font-size:12px;font-weight:500;color:var(--text1)">${z.name}</div>
-      <div style="font-size:9px;color:var(--text3)">${z.territories.length} points</div></div>
-    </div>
-    <div class="divider"></div>
-    ${z.territories.map(t => {
-      const owner = t.owner && t.owner !== N ? getD(t.owner) : null;
-      const canAtkThis = me && owner && owner.id !== me.id && myAtkCount() < 2 && countAtkOn(owner.id) < 2;
-      return `<div class="terr-card">
-        ${t.img ? `<img class="terr-img" src="${t.img}" alt="${t.name}" loading="lazy">` : `<div class="terr-placeholder"><i class="ti ti-building-bank" style="font-size:16px;color:var(--text4)" aria-hidden="true"></i></div>`}
-        <div class="terr-body"><div class="terr-row">
-          <div style="display:flex;align-items:center;gap:4px;min-width:0">
-            <div class="dot" style="background:${owner?owner.color:'var(--neutral)'}"></div>
-            <span class="terr-name">${t.name}</span><span class="tag tag-org">ORG.</span>
-          </div>
-          ${canAtkThis ? `<button class="atk-btn" onclick="openAtkModalDirect('${owner.id}','${t.id}')"><i class="ti ti-sword" style="font-size:8px" aria-hidden="true"></i>ATK</button>` : ''}
-        </div>
-        <div class="terr-owner" style="color:${owner?owner.color:'var(--text3)'}">${owner?owner.name:'Neutre'}</div>
-        </div></div>`;
-    }).join('')}`;
-}
-
-function renderZonePanel(zoneName) {
-  selectedZone = zoneName; selectedTrans = null;
-  document.querySelectorAll('.tchip').forEach(c => c.classList.remove('active'));
-  const data = ZONES[zoneName];
-  if (!data) {
-    document.getElementById('panel-inner').innerHTML = `<div class="back-btn" onclick="clearZone()"><i class="ti ti-arrow-left" aria-hidden="true"></i> Retour</div><div style="font-size:10px;color:var(--text4);text-align:center;margin-top:20px">Aucun point d'influence ici</div>`;
-    return;
-  }
-  const tzMap = T_TO_ZONE();
-  document.getElementById('panel-inner').innerHTML = `
-    <div class="back-btn" onclick="clearZone()"><i class="ti ti-arrow-left" aria-hidden="true"></i> Vue globale</div>
-    <div class="sec">${zoneName.toUpperCase()} — ${data.territories.length} POINT${data.territories.length > 1 ? 'S' : ''}</div>
-    ${data.territories.map(t => {
-      const owner = t.owner && t.owner !== N ? getD(t.owner) : null;
-      const isAtked = attacks.some(a => a.territory === t.id);
-      const isCap = capitulation === t.id;
-      const isMyT = me && t.owner === me.id;
-      const canAtkThis = me && owner && owner.id !== me.id && myAtkCount() < 2 && countAtkOn(owner.id) < 2;
-      const dc = getDotColor(t);
-      return `<div class="terr-card" style="border-color:${isAtked?'#2a1e00':'var(--border)'}">
-        ${t.img ? `<img class="terr-img" src="${t.img}" alt="${t.name}" loading="lazy" onerror="this.outerHTML='<div class=terr-placeholder><i class=ti style=font-size:16px;color:var(--text4) aria-hidden=true></i></div>'">` : `<div class="terr-placeholder"><i class="ti ${t.type==='city'?'ti-building-skyscraper':'ti-building-bank'}" style="font-size:16px;color:var(--text4)" aria-hidden="true"></i></div>`}
-        <div class="terr-body"><div class="terr-row">
-          <div style="display:flex;align-items:center;gap:4px;min-width:0">
-            <div class="dot" style="background:${dc};box-shadow:0 0 3px ${dc}66"></div>
-            <span class="terr-name">${t.name}</span>
-            <span class="tag ${t.type==='city'?'tag-city':'tag-org'}">${t.type==='city'?'VILLE':'ORG.'}</span>
-            ${t.pi > 1 ? `<span class="pi-badge">×${t.pi}</span>` : ''}
-          </div>
-          ${canAtkThis ? `<button class="atk-btn" onclick="openAtkModalDirect('${owner.id}','${t.id}')"><i class="ti ti-sword" style="font-size:8px" aria-hidden="true"></i>ATK</button>` : ''}
-        </div>
-        <div class="terr-owner" style="color:${owner?owner.color:'var(--text3)'}">${owner?owner.name:'Neutre'}</div>
-        ${isAtked && !isCap ? `<div style="font-size:8px;margin-top:2px;color:${isMyT?'var(--def)':'#d4a020'}">${isMyT?'⚔ Défense auto':'⚔ Sous attaque'}</div>` : ''}
-        ${isCap ? `<div style="font-size:8px;margin-top:2px;color:var(--atk)">⚑ Capitulation</div>` : ''}
-        </div></div>`;
-    }).join('')}`;
-}
-
-function clearZone() {
-  selectedZone = null; highlightZone(null);
-  if (me) renderPlayerPanel(); else showLoginPrompt();
-}
-
-function renderPlayerPanel() {
-  if (!me) return;
-  const myT = getAllT().filter(t => t.owner === me.id);
-  const myAtks = attacks.filter(a => a.attacker === me.id);
-  const incoming = attacks.filter(a => a.target === me.id);
-  const attackedT = Object.values(ZONES).flatMap(z => z.territories).filter(t => t.owner === me.id && incoming.some(a => a.territory === t.id));
-  const needsCap = incoming.length >= 2 && myAtks.length >= 2 && !capitulation;
-  const autoDefend = incoming.length > 0 && !(incoming.length >= 2 && myAtks.length >= 2);
-  document.getElementById('panel-inner').innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-      <div style="width:32px;height:32px;border-radius:50%;overflow:hidden;background:${me.color}22;border:1.5px solid ${me.color}55;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:${me.color}">
-        ${me.avatar ? `<img src="${me.avatar}" style="width:100%;height:100%;object-fit:cover">` : me.name.slice(0,2).toUpperCase()}
-      </div>
-      <div><div style="font-size:11px;font-weight:500;color:var(--text1)">${me.name}</div>
-      <div style="font-size:9px;color:var(--text3)">${me.pi}PI · ${myT.length} territoire${myT.length>1?'s':''}</div></div>
-    </div>
-    ${needsCap ? `<div class="notif-warn"><i class="ti ti-alert-triangle" style="font-size:9px" aria-hidden="true"></i> <b>Choix requis !</b> Sélectionnez le territoire à capituler.</div>` : ''}
-    ${autoDefend ? `<div class="notif-info"><i class="ti ti-shield-check" style="font-size:9px" aria-hidden="true"></i> Défense automatique active</div>` : ''}
-    <div class="sec">Mes attaques (${myAtks.length}/2)</div>
-    ${[0,1].map(i => { const a = myAtks[i]; return `<div class="slot${a?' atk':''}">
-      ${a ? `<div class="st atk"><i class="ti ti-sword" style="font-size:9px" aria-hidden="true"></i> ${getD(a.target)?.name} — ${getT(a.territory)?.name}</div>
-      <button class="xbtn" onclick="removeAtk(${i})"><i class="ti ti-x" aria-hidden="true"></i></button>`
-      : `<span class="st">${i===0?'Sélectionner une divinité ennemie':'Slot 2 optionnel'}</span>`}
-    </div>`; }).join('')}
-    ${needsCap ? `<div class="divider"></div><div class="sec">Territoire à capituler</div>${attackedT.map(t => `<div class="cap-choice${capitulation===t.id?' chosen':''}" onclick="setCapitulation('${t.id}')">${capitulation===t.id?'⚑ ':''}${t.name}</div>`).join('')}` : ''}
-    ${!needsCap && attackedT.length > 0 ? `<div class="divider"></div><div class="sec">Sous attaque — défense auto</div>${attackedT.map(t => `<div class="slot def"><div class="st def"><i class="ti ti-shield" style="font-size:8px" aria-hidden="true"></i> ${t.name}</div></div>`).join('')}` : ''}
-    <div class="divider"></div>
-    <div class="sec">Mes territoires (${myT.length})</div>
-    ${myT.slice(0,6).map(t => `<div class="hentry"><span class="tag ${t.type==='city'?'tag-city':'tag-org'}">${t.type==='city'?'V':'O'}</span>${t.name}${t.pi>1?`<span style="color:var(--text3);font-size:8px;margin-left:auto">×${t.pi}</span>`:''}</div>`).join('')}
-    ${myT.length > 6 ? `<div style="font-size:9px;color:var(--text4);padding:3px 0">+${myT.length-6} autres</div>` : ''}
-    <div class="divider"></div>
-    <div class="rule-block"><div class="rule-text"><b>Règles :</b> max 2 attaques · 2 attaques ET 2 reçues → capitulation · Sinon défense auto.</div></div>`;
-}
-
-function showLoginPrompt() {
-  document.getElementById('panel-inner').innerHTML = `<div class="login-prompt"><i class="ti ti-login" style="font-size:28px"></i><span>Connectez-vous<br>puis cliquez un pays<br>ou une divinité</span></div>`;
-}
-
-// ============================================================
-// ATTAQUES
-// ============================================================
-async function setCapitulation(tid) {
-  capitulation = tid;
-  const res = await postScript({ action: 'set_capitulation', cycle: CONFIG.CYCLE, attaquant: me.id, territoire_id: tid });
-  if (!res.ok) alert('Erreur sauvegarde capitulation : ' + res.error);
-  renderPlayerPanel(); refreshDots();
-}
-
-async function removeAtk(i) {
-  const a = attacks.filter(x => x.attacker === me.id)[i];
-  if (!a) return;
-  const res = await postScript({ action: 'remove_attack', cycle: CONFIG.CYCLE, attaquant: me.id, territoire_id: a.territory });
-  if (res.ok) attacks = attacks.filter(x => x !== a);
-  capitulation = null;
-  renderDock(); refreshDots(); renderPlayerPanel();
-}
-
-function openAtkModal(tid) {
-  if (!me || myAtkCount() >= 2) return;
-  const d = getD(tid);
-  const tT = getAllT().filter(x => x.owner === tid);
-  document.getElementById('atk-title').innerHTML = `<i class="ti ti-sword" style="font-size:12px;vertical-align:-2px;margin-right:5px" aria-hidden="true"></i>Attaquer ${d.name}`;
-  document.getElementById('atk-body').innerHTML = `<p style="font-size:9px;color:var(--text2);margin-bottom:8px">Territoire cible :</p>
-    <select id="atk-terr"><option value="">— Choisir —</option>${tT.map(t => `<option value="${t.id}">${t.name}${t.pi>1?` (×${t.pi}PI)`:''}</option>`).join('')}</select>`;
-  pendingAtk = { target: tid };
-  openModal('modal-atk');
-}
-
-function openAtkModalDirect(ownerId, terrId) {
-  if (!me || myAtkCount() >= 2) return;
-  const d = getD(ownerId);
-  const tT = getAllT().filter(x => x.owner === ownerId);
-  document.getElementById('atk-title').innerHTML = `<i class="ti ti-sword" style="font-size:12px;vertical-align:-2px;margin-right:5px" aria-hidden="true"></i>Attaquer ${d.name}`;
-  document.getElementById('atk-body').innerHTML = `<p style="font-size:9px;color:var(--text2);margin-bottom:8px">Territoire cible :</p>
-    <select id="atk-terr"><option value="">— Choisir —</option>${tT.map(t => `<option value="${t.id}"${t.id===terrId?' selected':''}>${t.name}${t.pi>1?` (×${t.pi}PI)`:''}</option>`).join('')}</select>`;
-  pendingAtk = { target: ownerId };
-  openModal('modal-atk');
-}
-
-async function confirmAttack() {
-  const sel = document.getElementById('atk-terr');
-  if (!sel || !sel.value) { alert('Choisissez un territoire cible'); return; }
-  const btn = document.getElementById('btn-confirm-atk');
-  btn.disabled = true; btn.textContent = 'Envoi…';
-  const res = await postScript({ action: 'add_attack', cycle: CONFIG.CYCLE, attaquant: me.id, cible: pendingAtk.target, territoire_id: sel.value });
-  btn.disabled = false; btn.innerHTML = '<i class="ti ti-sword"></i> Confirmer';
-  if (!res.ok) { alert('Erreur : ' + res.error); return; }
-  attacks.push({ attacker: me.id, target: pendingAtk.target, territory: sel.value });
-  capitulation = null;
-  closeModal('modal-atk');
-  renderDock(); refreshDots();
-  if (selectedZone) renderZonePanel(selectedZone);
-  else if (selectedTrans) showTransZone(selectedTrans);
-  else renderPlayerPanel();
-}
-
-// ============================================================
-// CARTE
-// ============================================================
-function onMapClick(zoneName) {
-  if (!zoneName) return;
-  highlightZone(zoneName); selectedDeity = null; renderDock();
-  renderZonePanel(zoneName);
-}
-
-function highlightZone(zoneName) {
-  if (!gMap) return;
-  gMap.selectAll('.country-hit').classed('country-active', false);
-  if (!zoneName) return;
-  const targets = Object.entries(COUNTRY_TO_ZONE).filter(([, z]) => z === zoneName).map(([c]) => c);
-  (targets.length ? targets : [zoneName]).forEach(cn =>
-    gMap.selectAll('.country-hit').filter(d => d.properties && d.properties.name === cn).classed('country-active', true)
-  );
-}
-
-function refreshDots() {
-  if (!gDots) return;
-  gDots.selectAll('circle.tpt').each(function(d) { d3.select(this).attr('fill', getDotColor(d)); });
-  gDots.selectAll('circle.thl').each(function(d) { d3.select(this).attr('fill', getDotColor(d)); });
-}
-
-function buildDots() {
-  if (!gDots || !proj) return;
-  gDots.selectAll('*').remove();
-  const tzMap = T_TO_ZONE();
-  Object.values(ZONES).flatMap(z => z.territories).forEach(t => {
-    const fill = getDotColor(t);
-    const baseR = t.pi >= 3 ? 2.8 : t.pi >= 2 ? 2.3 : 1.9;
-    const [px, py] = proj([t.lon, t.lat]);
-    gDots.append('circle').datum(t).attr('class', 'thl').attr('cx', px).attr('cy', py).attr('r', baseR * 2).attr('fill', fill).attr('opacity', 0.15).style('pointer-events', 'none');
-    gDots.append('circle').datum(t).attr('class', 'tpt').attr('cx', px).attr('cy', py).attr('r', baseR).attr('fill', fill).attr('stroke', 'rgba(255,255,255,0.2)').attr('stroke-width', 0.3).style('cursor', 'pointer').style('filter', `drop-shadow(0 0 1px ${fill})`)
-      .on('mouseenter', function(e) {
-        const owner = t.owner && t.owner !== N ? getD(t.owner) : null;
-        showTT(e, `${t.name} · ${owner ? owner.name : 'Neutre'}${t.pi > 1 ? ` · ×${t.pi}PI` : ''}`);
-        d3.select(this).attr('r', baseR * 1.6);
-      })
-      .on('mouseleave', function() { hideTT(); d3.select(this).attr('r', baseR); })
-      .on('click', function(e) { e.stopPropagation(); onMapClick(tzMap[t.id] || null); });
-  });
-}
-
-function buildBadges() {
-  if (!gBadges || !proj) return;
-  gBadges.selectAll('*').remove();
-  Object.entries(ZONES).forEach(([zoneName, zdata]) => {
-    if (!zdata.cx && !zdata.cy) return;
-    const total = zdata.territories.length;
-    const [px, py] = proj([zdata.cx, zdata.cy]);
-    const g = gBadges.append('g').attr('class', 'zone-badge').attr('transform', `translate(${px},${py})`).style('cursor', 'pointer')
-      .on('click', e => { e.stopPropagation(); onMapClick(zoneName); })
-      .on('mouseenter', e => showTT(e, zoneName))
-      .on('mouseleave', hideTT);
-    g.append('circle').attr('r', 10).attr('fill', '#08111f').attr('stroke', '#2a5a8a').attr('stroke-width', 0.8).attr('opacity', 0.92);
-    g.append('circle').attr('r', 7).attr('fill', '#0d2040').attr('opacity', 0.9);
-    g.append('text').attr('text-anchor', 'middle').attr('dominant-baseline', 'central').attr('font-size', total >= 10 ? 6.5 : 7.5).attr('font-weight', '700').attr('fill', '#7ab8f5').attr('font-family', 'sans-serif').text(total);
-  });
-}
-
-function applyZoom(k) {
-  const badgeOp = k < BADGE_FADE ? 1 : k > BADGE_HIDE ? 0 : 1 - (k - BADGE_FADE) / (BADGE_HIDE - BADGE_FADE);
-  gBadges.style('opacity', badgeOp).style('pointer-events', badgeOp > 0.1 ? 'auto' : 'none');
-  const dotOp = k < DOT_SHOW ? 0 : k > BADGE_HIDE ? 1 : (k - DOT_SHOW) / (BADGE_HIDE - DOT_SHOW);
-  gDots.style('opacity', dotOp).style('pointer-events', dotOp > 0.2 ? 'auto' : 'none');
-  const scale = Math.pow(k, 0.45);
-  gDots.selectAll('.tpt').each(function(d) { const b = d.pi>=3?2.8:d.pi>=2?2.3:1.9; d3.select(this).attr('r', b / scale); });
-  gDots.selectAll('.thl').each(function(d) { const b = d.pi>=3?2.8:d.pi>=2?2.3:1.9; d3.select(this).attr('r', b * 2 / scale); });
-  gBadges.selectAll('.zone-badge').attr('transform', function() {
-    const t = d3.select(this).attr('transform');
-    const m = t.match(/translate\(([^,]+),([^)]+)\)/);
-    return m ? `translate(${m[1]},${m[2]}) scale(${1/k})` : t;
-  });
-}
-
-function showTT(e, txt) {
-  if (isDragging) return;
-  const tt = document.getElementById('map-tt');
-  const rect = document.getElementById('map-wrap').getBoundingClientRect();
-  tt.textContent = txt; tt.style.display = 'block';
-  tt.style.left = (e.clientX - rect.left + 12) + 'px';
-  tt.style.top = (e.clientY - rect.top - 26) + 'px';
-}
-function hideTT() { document.getElementById('map-tt').style.display = 'none'; }
-function zoomIn() { svgSel.transition().duration(280).call(zoomBeh.scaleBy, 1.7); }
-function zoomOut() { svgSel.transition().duration(280).call(zoomBeh.scaleBy, 0.6); }
-function zoomReset() { svgSel.transition().duration(450).call(zoomBeh.transform, d3.zoomIdentity); }
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-async function initMap() {
-  const resp = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
-  const world = await resp.json();
-  const countries = topojson.feature(world, world.objects.countries);
-  const wrap = document.getElementById('map-wrap');
-  const W = wrap.clientWidth || 700, H = wrap.clientHeight || 470;
-  proj = d3.geoNaturalEarth1().scale(153).translate([W/2, H/2]);
-  const pathGen = d3.geoPath().projection(proj);
-  svgSel = d3.select('#world-svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`);
-  svgSel.append('rect').attr('width', W).attr('height', H).attr('fill', '#060d1a');
-  gMap = svgSel.append('g'); gDots = svgSel.append('g'); gBadges = svgSel.append('g');
-  gMap.append('path').datum({type:'Sphere'}).attr('d', pathGen).attr('fill', '#070f1c').attr('stroke', '#182840').attr('stroke-width', 0.5);
-  gMap.append('g').selectAll('path').data(countries.features).join('path').attr('d', pathGen)
-    .attr('class', d => COUNTRY_TO_ZONE[d.properties?.name] ? 'country-hit clickable' : 'country-hit')
-    .on('mouseenter', (e, d) => { const cn = d.properties?.name; if (COUNTRY_TO_ZONE[cn]) showTT(e, COUNTRY_TO_ZONE[cn]); })
-    .on('mouseleave', hideTT)
-    .on('click', (e, d) => { const cn = d.properties?.name; if (COUNTRY_TO_ZONE[cn]) onMapClick(COUNTRY_TO_ZONE[cn]); });
-  zoomBeh = d3.zoom().scaleExtent([0.6, 16])
-    .on('start', () => { isDragging = true; hideTT(); })
-    .on('zoom', e => {
-      curK = e.transform.k;
-      gMap.attr('transform', e.transform);
-      gDots.attr('transform', e.transform);
-      gBadges.attr('transform', e.transform);
-      applyZoom(curK);
-    })
-    .on('end', () => { setTimeout(() => { isDragging = false; }, 50); });
-  svgSel.call(zoomBeh);
-  document.getElementById('map-loading').style.display = 'none';
-  svgSel.style('display', 'block');
-  buildDots(); buildBadges(); applyZoom(1);
-}
-
-// ============================================================
-// AUTH
-// ============================================================
-document.getElementById('btn-login').onclick = () => {
-  document.getElementById('login-sel').innerHTML = '<option value="">— Votre divinité —</option>' + DEITIES.map(d => `<option value="${d.id}">${d.name}${d.player?' ('+d.player+')':''}</option>`).join('');
-  openModal('modal-login');
-};
-
-function doLogin() {
-  const id = document.getElementById('login-sel').value;
-  const pw = document.getElementById('login-pw').value;
-  const d = getD(id);
-  if (!d || !d.pass || d.pass !== pw) { document.getElementById('login-err').textContent = 'Identifiants incorrects'; return; }
-  me = d; closeModal('modal-login');
-  document.getElementById('btn-login').innerHTML = `<i class="ti ti-user-check" aria-hidden="true"></i> ${d.name}`;
-  if (pw === CONFIG.ADMIN_PASS) document.getElementById('btn-admin').style.display = 'flex';
-  selectedDeity = d.id; renderDock(); refreshDots(); renderPlayerPanel();
-}
-
-// ============================================================
-// ADMIN
-// ============================================================
-document.getElementById('btn-admin').onclick = () => {
-  const divinitesMap = Object.fromEntries(DEITIES.map(d => [d.id, d]));
-  const summary = attacks.length === 0 ? '*Aucune attaque ce cycle.*' :
-    Object.entries(attacks.reduce((acc, a) => { (acc[a.attacker] = acc[a.attacker]||[]).push(a); return acc; }, {}))
-    .map(([atkId, atks]) => atks.map(a => `⚔️ **${getD(a.attacker)?.name}** → **${getD(a.target)?.name}** (${getT(a.territory)?.name || a.territory})`).join('\n')).join('\n');
-
-  document.getElementById('admin-body').innerHTML = `
-    <div style="font-size:9px;color:var(--text2);margin-bottom:9px">Cycle ${CONFIG.CYCLE} · ${attacks.length} attaque(s) déclarée(s)</div>
-    <button class="btn btn-warn" style="margin-bottom:6px" onclick="adminCloseCycle()"><i class="ti ti-gavel" aria-hidden="true"></i> Clôturer le cycle & notifier Discord</button>
-    <button class="btn" style="margin-bottom:6px" onclick="adminRefresh()"><i class="ti ti-refresh" aria-hidden="true"></i> Forcer synchronisation</button>
-    <div class="divider"></div>
-    <div class="sec">Attaques déclarées</div>
-    ${attacks.length ? attacks.map(a => `<div class="hentry"><i class="ti ti-sword" style="font-size:9px;color:var(--danger)" aria-hidden="true"></i>${getD(a.attacker)?.name} → ${getD(a.target)?.name} · ${getT(a.territory)?.name||a.territory}${getT(a.territory)?.pi>1?` ×${getT(a.territory).pi}PI`:''}</div>`).join('') : '<div style="font-size:9px;color:var(--text4)">Aucune attaque</div>'}
-  `;
-  openModal('modal-admin');
-};
-
-async function adminCloseCycle() {
-  if (!confirm(`Clôturer le cycle ${CONFIG.CYCLE} et envoyer le résumé sur Discord ?`)) return;
-  const divinitesMap = Object.fromEntries(DEITIES.map(d => [d.id, { nom: d.name }]));
-  const res = await postScript({ action: 'close_cycle', cycle: CONFIG.CYCLE, divinites: divinitesMap });
-  if (res.ok) {
-    alert(`Cycle ${CONFIG.CYCLE} clôturé ! Résumé envoyé sur Discord.`);
-    closeModal('modal-admin');
-    await fullRefresh();
-  } else {
-    alert('Erreur : ' + res.error);
-  }
-}
-
-async function adminRefresh() {
-  closeModal('modal-admin');
-  await fullRefresh();
-}
-
-// ============================================================
-// REFRESH
-// ============================================================
-async function fullRefresh() {
-  const ok = await loadData();
-  if (ok) {
-    buildDots(); buildBadges(); applyZoom(curK);
-    renderDock();
-    if (selectedZone) renderZonePanel(selectedZone);
-    else if (selectedTrans) showTransZone(selectedTrans);
-    else if (me) renderPlayerPanel();
-    else showLoginPrompt();
-  }
-}
-
-document.getElementById('btn-refresh').onclick = fullRefresh;
-
-function startAutoRefresh() {
-  if (refreshTimer) clearInterval(refreshTimer);
-  refreshTimer = setInterval(fullRefresh, CONFIG.REFRESH_MIN * 60 * 1000);
-}
-
-// ============================================================
-// INIT
-// ============================================================
-async function init() {
-  await loadData();
-  await initMap();
-  renderDock();
-  showLoginPrompt();
-  startAutoRefresh();
-}
-
-init();
-</script>
+<script src="app.js"></script>
 </body>
 </html>
