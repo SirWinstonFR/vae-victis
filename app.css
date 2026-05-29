@@ -124,7 +124,7 @@ html, body {
 #transbar {
   background: #070f1c;
   border-bottom: 0.5px solid var(--border);
-  padding: 5px 12px;
+  padding: 7px 16px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -133,24 +133,59 @@ html, body {
   scrollbar-width: none;
 }
 #transbar::-webkit-scrollbar { display: none; }
-.trans-label { font-size: 9px; color: var(--text3); letter-spacing: .06em; text-transform: uppercase; flex-shrink: 0; margin-right: 4px; }
+.trans-label { font-size: 10px; color: var(--text3); letter-spacing: .06em; text-transform: uppercase; flex-shrink: 0; margin-right: 8px; white-space: nowrap; }
 .tchip {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
-  border-radius: 20px;
+  gap: 8px;
+  padding: 5px 14px 5px 6px;
+  border-radius: 8px;
   border: 0.5px solid var(--border);
   background: var(--bg2);
   cursor: pointer;
   flex-shrink: 0;
-  transition: all .12s;
+  transition: all .15s;
+  color: var(--text2);
+  position: relative;
+  overflow: hidden;
+}
+.tchip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 60%, rgba(255,255,255,.03));
+  pointer-events: none;
+}
+.tchip:hover { border-color: #2a4a7a; background: #0d1e30; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.3); }
+.tchip.active { border-color: #3a6aaa; background: #0d2040; box-shadow: 0 0 12px rgba(58,106,170,.3); }
+.tchip-flag {
+  width: 28px;
+  height: 20px;
+  object-fit: cover;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: 0.5px solid rgba(255,255,255,.1);
+}
+.tchip-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.tchip-name {
   font-size: 11px;
   font-weight: 500;
-  color: var(--text2);
+  color: var(--text1);
+  white-space: nowrap;
 }
-.tchip:hover { border-color: #2a4a7a; background: var(--bg3); }
-.tchip.active { border-color: #3a6aaa; background: #0d2040; color: var(--info); }
+.tchip-sub {
+  font-size: 9px;
+  color: var(--text3);
+  white-space: nowrap;
+}
+.tchip.active .tchip-name { color: var(--info); }
+.tchip-ue.active { border-color: #2a4a9a; box-shadow: 0 0 12px rgba(42,74,154,.4); }
+.tchip-otan.active { border-color: #1a5a8a; box-shadow: 0 0 12px rgba(26,90,138,.4); }
+.tchip-onu.active { border-color: #1a6a5a; box-shadow: 0 0 12px rgba(26,106,90,.4); }
 
 /* ---- BODY GRID ---- */
 #body-grid {
@@ -522,3 +557,11 @@ html, body {
   width: 7px;
   height: 7px;
 }
+
+/* Transnational member highlight */
+.country.trans-member {
+  fill: #1a3a5a !important;
+  stroke: #3a6aaa;
+  stroke-width: 0.6;
+}
+.country.trans-member:hover { fill: #224a6a !important; }
