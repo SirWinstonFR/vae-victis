@@ -20,6 +20,26 @@ const CFG = {
   },
 };
 
+// ---- FACTIONS ----------------------------------------------
+const FACTIONS = {
+  sovereign: {
+    name: 'Sovereign', color: '#4a8ad4', glow: '#4a8ad4',
+    members: ['liberty','capital','judgment','union','manifest','wrath','industry','oldmedia','newmedia','vigil','science']
+  },
+  olympien: {
+    name: 'Olympiens', color: '#c8a020', glow: '#f0c060',
+    members: ['zeus','hera','poseidon','demeter','persephone','athena','ares','hades','apollo','hermes','dionysus','hestia','hephaiston','aphrodite']
+  },
+  shemning: {
+    name: 'Shemning', color: '#cc3030', glow: '#f07070',
+    members: ['entity','isis','seth','osiris','hel','tyr','loki','shiva','vishnu','brahma','ama']
+  },
+};
+ 
+function getFaction(deityId) {
+  return Object.values(FACTIONS).find(f => f.members.includes(deityId)) || null;
+}
+ 
 // ---- STATE -------------------------------------------------
 let DEITIES       = [];
 let ZONES         = {};
@@ -38,14 +58,14 @@ let selDeity      = null;
 let selZone       = null;
 let selTrans      = null;
 let refreshTimer  = null;
-
+ 
 // D3 / map state
 let proj, svgSel, gMap, gDots, gBadges, zoomBeh;
 let curK      = 1;
 let dragging  = false;
 const N = 'neutral';
-const BADGE_FADE = 1.8, BADGE_HIDE = 2.8, DOTS_SHOW = 2.0;
-
+const BADGE_FADE = 1.5, BADGE_HIDE = 2.2, DOTS_SHOW = 1.6;
+ 
 // ---- HELPERS -----------------------------------------------
 const $ = id => document.getElementById(id);
 const getD = id => DEITIES.find(d => d.id === id) || { id, name: id, color: '#3a5a7a', pi: 0, avatar: '' };
@@ -61,7 +81,7 @@ const tzMap   = ()  => {
   Object.entries(ZONES).forEach(([z, d]) => d.territories.forEach(t => { m[t.id] = z; }));
   return m;
 };
-
+ 
 function dotColor(t) {
   const isMe    = me && t.owner === me.id;
   const isAtked = attacks.some(a => a.territory === t.id);
@@ -73,13 +93,13 @@ function dotColor(t) {
   if (owner)              return isMe ? '#2a9a6a' : owner.color;
   return '#2a4a6a';
 }
-
+ 
 // ---- GOOGLE SHEETS — READ ----------------------------------
 // gviz/tq supporte CORS nativement — pas besoin de proxy
 function gvizUrl(tab) {
   return `https://docs.google.com/spreadsheets/d/${CFG.SHEET_ID}/gviz/tq?tqx=out:json&gid=${CFG.GIDS[tab] || '0'}`;
 }
-
+ 
 function parseGviz(raw) {
   const match = raw.match(/setResponse\(([\s\S]*)\)/);
   if (!match) throw new Error('Format gviz invalide');
@@ -89,7 +109,7 @@ function parseGviz(raw) {
     Object.fromEntries(cols.map((col, i) => [col, String(r?.c?.[i]?.v ?? '').trim()]))
   );
 }
-
+ 
 async function fetchTab(tab) {
   try {
     const r = await fetch(gvizUrl(tab));
@@ -100,13 +120,13 @@ async function fetchTab(tab) {
     return [];
   }
 }
-
+ 
 function setSyncState(state, label) {
   const dot = $('sync-dot'), lbl = $('sync-label');
   if (dot) dot.className = `sync-dot ${state}`;
   if (lbl) lbl.textContent = label;
 }
-
+ 
 async function loadData() {
   setSyncState('loading', 'Synchronisation…');
   console.log('[VV] Chargement depuis:', gvizUrl('divinites'));
@@ -118,18 +138,24 @@ async function loadData() {
     console.log('[VV] Divinités chargées:', div.length);
     console.log('[VV] Territoires chargés:', terr.length);
     console.log('[VV] Attaques:', atk.length);
-
+ 
     // Divinités
-    DEITIES = div.filter(r => r.id).map(r => ({
-      id:     r.id.trim(),
-      name:   (r.nom   || r.id).trim(),
-      player: (r.joueur || '').trim(),
-      pi:     Number(r.pi) || 0,
-      color:  (r.couleur || '#4a8ad4').trim(),
-      pass:   (r.pass  || '').trim(),
-      avatar: (r.avatar_url || '').trim(),
-    }));
-
+    DEITIES = div.filter(r => r.id).map(r => {
+      const id = r.id.trim();
+      let name = (r.nom || r.id).trim();
+      if (id === 'ama') name = 'Amaterasu';
+      return {
+        id,
+        name,
+        player: (r.joueur || '').trim(),
+        pi:     Number(r.pi) || 0,
+        color:  (r.couleur || '#4a8ad4').trim(),
+        pass:   (r.pass  || '').trim(),
+        avatar: (r.avatar_url || '').trim(),
+        logo:   (r.logo_url || '').trim(),
+      };
+    });
+ 
     // Zones config
     COUNTRY_MAP = {};
     const cx = {}, cy = {};
@@ -192,7 +218,7 @@ async function loadData() {
     // Russie
     'Russia':'Russie',
     // Chine
-    'China':'Chine','Taiwan':'Chine','Mongolia':'Chine',
+    'China':'Chine','Taiwan':'Chine',
     // Japon
     'Japan':'Japon','South Korea':'Japon','North Korea':'Japon',
     // Inde
@@ -207,12 +233,12 @@ async function loadData() {
     // Suisse — neutre, pas de zone
   };
   Object.entries(FB).forEach(([c,z])=>{ if(!COUNTRY_MAP[c]) COUNTRY_MAP[c]=z; });
-
+ 
     // Territoires
     const newZones = {};
     const transKeys = Object.keys(TRANS_ZONES);
     transKeys.forEach(k => { TRANS_ZONES[k].territories = []; });
-
+ 
     terr.filter(r => r.id && r.zone).forEach(r => {
       const zone = r.zone.trim();
       const t = {
@@ -233,13 +259,13 @@ async function loadData() {
       }
     });
     ZONES = newZones;
-
+ 
     // Cycle actif
     const active = cyc.find(r => r.statut?.trim() === 'actif');
     if (active) CYCLE = Number(active.numero);
     const cb = $('cycle-badge');
     if (cb) cb.textContent = `CYCLE ${CYCLE}`;
-
+ 
     // Attaques
     attacks = atk
       .filter(r => Number(r.cycle) === CYCLE && r.statut?.trim() === 'déclarée')
@@ -248,7 +274,7 @@ async function loadData() {
         target:    r.cible.trim(),
         territory: r.territoire_id.trim(),
       }));
-
+ 
     setSyncState('ok', `Sync ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`);
     return true;
   } catch (e) {
@@ -257,7 +283,7 @@ async function loadData() {
     return false;
   }
 }
-
+ 
 // ---- APPS SCRIPT — WRITE -----------------------------------
 async function postScript(payload) {
   try {
@@ -273,28 +299,28 @@ async function postScript(payload) {
     return { ok: false, error: e.message };
   }
 }
-
+ 
 // ---- MAP ---------------------------------------------------
 function initMap(world) {
   const wrap = $('map-wrap');
   const W = wrap.clientWidth, H = wrap.clientHeight;
   const countries = topojson.feature(world, world.objects.countries);
-
+ 
   proj = d3.geoNaturalEarth1().scale(153).translate([W / 2, H / 2]);
   const path = d3.geoPath().projection(proj);
-
+ 
   svgSel = d3.select('#world-svg')
     .attr('width', W).attr('height', H)
     .attr('viewBox', `0 0 ${W} ${H}`)
     .style('display', 'block');
-
+ 
   svgSel.append('rect').attr('width', W).attr('height', H).attr('fill', '#060d1a');
   // Pas de sphère — fond plat uniquement
-
+ 
   gMap    = svgSel.append('g');
   gDots   = svgSel.append('g');
   gBadges = svgSel.append('g');
-
+ 
   // Countries
   gMap.selectAll('path')
     .data(countries.features)
@@ -310,7 +336,7 @@ function initMap(world) {
       const z = COUNTRY_MAP[d.properties?.name];
       if (z) onZoneClick(z);
     });
-
+ 
   // Zoom
   zoomBeh = d3.zoom()
     .scaleExtent([.6, 18])
@@ -323,21 +349,21 @@ function initMap(world) {
       applyZoom(curK);
     })
     .on('end', () => setTimeout(() => { dragging = false; }, 50));
-
+ 
   svgSel.call(zoomBeh);
   $('map-loading').style.display = 'none';
 }
-
+ 
 function buildDots() {
   if (!gDots || !proj) return;
   gDots.selectAll('*').remove();
   const tm = tzMap();
-
+ 
   Object.values(ZONES).flatMap(z => z.territories).forEach(t => {
     const fill  = dotColor(t);
     const baseR = t.pi >= 3 ? 2.8 : t.pi >= 2 ? 2.3 : 1.9;
     const [px, py] = proj([t.lon, t.lat]);
-
+ 
     // Halo
     gDots.append('circle').datum(t)
       .attr('class', 'thl')
@@ -345,7 +371,7 @@ function buildDots() {
       .attr('r', baseR * 2.2)
       .attr('fill', fill).attr('opacity', .14)
       .style('pointer-events', 'none');
-
+ 
     if (t.type === 'org') {
       // Losange pour les organisations
       const s = baseR * 1.4;
@@ -383,16 +409,16 @@ function buildDots() {
     }
   });
 }
-
+ 
 function buildBadges() {
   if (!gBadges || !proj) return;
   gBadges.selectAll('*').remove();
-
+ 
   Object.entries(ZONES).forEach(([zoneName, zd]) => {
     if (!zd.cx && !zd.cy) return;
     const [px, py] = proj([zd.cx, zd.cy]);
     const n = zd.territories.length;
-
+ 
     const g = gBadges.append('g')
       .attr('class', 'zone-badge')
       .attr('transform', `translate(${px},${py})`)
@@ -400,7 +426,7 @@ function buildBadges() {
       .on('click', e => { e.stopPropagation(); onZoneClick(zoneName); })
       .on('mouseenter', e => showTT(e, zoneName))
       .on('mouseleave', hideTT);
-
+ 
     g.append('circle').attr('r', 10).attr('fill', '#08111f').attr('stroke', '#2a5a8a').attr('stroke-width', .8).attr('opacity', .92);
     g.append('circle').attr('r', 7).attr('fill', '#0d2040').attr('opacity', .9);
     g.append('text')
@@ -410,14 +436,14 @@ function buildBadges() {
       .text(n);
   });
 }
-
+ 
 function applyZoom(k) {
   const bOp = k < BADGE_FADE ? 1 : k > BADGE_HIDE ? 0 : 1 - (k - BADGE_FADE) / (BADGE_HIDE - BADGE_FADE);
   const dOp = k < DOTS_SHOW  ? 0 : k > BADGE_HIDE ? 1 : (k - DOTS_SHOW)  / (BADGE_HIDE - DOTS_SHOW);
-
+ 
   gBadges.style('opacity', bOp).style('pointer-events', bOp > .1 ? 'auto' : 'none');
   gDots.style('opacity', dOp).style('pointer-events', dOp > .2 ? 'auto' : 'none');
-
+ 
   const s = Math.pow(k, .45);
   gDots.selectAll('.tpt').each(function (d) {
     const b = (d.pi >= 3 ? 2.8 : d.pi >= 2 ? 2.3 : 1.9) / s;
@@ -432,14 +458,14 @@ function applyZoom(k) {
     }
   });
   gDots.selectAll('.thl').each(function (d) { d3.select(this).attr('r', (d.pi >= 3 ? 2.8 : d.pi >= 2 ? 2.3 : 1.9) * 2.2 / s); });
-
+ 
   gBadges.selectAll('.zone-badge').attr('transform', function () {
     const t = d3.select(this).attr('transform');
     const m = t.match(/translate\(([^,]+),([^)]+)\)/);
     return m ? `translate(${m[1]},${m[2]}) scale(${1 / k})` : t;
   });
 }
-
+ 
 function refreshDotColors() {
   if (!gDots) return;
   gDots.selectAll('.tpt').each(function (d) {
@@ -454,7 +480,7 @@ function refreshDotColors() {
   });
   gDots.selectAll('.thl').each(function (d) { d3.select(this).attr('fill', dotColor(d)); });
 }
-
+ 
 function highlightZone(name) {
   if (!gMap) return;
   gMap.selectAll('.country').classed('active', false).classed('zone-member', false).classed('trans-member', false);
@@ -468,7 +494,7 @@ function highlightZone(name) {
       .classed('zone-member', true)
   );
 }
-
+ 
 function showTT(e, txt) {
   if (dragging) return;
   const tt = $('map-tt'), rect = $('map-wrap').getBoundingClientRect();
@@ -477,7 +503,7 @@ function showTT(e, txt) {
   tt.style.top  = `${e.clientY - rect.top  - 26}px`;
 }
 function hideTT() { const tt = $('map-tt'); if (tt) tt.style.display = 'none'; }
-
+ 
 // ---- MAP CLICK HANDLER -------------------------------------
 function onZoneClick(zoneName) {
   if (!zoneName) return;
@@ -487,7 +513,7 @@ function onZoneClick(zoneName) {
   document.querySelectorAll('.tchip').forEach(c => c.classList.remove('active'));
   renderZonePanel(zoneName);
 }
-
+ 
 // ---- DOCK --------------------------------------------------
 function renderDock() {
   const dock = $('dock');
@@ -511,7 +537,7 @@ function renderDock() {
     el.addEventListener('click', () => selectDeity(el.dataset.id))
   );
 }
-
+ 
 function selectDeity(id) {
   if (atkOn(id) >= 2 && me && id !== me.id) return;
   selDeity = id; selZone = null; selTrans = null;
@@ -521,18 +547,18 @@ function selectDeity(id) {
   if (me && id === me.id) { renderPlayerPanel(); return; }
   renderDeityPanel(getD(id));
 }
-
+ 
 // ---- PANELS ------------------------------------------------
 function setPanel(html) {
   const p = $('panel-inner');
   if (p) p.innerHTML = html;
 }
-
+ 
 function renderDeityPanel(d) {
   const myT  = allT().filter(t => t.owner === d.id);
   const n    = atkOn(d.id);
   const canA = me && d.id !== me.id && myAtks().length < 2 && n < 2;
-
+ 
   setPanel(`
     <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px">
       <div class="d-avatar" style="background:${d.color}22;color:${d.color};border-color:${d.color}44">
@@ -560,7 +586,7 @@ function renderDeityPanel(d) {
     if (btn) btn.addEventListener('click', () => openAtkModal(d.id));
   }
 }
-
+ 
 function renderTransPanel(key) {
   const z = TRANS_ZONES[key];
   if (!z) return;
@@ -578,11 +604,11 @@ function renderTransPanel(key) {
   `);
   bindTerrButtons();
 }
-
+ 
 function renderZonePanel(zoneName) {
   selZone = zoneName;
   const data = ZONES[zoneName];
-
+ 
   if (!data || data.territories.length === 0) {
     setPanel(`
       <button class="back-btn" id="back-btn"><i class="ti ti-arrow-left"></i> Vue globale</button>
@@ -591,17 +617,17 @@ function renderZonePanel(zoneName) {
     $('back-btn')?.addEventListener('click', clearZone);
     return;
   }
-
+ 
   setPanel(`
     <button class="back-btn" id="back-btn"><i class="ti ti-arrow-left"></i> Vue globale</button>
     <div class="sec">${zoneName.toUpperCase()} — ${data.territories.length} POINT${data.territories.length > 1 ? 'S' : ''}</div>
     ${data.territories.map(t => terrCard(t)).join('')}
   `);
-
+ 
   $('back-btn')?.addEventListener('click', clearZone);
   bindTerrButtons();
 }
-
+ 
 function terrCard(t) {
   const owner   = t.owner && t.owner !== N ? getD(t.owner) : null;
   const isAtked = attacks.some(a => a.territory === t.id);
@@ -610,7 +636,7 @@ function terrCard(t) {
   const canA    = me && owner && owner.id !== me.id && myAtks().length < 2 && atkOn(owner.id) < 2;
   const dc      = dotColor(t);
   const isCity  = t.type === 'city';
-
+ 
   // Villes : carte avec image
   if (isCity) {
     return `<div class="terr-card${isAtked ? ' under-attack' : ''}">
@@ -634,7 +660,7 @@ function terrCard(t) {
       </div>
     </div>`;
   }
-
+ 
   // Organisations : chip avec image optionnelle
   if (t.img) {
     return `<div class="terr-card${isAtked ? ' under-attack' : ''}" style="border-color:${dc}44">
@@ -666,13 +692,13 @@ function terrCard(t) {
     ${canA ? `<button class="atk-btn" data-owner="${owner.id}" data-terr="${t.id}"><i class="ti ti-sword"></i>ATK</button>` : ''}
   </div>`;
 }
-
+ 
 function bindTerrButtons() {
   document.querySelectorAll('.atk-btn[data-owner]').forEach(btn =>
     btn.addEventListener('click', () => openAtkModalDirect(btn.dataset.owner, btn.dataset.terr))
   );
 }
-
+ 
 function renderPlayerPanel() {
   if (!me) return;
   const myT     = allT().filter(t => t.owner === me.id);
@@ -682,7 +708,7 @@ function renderPlayerPanel() {
     .filter(t => t.owner === me.id && incoming.some(a => a.territory === t.id));
   const needCap  = incoming.length >= 2 && atks.length >= 2 && !capitulation;
   const autoDef  = incoming.length > 0 && !(incoming.length >= 2 && atks.length >= 2);
-
+ 
   setPanel(`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
       <div class="d-avatar" style="width:32px;height:32px;font-size:10px;background:${me.color}22;color:${me.color};border-color:${me.color}55">
@@ -693,10 +719,10 @@ function renderPlayerPanel() {
         <div style="font-size:9px;color:var(--text3)">${me.pi}PI · ${myT.length} territoire${myT.length > 1 ? 's' : ''}</div>
       </div>
     </div>
-
+ 
     ${needCap ? `<div class="notif notif-warn"><i class="ti ti-alert-triangle"></i> <b>Choix requis !</b> Sélectionnez le territoire à capituler.</div>` : ''}
     ${autoDef  ? `<div class="notif notif-info"><i class="ti ti-shield-check"></i> Défense automatique active</div>` : ''}
-
+ 
     <div class="sec">Mes attaques (${atks.length}/2)</div>
     ${[0, 1].map(i => {
       const a = atks[i];
@@ -708,19 +734,19 @@ function renderPlayerPanel() {
         }
       </div>`;
     }).join('')}
-
+ 
     ${needCap ? `
       <div class="divider"></div>
       <div class="sec">Territoire à capituler</div>
       ${atkdT.map(t => `<button class="cap-choice${capitulation === t.id ? ' chosen' : ''}" data-tid="${t.id}">${capitulation === t.id ? '⚑ ' : ''}${t.name}</button>`).join('')}
     ` : ''}
-
+ 
     ${!needCap && atkdT.length > 0 ? `
       <div class="divider"></div>
       <div class="sec">Sous attaque — défense auto</div>
       ${atkdT.map(t => `<div class="slot def"><div class="slot-text def"><i class="ti ti-shield"></i> ${t.name}</div></div>`).join('')}
     ` : ''}
-
+ 
     <div class="divider"></div>
     <div class="sec">Mes territoires (${myT.length})</div>
     ${myT.slice(0, 6).map(t => `<div class="hentry">
@@ -732,7 +758,7 @@ function renderPlayerPanel() {
     <div class="divider"></div>
     <div class="rule-block"><div class="rule-text"><b>Règles :</b> max 2 attaques · 2 attaques ET 2 reçues → capitulation · Sinon défense auto.</div></div>
   `);
-
+ 
   // Events
   document.querySelectorAll('.xbtn[data-idx]').forEach(btn =>
     btn.addEventListener('click', () => removeAtk(parseInt(btn.dataset.idx)))
@@ -741,19 +767,57 @@ function renderPlayerPanel() {
     btn.addEventListener('click', () => setCapitulation(btn.dataset.tid))
   );
 }
-
+ 
 function showPrompt() {
   setPanel(`<div class="prompt"><i class="ti ti-login"></i><span>Connectez-vous<br>puis cliquez un pays<br>ou une divinité</span></div>`);
 }
-
+ 
+function updateWarningTicker() {
+  const ticker = $('warning-ticker');
+  if (!ticker) return;
+  if (!me) { ticker.style.display = 'none'; return; }
+ 
+  const incoming = attacks.filter(a => a.target === me.id);
+  const myAtkList = attacks.filter(a => a.attacker === me.id);
+ 
+  if (incoming.length === 0 && myAtkList.length === 0) {
+    ticker.style.display = 'none';
+    return;
+  }
+ 
+  ticker.style.display = 'flex';
+  const parts = [];
+ 
+  // Territories we are attacking (memory)
+  myAtkList.forEach(a => {
+    const terr = getT(a.territory);
+    const target = getD(a.target);
+    parts.push(`⚔️ Attaque déclarée sur ${terr?.name || a.territory} (${target?.name})`);
+  });
+ 
+  // Territories under attack (no attacker revealed)
+  incoming.forEach(a => {
+    const terr = getT(a.territory);
+    parts.push(`🚨 ALERTE — ${terr?.name || a.territory} est sous attaque`);
+  });
+ 
+  const text = parts.join('　　·　　');
+  ticker.querySelector('.ticker-content').textContent = text + '　　·　　' + text;
+}
+ 
 function clearZone() {
   selZone = null; highlightZone(null);
   if (me) renderPlayerPanel(); else showPrompt();
 }
-
+ 
 // ---- ATTACKS -----------------------------------------------
 function openAtkModal(targetId) {
   if (!me || myAtks().length >= 2) return;
+  // Empêcher d'attaquer deux fois la même divinité
+  if (attacks.some(a => a.attacker === me.id && a.target === targetId)) {
+    alert(`Vous avez déjà déclaré une attaque contre ${getD(targetId).name} ce cycle.`);
+    return;
+  }
   const d  = getD(targetId);
   const ts = allT().filter(t => t.owner === targetId);
   $('atk-title').innerHTML = `<i class="ti ti-sword"></i> Attaquer ${d.name}`;
@@ -766,9 +830,13 @@ function openAtkModal(targetId) {
   pendingAtk = { target: targetId };
   openModal('modal-atk');
 }
-
+ 
 function openAtkModalDirect(ownerId, terrId) {
   if (!me || myAtks().length >= 2) return;
+  if (attacks.some(a => a.attacker === me.id && a.target === ownerId)) {
+    alert(`Vous avez déjà déclaré une attaque contre ${getD(ownerId).name} ce cycle.`);
+    return;
+  }
   const d  = getD(ownerId);
   const ts = allT().filter(t => t.owner === ownerId);
   $('atk-title').innerHTML = `<i class="ti ti-sword"></i> Attaquer ${d.name}`;
@@ -781,33 +849,33 @@ function openAtkModalDirect(ownerId, terrId) {
   pendingAtk = { target: ownerId };
   openModal('modal-atk');
 }
-
+ 
 async function confirmAttack() {
   const sel = $('atk-terr');
   if (!sel?.value) { alert('Choisissez un territoire cible'); return; }
-
+ 
   const btn = $('atk-confirm');
   btn.disabled = true; btn.textContent = 'Envoi…';
-
+ 
   const res = await postScript({
     action: 'add_attack', cycle: CYCLE,
     attaquant: me.id, cible: pendingAtk.target, territoire_id: sel.value,
   });
-
+ 
   btn.disabled = false; btn.innerHTML = '<i class="ti ti-sword"></i> Confirmer l\'attaque';
-
+ 
   if (!res.ok) { alert(`Erreur : ${res.error}`); return; }
-
+ 
   attacks.push({ attacker: me.id, target: pendingAtk.target, territory: sel.value });
   capitulation = null;
   closeModal('modal-atk');
   renderDock(); refreshDotColors();
-
+ 
   if (selZone) renderZonePanel(selZone);
   else if (selTrans) renderTransPanel(selTrans);
   else renderPlayerPanel();
 }
-
+ 
 async function removeAtk(i) {
   const a = myAtks()[i];
   if (!a) return;
@@ -816,13 +884,13 @@ async function removeAtk(i) {
   capitulation = null;
   renderDock(); refreshDotColors(); renderPlayerPanel();
 }
-
+ 
 async function setCapitulation(tid) {
   capitulation = tid;
   await postScript({ action: 'set_capitulation', cycle: CYCLE, attaquant: me.id, territoire_id: tid });
   renderPlayerPanel(); refreshDotColors();
 }
-
+ 
 // ---- AUTH --------------------------------------------------
 function openLogin() {
   const sel = $('login-sel');
@@ -832,7 +900,7 @@ function openLogin() {
   $('login-err').textContent = '';
   openModal('modal-login');
 }
-
+ 
 function doLogin() {
   const id = $('login-sel').value;
   const pw = $('login-pw').value;
@@ -850,7 +918,7 @@ function doLogin() {
   selDeity = d.id;
   renderDock(); refreshDotColors(); renderPlayerPanel();
 }
-
+ 
 // ---- ADMIN -------------------------------------------------
 function openAdminPanel() {
   const atks = attacks;
@@ -868,12 +936,12 @@ function openAdminPanel() {
         </div>`).join('')
       : '<div style="font-size:9px;color:var(--text4)">Aucune attaque</div>'
     }`;
-
+ 
   $('admin-close-cycle')?.addEventListener('click', closeCycle);
   $('admin-refresh')?.addEventListener('click', async () => { closeModal('modal-admin'); await fullRefresh(); });
   openModal('modal-admin');
 }
-
+ 
 async function closeCycle() {
   if (!confirm(`Clôturer le cycle ${CYCLE} et envoyer le résumé sur Discord ?`)) return;
   const divMap = Object.fromEntries(DEITIES.map(d => [d.id, { nom: d.name }]));
@@ -886,11 +954,11 @@ async function closeCycle() {
     alert(`Erreur : ${res.error}`);
   }
 }
-
+ 
 // ---- MODAL HELPERS -----------------------------------------
 function openModal(id)  { $(`${id}`)?.classList.add('open'); }
 function closeModal(id) { $(`${id}`)?.classList.remove('open'); }
-
+ 
 // ---- REFRESH -----------------------------------------------
 async function fullRefresh() {
   const ok = await loadData();
@@ -910,8 +978,9 @@ async function fullRefresh() {
   else if (selTrans) renderTransPanel(selTrans);
   else if (me)       renderPlayerPanel();
   else               showPrompt();
+  updateWarningTicker();
 }
-
+ 
 // ---- INIT --------------------------------------------------
 async function init() {
   // Charger données sheets + topojson en parallèle
@@ -919,7 +988,7 @@ async function init() {
     loadData(),
     fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r => r.json()),
   ]);
-
+ 
   initMap(world);
   buildDots();
   buildBadges();
@@ -930,33 +999,51 @@ async function init() {
   applyZoom(1.15);
   renderDock();
   showPrompt();
-
+ 
   // Auto-refresh
   refreshTimer = setInterval(fullRefresh, CFG.REFRESH_MIN * 60 * 1000);
 }
-
+ 
 // ---- EVENT LISTENERS ---------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
-
+ 
+  // Faction filter buttons
+  document.querySelectorAll('.faction-btn').forEach(btn =>
+    btn.addEventListener('click', () => {
+      const f = btn.dataset.faction;
+      document.querySelectorAll('.faction-btn').forEach(b => b.classList.remove('active'));
+      if (btn.classList.contains('active')) {
+        btn.classList.remove('active');
+        renderDock(null);
+      } else {
+        btn.classList.add('active');
+        renderDock(f);
+      }
+    })
+  );
+ 
+  // Fandom link
+  $('btn-fandom')?.addEventListener('click', () => window.open(CFG.FANDOM_URL, '_blank'));
+ 
   // Login
   $('btn-login')?.addEventListener('click', openLogin);
   $('login-submit')?.addEventListener('click', doLogin);
   $('login-pw')?.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-
+ 
   // Admin
   $('btn-admin')?.addEventListener('click', openAdminPanel);
-
+ 
   // Refresh
   $('btn-refresh')?.addEventListener('click', fullRefresh);
-
+ 
   // Atk confirm
   $('atk-confirm')?.addEventListener('click', confirmAttack);
-
+ 
   // Zoom
   $('zoom-in')?.addEventListener('click',    () => svgSel.transition().duration(280).call(zoomBeh.scaleBy, 1.7));
   $('zoom-out')?.addEventListener('click',   () => svgSel.transition().duration(280).call(zoomBeh.scaleBy, .6));
   $('zoom-reset')?.addEventListener('click', () => svgSel.transition().duration(450).call(zoomBeh.transform, d3.zoomIdentity));
-
+ 
   // Transnationales
   const TRANS_MEMBERS = {
     'UE': ['France','Germany','Austria','Belgium','Netherlands','Luxembourg','Italy','Spain','Portugal',
@@ -970,7 +1057,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'ONU': ['France','United States of America','United Kingdom','Russia','China',
             'Germany','Japan','India','Brazil','Canada','Australia','Italy','Spain'],
   };
-
+ 
   document.querySelectorAll('.tchip').forEach(chip =>
     chip.addEventListener('click', () => {
       const key = chip.dataset.zone;
@@ -991,16 +1078,16 @@ document.addEventListener('DOMContentLoaded', () => {
       renderTransPanel(key);
     })
   );
-
+ 
   // Fermer modals via [data-close]
   document.querySelectorAll('[data-close]').forEach(btn =>
     btn.addEventListener('click', () => closeModal(btn.dataset.close))
   );
-
+ 
   // Fermer modal en cliquant le fond
   document.querySelectorAll('.modal-bg').forEach(bg =>
     bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); })
   );
-
+ 
   init();
 });
