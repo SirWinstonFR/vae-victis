@@ -15,6 +15,12 @@
     <div class="header-right">
       <div class="sync-wrap"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">Chargement…</span></div>
       <span class="cycle-badge" id="cycle-badge">CYCLE —</span>
+      <div class="faction-filters">
+        <button class="faction-btn" data-faction="Sovereign" title="Sovereign">🔵</button>
+        <button class="faction-btn" data-faction="Olympiens" title="Olympiens">🟡</button>
+        <button class="faction-btn" data-faction="Shemning" title="Shemning">🔴</button>
+      </div>
+      <button class="btn icon-btn" id="btn-fandom" title="Wiki Fandom"><i class="ti ti-book" aria-hidden="true"></i></button>
       <button class="btn icon-btn" id="btn-refresh" title="Rafraîchir"><i class="ti ti-refresh" aria-hidden="true"></i></button>
       <button class="btn" id="btn-login"><i class="ti ti-user" aria-hidden="true"></i> Connexion</button>
       <button class="btn btn-warn" id="btn-admin" style="display:none"><i class="ti ti-shield" aria-hidden="true"></i> Admin</button>
@@ -35,6 +41,11 @@
       <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Emblem_of_the_United_Nations.svg/60px-Emblem_of_the_United_Nations.svg.png" class="tchip-flag" alt="ONU">
       <div class="tchip-info"><span class="tchip-name">ONU</span><span class="tchip-sub">Nations Unies</span></div>
     </div>
+  </div>
+
+  <div id="warning-ticker" style="display:none">
+    <div class="ticker-icon">⚠️</div>
+    <div class="ticker-track"><span class="ticker-content"></span></div>
   </div>
 
   <div id="body-grid">
