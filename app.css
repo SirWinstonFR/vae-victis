@@ -35,7 +35,7 @@ html, body {
   background: var(--bg0);
   color: var(--text1);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* ---- APP LAYOUT ---- */
@@ -51,7 +51,7 @@ html, body {
 #header {
   background: var(--bg1);
   border-bottom: 0.5px solid var(--border);
-  padding: 8px 16px;
+  padding: 10px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -59,7 +59,7 @@ html, body {
   gap: 12px;
 }
 .logo {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text1);
   display: flex;
@@ -82,10 +82,10 @@ html, body {
 .sync-dot.error { background: var(--danger); }
 @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
 .cycle-badge {
-  font-size: 10px;
+  font-size: 12px;
   background: #0a1e34;
   color: #4a9ad4;
-  padding: 3px 10px;
+  padding: 4px 12px;
   border-radius: 4px;
   border: 0.5px solid #1a4070;
   white-space: nowrap;
@@ -97,9 +97,9 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  padding: 5px 10px;
+  padding: 7px 13px;
   border-radius: 5px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   border: 0.5px solid var(--border2);
@@ -145,7 +145,7 @@ html, body {
   cursor: pointer;
   flex-shrink: 0;
   transition: all .12s;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--text2);
 }
@@ -155,7 +155,7 @@ html, body {
 /* ---- BODY GRID ---- */
 #body-grid {
   display: grid;
-  grid-template-columns: 1fr 280px;
+  grid-template-columns: 1fr 320px;
   flex: 1;
   overflow: hidden;
   min-height: 0;
@@ -253,6 +253,7 @@ html, body {
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--border2) transparent;
+  min-width: 300px;
 }
 #panel-inner { padding: 10px; }
 
@@ -270,7 +271,7 @@ html, body {
 .prompt i { font-size: 28px; }
 
 .sec {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 500;
   color: var(--text3);
   text-transform: uppercase;
@@ -353,8 +354,8 @@ html, body {
 .terr-ph { width: 100%; height: 54px; background: var(--bg2); display: flex; align-items: center; justify-content: center; color: var(--text4); font-size: 18px; }
 .terr-body { padding: 7px 9px; background: #0a1220; }
 .terr-row { display: flex; align-items: center; justify-content: space-between; gap: 5px; }
-.terr-name { font-size: 10px; font-weight: 500; color: var(--text1); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.terr-owner { font-size: 9px; margin-top: 2px; }
+.terr-name { font-size: 11px; font-weight: 500; color: var(--text1); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.terr-owner { font-size: 10px; margin-top: 2px; }
 .terr-status { font-size: 8px; margin-top: 2px; display: flex; align-items: center; gap: 3px; }
 .pi-badge { font-size: 8px; padding: 1px 5px; border-radius: 3px; background: #0a1e30; color: #3a7aaa; border: 0.5px solid var(--border2); flex-shrink: 0; }
 .tag { font-size: 8px; padding: 1px 4px; border-radius: 3px; flex-shrink: 0; }
@@ -375,9 +376,9 @@ html, body {
 
 /* ---- HENTRY ---- */
 .hentry {
-  padding: 4px 0;
+  padding: 5px 0;
   border-bottom: 0.5px solid #0d1a28;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text2);
   display: flex;
   align-items: center;
@@ -407,7 +408,7 @@ html, body {
   background: #070f1c;
   border-top: 0.5px solid var(--border);
   flex-shrink: 0;
-  height: 92px;
+  height: 104px;
   overflow-x: auto;
   overflow-y: hidden;
   display: flex;
@@ -430,15 +431,15 @@ html, body {
 .dchip.active { background: #0d2040; border-color: #2a5a9a; }
 .dchip.locked { opacity: .28; cursor: not-allowed; }
 .dchip .av {
-  width: 32px; height: 32px; border-radius: 50%;
+  width: 38px; height: 38px; border-radius: 50%;
   border: 1.5px solid transparent; flex-shrink: 0;
   background: var(--bg3);
   display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 500; overflow: hidden;
+  font-size: 11px; font-weight: 500; overflow: hidden;
 }
 .dchip.active .av { border-color: #3a7abf; }
 .dchip .av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.dchip .dn { font-size: 9px; font-weight: 500; color: var(--text2); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+.dchip .dn { font-size: 10px; font-weight: 500; color: var(--text2); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
 .dchip .dp { font-size: 8px; color: var(--text3); }
 .dchip .abadge {
   position: absolute; top: 2px; right: 2px;
@@ -486,3 +487,29 @@ html, body {
 
 /* ---- SVG MAP ZONES ---- */
 .zone-badge-circle { transition: opacity .3s; }
+
+/* Zone member highlight */
+.country.zone-member { fill: #1e3a60; }
+.country.zone-member:hover { fill: #264a78; }
+
+/* Org chip style in panel */
+.org-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 5px;
+  width: 100%;
+  cursor: default;
+  font-size: 11px;
+  font-weight: 500;
+  border: 0.5px solid var(--border);
+  background: var(--bg2);
+  transition: all .15s;
+}
+.org-chip .org-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.org-chip .org-name { flex: 1; color: var(--text1); }
+.org-chip .org-owner { font-size: 10px; }
+.org-chip .org-pi { font-size: 9px; padding: 1px 5px; border-radius: 3px; background: #0a1e30; color: #3a7aaa; border: 0.5px solid var(--border2); }
+.org-chip:has(.atk-btn) { cursor: default; }
