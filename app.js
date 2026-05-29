@@ -516,28 +516,48 @@ function onZoneClick(zoneName) {
 }
 
 // ---- DOCK --------------------------------------------------
-function renderDock() {
+function renderDock(filterFaction = null) {
   const dock = $('dock');
   if (!dock) return;
-  dock.innerHTML = DEITIES.map(d => {
-    const n = atkOn(d.id), locked = n >= 2 && (!me || d.id !== me.id), isActive = selDeity === d.id;
-    return `<div class="dchip${isActive ? ' active' : ''}${locked ? ' locked' : ''}" data-id="${d.id}" title="${d.name} · ${d.pi}PI">
+
+  const attackersOnMe = me ? [...new Set(attacks.filter(a => a.target === me.id).map(a => a.attacker))] : [];
+
+  let deities = DEITIES;
+  if (filterFaction) {
+    deities = DEITIES.filter(d => {
+      const f = getFaction(d.id);
+      return f && f.name === filterFaction;
+    });
+  }
+
+  dock.innerHTML = deities.map(d => {
+    const n = atkOn(d.id);
+    const locked = n >= 2 && (!me || d.id !== me.id);
+    const isActive = selDeity === d.id;
+    const faction = getFaction(d.id);
+    const isAttackingMe = attackersOnMe.includes(d.id);
+    const factionColor = faction ? faction.color : '#3a6a8a';
+    const borderColor = isActive ? factionColor : 'transparent';
+
+    return `<div class="dchip${isActive ? ' active' : ''}${locked ? ' locked' : ''}${isAttackingMe ? ' attacking-me' : ''}"
+      data-id="${d.id}" title="${d.name} · ${d.pi}PI · ${faction?.name || ''}">
       ${n > 0 ? `<div class="abadge">${n}</div>` : ''}
-      <div class="av" style="background:${d.color}22;color:${d.color};border-color:${isActive ? d.color : 'transparent'}">
-        ${d.avatar
-          ? `<img src="${d.avatar}" alt="${d.name}" style="position:absolute;width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.remove()">`
-          : `<span style="position:relative;z-index:1">${d.name.slice(0, 2).toUpperCase()}</span>`
-        }
-        ${d.avatar ? '' : ''}
+      ${isAttackingMe ? `<div class="alert-badge">!</div>` : ''}
+      <div class="av" style="border-color:${borderColor}">
+        ${d.avatar ? `<img src="${d.avatar}" alt="${d.name}" class="av-avatar" onerror="this.style.display='none'">` : ''}
+        ${d.logo ? `<img src="${d.logo}" alt="${d.name}" class="av-logo" onerror="this.style.display='none'">` : ''}
+        <span class="av-initials" style="color:#5ab8f5">${d.name.slice(0, 2).toUpperCase()}</span>
       </div>
-      <div class="dn" style="color:${isActive ? d.color : '#3a6a8a'}">${d.name}</div>
-      <div class="dp">${d.pi}PI</div>
+      <div class="dn" style="color:${isActive ? factionColor : '#5a8aaa'}">${d.name}</div>
+      <div class="dp" style="color:${faction ? faction.color + '99' : '#2a4a6a'}">${faction?.name || ''}</div>
     </div>`;
   }).join('');
+
   dock.querySelectorAll('.dchip:not(.locked)').forEach(el =>
     el.addEventListener('click', () => selectDeity(el.dataset.id))
   );
 }
+
 
 function selectDeity(id) {
   if (atkOn(id) >= 2 && me && id !== me.id) return;
