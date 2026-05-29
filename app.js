@@ -8,7 +8,7 @@
 const CFG = {
   SHEET_PUB_ID: '2PACX-1vS3YihqiaMrry5ksybGNmpyn3zsFVlztk6hAtdZLQj55bkxCgXhLBr29ap_tFmNq__M7Nvjt6f5ZPxQ',
   SHEET_ID:     '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
-  APPS_SCRIPT:  'https://script.google.com/macros/s/AKfycbxzrk3x8qu0LZLT7-MIxkwa9DsoRhUiSl7LlYul-oTYnzD4kG6-vs_OQZVbIbU6or95uw/exec',
+  APPS_SCRIPT:  'https://script.google.com/macros/s/AKfycbyCaQI2c5ds2uCmoeCw6_fALjh-8ii05fkOVgZmWPhbY64vyYbrNcFvqbFKRb7rUwyxwQ/exec',
   REFRESH_MIN:  5,
   // GIDs des onglets — visible dans l'URL du sheet après #gid=
   GIDS: {
@@ -408,6 +408,21 @@ function buildDots() {
         .on('mouseleave', function () { hideTT(); d3.select(this).attr('r', baseR); })
         .on('click', e => { e.stopPropagation(); onZoneClick(tm[t.id]); });
     }
+
+    // Icône ⚔ sur les territoires qu'ON attaque (nous)
+    const isMeAttacking = me && attacks.some(a => a.attacker === me.id && a.territory === t.id);
+    if (isMeAttacking) {
+      gDots.append('text').datum(t)
+        .attr('class', 'tpt-icon')
+        .attr('x', px)
+        .attr('y', py - baseR - 2)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', Math.max(8, baseR * 2.5))
+        .attr('pointer-events', 'none')
+        .attr('user-select', 'none')
+        .style('filter', 'drop-shadow(0 0 2px #fff)')
+        .text('⚔');
+    }
   });
 }
 
@@ -480,6 +495,26 @@ function refreshDotColors() {
     }
   });
   gDots.selectAll('.thl').each(function (d) { d3.select(this).attr('fill', dotColor(d)); });
+  // Mettre à jour les icônes d'attaque
+  gDots.selectAll('.tpt-icon').remove();
+  if (me) {
+    const baseScale = Math.pow(curK, 0.45);
+    Object.values(ZONES).flatMap(z => z.territories).forEach(t => {
+      const isMeAttacking = attacks.some(a => a.attacker === me.id && a.territory === t.id);
+      if (isMeAttacking) {
+        const [px, py] = proj([t.lon, t.lat]);
+        const baseR = (t.pi >= 3 ? 2.8 : t.pi >= 2 ? 2.3 : 1.9) / baseScale;
+        gDots.append('text').datum(t)
+          .attr('class', 'tpt-icon')
+          .attr('x', px).attr('y', py - baseR - 2)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', Math.max(6, baseR * 2.5))
+          .attr('pointer-events', 'none')
+          .style('filter', 'drop-shadow(0 0 2px #fff)')
+          .text('⚔');
+      }
+    });
+  }
 }
 
 function highlightZone(name) {
@@ -810,7 +845,7 @@ function updateWarningTicker() {
   if (incoming.length === 0 && myAtkList.length === 0) {
     ticker.classList.remove('ticker-alert');
     ticker.classList.add('ticker-calm');
-    tc.textContent = '✅ Aucune menace détectée ce cycle　·　CYCLE ' + CYCLE + '　·　✅ Aucune menace détectée ce cycle';
+    tc.textContent = 'Aucune menace ce cycle　·　CYCLE ' + CYCLE + '　·　✅ Aucune menace détectée ce cycle';
     return;
   }
 
@@ -820,12 +855,12 @@ function updateWarningTicker() {
   myAtkList.forEach(a => {
     const terr = getT(a.territory);
     const target = getD(a.target);
-    parts.push('⚔️ Attaque déclarée sur ' + (terr?.name || a.territory) + ' (' + (target?.name || a.target) + ')');
+    parts.push('Attaque sur ' + (terr?.name || a.territory) + ' (' + (target?.name || a.target) + ')');
   });
 
   incoming.forEach(a => {
     const terr = getT(a.territory);
-    parts.push('🚨 ALERTE — ' + (terr?.name || a.territory) + ' est sous attaque');
+    parts.push('ALERTE — ' + (terr?.name || a.territory) + ' est sous attaque');
   });
 
   const text = parts.join('   ·   ');
