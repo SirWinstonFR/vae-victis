@@ -11,11 +11,11 @@ const CFG = {
   REFRESH_MIN:  5,
   // GIDs des onglets — visible dans l'URL du sheet après #gid=
   GIDS: {
-    divinites:    '0',
-    territoires:  '1771636016',
-    attaques:     '1148599013',
-    cycles:       '1753972503',
-    zones_config: '1990010985',
+    divinites:    '855807094',
+    territoires:  '658049216',
+    attaques:     '2093054741',
+    cycles:       '1122856746',
+    zones_config: '851605217',
   },
 };
 
