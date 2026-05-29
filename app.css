@@ -610,19 +610,36 @@ html, body {
   padding: 2px 4px;
 }
 .faction-btn {
-  width: 24px; height: 24px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
   background: none;
-  border: none;
+  border: 0.5px solid transparent;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
-  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text3);
   transition: all .12s;
-  opacity: 0.5;
-  filter: grayscale(0.5);
+  font-family: inherit;
+  white-space: nowrap;
 }
-.faction-btn:hover { opacity: 0.85; background: var(--bg3); filter: none; }
-.faction-btn.active { opacity: 1; background: var(--bg3); filter: none; box-shadow: 0 0 6px currentColor; }
+.faction-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.faction-sovereign .faction-dot { background: #4a8ad4; box-shadow: 0 0 4px #4a8ad4; }
+.faction-olympien  .faction-dot { background: #c8a020; box-shadow: 0 0 4px #c8a020; }
+.faction-shemning  .faction-dot { background: #cc3030; box-shadow: 0 0 4px #cc3030; }
+.faction-sovereign { color: #4a8ad4aa; }
+.faction-olympien  { color: #c8a020aa; }
+.faction-shemning  { color: #cc3030aa; }
+.faction-btn:hover { border-color: var(--border2); background: var(--bg3); }
+.faction-sovereign:hover, .faction-sovereign.active { color: #4a8ad4; border-color: #4a8ad4; background: #4a8ad411; }
+.faction-olympien:hover,  .faction-olympien.active  { color: #c8a020; border-color: #c8a020; background: #c8a02011; }
+.faction-shemning:hover,  .faction-shemning.active  { color: #cc3030; border-color: #cc3030; background: #cc303011; }
 
 /* ---- DOCK — logo on hover, blue uniform ---- */
 .dchip .av {
@@ -668,3 +685,13 @@ html, body {
 /* ---- RULES bigger ---- */
 .rule-block { padding: 10px 12px; }
 .rule-text { font-size: 11px; line-height: 1.8; }
+
+/* Ticker states */
+#warning-ticker.ticker-calm {
+  background: linear-gradient(90deg, #0a1e0a, #0d2a0d, #0a1e0a);
+  border-bottom-color: #1a4a1a;
+  animation: none;
+}
+#warning-ticker.ticker-calm .ticker-icon::before { content: '✅'; }
+#warning-ticker.ticker-calm .ticker-content { color: #3a9a4a; }
+#warning-ticker.ticker-alert .ticker-content { color: #f07070; font-weight: 600; }
