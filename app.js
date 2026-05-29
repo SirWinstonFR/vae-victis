@@ -109,11 +109,15 @@ function setSyncState(state, label) {
 
 async function loadData() {
   setSyncState('loading', 'Synchronisation…');
+  console.log('[VV] Chargement depuis:', gvizUrl('divinites'));
   try {
     const [div, terr, atk, cyc, zones] = await Promise.all([
       fetchTab('divinites'), fetchTab('territoires'), fetchTab('attaques'),
       fetchTab('cycles'),    fetchTab('zones_config'),
     ]);
+    console.log('[VV] Divinités chargées:', div.length);
+    console.log('[VV] Territoires chargés:', terr.length);
+    console.log('[VV] Attaques:', atk.length);
 
     // Divinités
     DEITIES = div.filter(r => r.id).map(r => ({
