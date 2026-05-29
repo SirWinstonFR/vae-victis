@@ -513,3 +513,12 @@ html, body {
 .org-chip .org-owner { font-size: 10px; }
 .org-chip .org-pi { font-size: 9px; padding: 1px 5px; border-radius: 3px; background: #0a1e30; color: #3a7aaa; border: 0.5px solid var(--border2); }
 .org-chip:has(.atk-btn) { cursor: default; }
+
+/* Org diamond in legend */
+.ld.org-diamond {
+  background: #7aaed4;
+  border-radius: 0;
+  transform: rotate(45deg);
+  width: 7px;
+  height: 7px;
+}
