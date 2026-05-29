@@ -457,7 +457,8 @@ function refreshDotColors() {
 
 function highlightZone(name) {
   if (!gMap) return;
-  gMap.selectAll('.country').classed('active', false).classed('zone-member', false);
+  gMap.selectAll('.country').classed('active', false).classed('zone-member', false).classed('trans-member', false);
+  document.querySelectorAll('.tchip').forEach(c => c.classList.remove('active'));
   if (!name) return;
   const targets = Object.entries(COUNTRY_MAP).filter(([, z]) => z === name).map(([c]) => c);
   const list = targets.length ? targets : [name];
@@ -612,7 +613,7 @@ function terrCard(t) {
     return `<div class="terr-card${isAtked ? ' under-attack' : ''}">
       ${t.img
         ? `<img class="terr-img" src="${t.img}" alt="${t.name}" loading="lazy">`
-        : `<div class="terr-ph"><i class="ti ti-building-skyscraper"></i></div>`
+        : `<div class="terr-ph" style="background:${dc}18;border-bottom:2px solid ${dc}33"><i class="ti ti-building-skyscraper" style="color:${dc};font-size:22px"></i></div>`
       }
       <div class="terr-body">
         <div class="terr-row">
@@ -950,11 +951,33 @@ document.addEventListener('DOMContentLoaded', () => {
   $('zoom-reset')?.addEventListener('click', () => svgSel.transition().duration(450).call(zoomBeh.transform, d3.zoomIdentity));
 
   // Transnationales
+  const TRANS_MEMBERS = {
+    'UE': ['France','Germany','Austria','Belgium','Netherlands','Luxembourg','Italy','Spain','Portugal',
+           'Poland','Czech Republic','Hungary','Slovakia','Sweden','Denmark','Finland',
+           'Greece','Bulgaria','Romania','Croatia','Slovenia','Estonia','Latvia','Lithuania',
+           'Ireland','Cyprus','Malta'],
+    'OTAN': ['United States of America','Canada','United Kingdom','France','Germany','Italy','Spain',
+             'Netherlands','Belgium','Luxembourg','Norway','Denmark','Iceland','Poland','Czech Republic',
+             'Hungary','Turkey','Greece','Portugal','Bulgaria','Romania','Slovakia','Slovenia',
+             'Estonia','Latvia','Lithuania','Albania','Croatia','Montenegro','North Macedonia','Finland','Sweden'],
+    'ONU': ['France','United States of America','United Kingdom','Russia','China',
+            'Germany','Japan','India','Brazil','Canada','Australia','Italy','Spain'],
+  };
+
   document.querySelectorAll('.tchip').forEach(chip =>
     chip.addEventListener('click', () => {
       const key = chip.dataset.zone;
       selTrans = key; selZone = null; selDeity = null;
-      highlightZone(null);
+      // Clear previous highlights
+      if (gMap) {
+        gMap.selectAll('.country').classed('active', false).classed('zone-member', false).classed('trans-member', false);
+        // Highlight member countries
+        const members = TRANS_MEMBERS[key] || [];
+        members.forEach(cn => {
+          gMap.selectAll('.country').filter(d => d.properties?.name === cn)
+            .classed('trans-member', true);
+        });
+      }
       document.querySelectorAll('.tchip').forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
       renderDock();
