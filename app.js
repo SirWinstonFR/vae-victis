@@ -141,8 +141,71 @@ async function loadData() {
         if (p) COUNTRY_MAP[p] = r.zone.trim();
       });
     });
-  // Fallback pays manquants
-  const FB = {'Austria':'Allemagne','Switzerland':'Allemagne','Ireland':'Royaume-Uni','Portugal':'Espagne','Iceland':'Scandinavie','Belarus':'Ruthenie','Moldova':'Ruthenie','Romania':'Ruthenie','Estonia':'Ruthenie','Lithuania':'Ruthenie','Bulgaria':'Grèce & Balkans','Albania':'Grèce & Balkans','Slovenia':'Grèce & Balkans','Montenegro':'Grèce & Balkans','North Macedonia':'Grèce & Balkans','Bosnia and Herzegovina':'Grèce & Balkans','Croatia':'Grèce & Balkans','El Salvador':'Amérique Centrale','Belize':'Amérique Centrale','Honduras':'Amérique Centrale','Nicaragua':'Amérique Centrale','Costa Rica':'Amérique Centrale','Cuba':'Amérique Centrale','Haiti':'Amérique Centrale','Dominican Republic':'Amérique Centrale','Jamaica':'Amérique Centrale','Pakistan':'Inde','Bangladesh':'Inde','Sri Lanka':'Inde','Nepal':'Inde','Afghanistan':'Perse','Kuwait':'Arabie','Qatar':'Arabie','United Arab Emirates':'Arabie','Oman':'Arabie','Syria':'Arabie','Lebanon':'Arabie','Israel':'Arabie','Libya':'Maghreb','Sudan':'Maghreb','Ethiopia':'Maghreb','Somalia':'Maghreb','Kenya':'Maghreb','Tanzania':'Maghreb','Nigeria':'Maghreb','Ghana':'Maghreb','Senegal':'Maghreb','Congo':'Maghreb','Dem. Rep. Congo':'Maghreb','South Africa':'Maghreb','Cameroon':'Maghreb','Angola':'Maghreb','Mozambique':'Maghreb','Zimbabwe':'Maghreb','Zambia':'Maghreb','Argentina':'Brésil','Bolivia':'Brésil','Paraguay':'Brésil','Uruguay':'Brésil','Chile':'Brésil','Colombia':'Brésil','Venezuela':'Brésil','Peru':'Brésil','Ecuador':'Brésil','North Korea':'Chine','Mongolia':'Chine','South Korea':'Japon','Philippines':'Japon','Vietnam':'Japon','Thailand':'Japon','Myanmar':'Japon','Cambodia':'Japon','Laos':'Japon','Malaysia':'Japon','Indonesia':'Océanie','Papua New Guinea':'Océanie','Kazakhstan':'Russie','Uzbekistan':'Russie','Kyrgyzstan':'Russie','Tajikistan':'Russie','Turkmenistan':'Russie','Georgia':'Ruthenie','Armenia':'Ruthenie','Azerbaijan':'Ruthenie'};
+  // Mapping exact des régions (source officielle)
+  const FB = {
+    // USA
+    'United States of America':'USA',
+    // Canada
+    'Canada':'Canada',
+    // Amérique Centrale
+    'Mexico':'Amérique Centrale','Guatemala':'Amérique Centrale','Belize':'Amérique Centrale',
+    'Honduras':'Amérique Centrale','El Salvador':'Amérique Centrale','Nicaragua':'Amérique Centrale',
+    'Costa Rica':'Amérique Centrale','Panama':'Amérique Centrale',
+    'Cuba':'Amérique Centrale','Haiti':'Amérique Centrale','Dominican Republic':'Amérique Centrale','Jamaica':'Amérique Centrale',
+    // Brésil (+ Amérique du Sud)
+    'Brazil':'Brésil','Argentina':'Brésil','Bolivia':'Brésil','Paraguay':'Brésil',
+    'Uruguay':'Brésil','Chile':'Brésil','Colombia':'Brésil','Venezuela':'Brésil',
+    'Peru':'Brésil','Ecuador':'Brésil','Guyana':'Brésil','Suriname':'Brésil',
+    // France
+    'France':'France',
+    // Espagne-Portugal (Péninsule Ibérique)
+    'Spain':'Espagne','Portugal':'Espagne',
+    // Allemagne-Autriche (PAS la Suisse)
+    'Germany':'Allemagne','Austria':'Allemagne',
+    // BeNeLux
+    'Belgium':'BeNeLux','Netherlands':'BeNeLux','Luxembourg':'BeNeLux',
+    // Royaume-Uni
+    'United Kingdom':'Royaume-Uni','Ireland':'Royaume-Uni',
+    // Italie
+    'Italy':'Italie','Malta':'Italie',
+    // Grèce & Balkans
+    'Greece':'Grèce & Balkans','Albania':'Grèce & Balkans','Bosnia and Herzegovina':'Grèce & Balkans',
+    'Serbia':'Grèce & Balkans','Montenegro':'Grèce & Balkans','Kosovo':'Grèce & Balkans',
+    'North Macedonia':'Grèce & Balkans','Croatia':'Grèce & Balkans','Slovenia':'Grèce & Balkans',
+    'Bulgaria':'Grèce & Balkans',
+    // Visegrad (Czechia = Czech Republic dans TopoJSON)
+    'Poland':'Visegrad','Czech Republic':'Visegrad','Czechia':'Visegrad','Slovakia':'Visegrad','Hungary':'Visegrad',
+    // Scandinavie
+    'Sweden':'Scandinavie','Norway':'Scandinavie','Denmark':'Scandinavie','Finland':'Scandinavie','Iceland':'Scandinavie',
+    // Ruthenie
+    'Ukraine':'Ruthenie','Estonia':'Ruthenie','Latvia':'Ruthenie','Lithuania':'Ruthenie',
+    'Romania':'Ruthenie','Moldova':'Ruthenie','Belarus':'Ruthenie',
+    // Arabie (Péninsule Arabique)
+    'Iraq':'Arabie','Syria':'Arabie','Saudi Arabia':'Arabie','Yemen':'Arabie',
+    'Oman':'Arabie','United Arab Emirates':'Arabie','Qatar':'Arabie','Kuwait':'Arabie',
+    'Bahrain':'Arabie','Jordan':'Arabie','Lebanon':'Arabie','Israel':'Arabie','Palestine':'Arabie',
+    // Perse (Iran-Georgie)
+    'Iran':'Perse','Georgia':'Perse','Armenia':'Perse','Azerbaijan':'Perse',
+    // Asie Centrale (Steppes)
+    'Kazakhstan':'Russie','Uzbekistan':'Russie','Turkmenistan':'Russie',
+    'Tajikistan':'Russie','Kyrgyzstan':'Russie','Afghanistan':'Russie',
+    // Russie
+    'Russia':'Russie',
+    // Chine
+    'China':'Chine','Taiwan':'Chine','Mongolia':'Chine',
+    // Japon
+    'Japan':'Japon','South Korea':'Japon','North Korea':'Japon',
+    // Inde
+    'India':'Inde','Pakistan':'Inde','Bangladesh':'Inde','Sri Lanka':'Inde','Nepal':'Inde','Bhutan':'Inde',
+    // Océanie
+    'Australia':'Océanie','New Zealand':'Océanie','Papua New Guinea':'Océanie','Indonesia':'Océanie',
+    'Philippines':'Océanie','Malaysia':'Océanie','Vietnam':'Océanie','Thailand':'Océanie',
+    'Myanmar':'Océanie','Cambodia':'Océanie','Laos':'Océanie','Singapore':'Océanie','Timor-Leste':'Océanie',
+    // Maghreb (uniquement Afrique du Nord)
+    'Morocco':'Maghreb','Algeria':'Maghreb','Tunisia':'Maghreb','Libya':'Maghreb',
+    'Egypt':'Maghreb','Western Sahara':'Maghreb',
+    // Suisse — neutre, pas de zone
+  };
   Object.entries(FB).forEach(([c,z])=>{ if(!COUNTRY_MAP[c]) COUNTRY_MAP[c]=z; });
 
     // Territoires
@@ -283,22 +346,41 @@ function buildDots() {
       .attr('fill', fill).attr('opacity', .14)
       .style('pointer-events', 'none');
 
-    // Point
-    gDots.append('circle').datum(t)
-      .attr('class', 'tpt')
-      .attr('cx', px).attr('cy', py)
-      .attr('r', baseR)
-      .attr('fill', fill)
-      .attr('stroke', 'rgba(255,255,255,.2)').attr('stroke-width', .3)
-      .style('cursor', 'pointer')
-      .style('filter', `drop-shadow(0 0 1.5px ${fill})`)
-      .on('mouseenter', function (e) {
-        const owner = t.owner && t.owner !== N ? getD(t.owner) : null;
-        showTT(e, `${t.name} · ${owner ? owner.name : 'Neutre'}${t.pi > 1 ? ` · ×${t.pi}PI` : ''}`);
-        d3.select(this).attr('r', baseR * 1.6);
-      })
-      .on('mouseleave', function () { hideTT(); d3.select(this).attr('r', baseR); })
-      .on('click', e => { e.stopPropagation(); onZoneClick(tm[t.id]); });
+    if (t.type === 'org') {
+      // Losange pour les organisations
+      const s = baseR * 1.4;
+      gDots.append('path').datum(t)
+        .attr('class', 'tpt')
+        .attr('d', `M${px},${py - s} L${px + s},${py} L${px},${py + s} L${px - s},${py} Z`)
+        .attr('fill', fill)
+        .attr('stroke', 'rgba(255,255,255,.25)').attr('stroke-width', .3)
+        .style('cursor', 'pointer')
+        .style('filter', `drop-shadow(0 0 1.5px ${fill})`)
+        .on('mouseenter', function (e) {
+          const owner = t.owner && t.owner !== N ? getD(t.owner) : null;
+          showTT(e, `${t.name} · ${owner ? owner.name : 'Neutre'}${t.pi > 1 ? ` · ×${t.pi}PI` : ''}`);
+          d3.select(this).attr('transform', `scale(1.3)`).attr('transform-origin', `${px}px ${py}px`);
+        })
+        .on('mouseleave', function () { hideTT(); d3.select(this).attr('transform', null); })
+        .on('click', e => { e.stopPropagation(); onZoneClick(tm[t.id]); });
+    } else {
+      // Cercle pour les villes
+      gDots.append('circle').datum(t)
+        .attr('class', 'tpt')
+        .attr('cx', px).attr('cy', py)
+        .attr('r', baseR)
+        .attr('fill', fill)
+        .attr('stroke', 'rgba(255,255,255,.2)').attr('stroke-width', .3)
+        .style('cursor', 'pointer')
+        .style('filter', `drop-shadow(0 0 1.5px ${fill})`)
+        .on('mouseenter', function (e) {
+          const owner = t.owner && t.owner !== N ? getD(t.owner) : null;
+          showTT(e, `${t.name} · ${owner ? owner.name : 'Neutre'}${t.pi > 1 ? ` · ×${t.pi}PI` : ''}`);
+          d3.select(this).attr('r', baseR * 1.6);
+        })
+        .on('mouseleave', function () { hideTT(); d3.select(this).attr('r', baseR); })
+        .on('click', e => { e.stopPropagation(); onZoneClick(tm[t.id]); });
+    }
   });
 }
 
@@ -337,7 +419,18 @@ function applyZoom(k) {
   gDots.style('opacity', dOp).style('pointer-events', dOp > .2 ? 'auto' : 'none');
 
   const s = Math.pow(k, .45);
-  gDots.selectAll('.tpt').each(function (d) { d3.select(this).attr('r', (d.pi >= 3 ? 2.8 : d.pi >= 2 ? 2.3 : 1.9) / s); });
+  gDots.selectAll('.tpt').each(function (d) {
+    const b = (d.pi >= 3 ? 2.8 : d.pi >= 2 ? 2.3 : 1.9) / s;
+    const el = d3.select(this);
+    if (this.tagName === 'circle') {
+      el.attr('r', b);
+    } else {
+      // losange org
+      const [px, py] = proj([d.lon, d.lat]);
+      const sv = b * 1.4;
+      el.attr('d', `M${px},${py - sv} L${px + sv},${py} L${px},${py + sv} L${px - sv},${py} Z`);
+    }
+  });
   gDots.selectAll('.thl').each(function (d) { d3.select(this).attr('r', (d.pi >= 3 ? 2.8 : d.pi >= 2 ? 2.3 : 1.9) * 2.2 / s); });
 
   gBadges.selectAll('.zone-badge').attr('transform', function () {
@@ -349,7 +442,16 @@ function applyZoom(k) {
 
 function refreshDotColors() {
   if (!gDots) return;
-  gDots.selectAll('.tpt').each(function (d) { d3.select(this).attr('fill', dotColor(d)); });
+  gDots.selectAll('.tpt').each(function (d) {
+    const fill = dotColor(d);
+    const el = d3.select(this);
+    el.attr('fill', fill);
+    if (d.type === 'org' && el.node().tagName === 'path') {
+      const [px, py] = proj([d.lon, d.lat]);
+      const s = (d.pi >= 3 ? 2.8 : d.pi >= 2 ? 2.3 : 1.9) * 1.4;
+      el.attr('d', `M${px},${py - s} L${px + s},${py} L${px},${py + s} L${px - s},${py} Z`);
+    }
+  });
   gDots.selectAll('.thl').each(function (d) { d3.select(this).attr('fill', dotColor(d)); });
 }
 
@@ -529,9 +631,28 @@ function terrCard(t) {
     </div>`;
   }
 
-  // Organisations : chip coloré
+  // Organisations : chip avec image optionnelle
+  if (t.img) {
+    return `<div class="terr-card${isAtked ? ' under-attack' : ''}" style="border-color:${dc}44">
+      <img class="terr-img" src="${t.img}" alt="${t.name}" loading="lazy">
+      <div class="terr-body">
+        <div class="terr-row">
+          <div style="display:flex;align-items:center;gap:4px;min-width:0">
+            <div class="dot" style="background:${dc};box-shadow:0 0 4px ${dc}88;clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%)"></div>
+            <span class="terr-name">${t.name}</span>
+            <span class="tag tag-org">ORG.</span>
+            ${t.pi > 1 ? `<span class="pi-badge">×${t.pi}</span>` : ''}
+          </div>
+          ${canA ? `<button class="atk-btn" data-owner="${owner.id}" data-terr="${t.id}"><i class="ti ti-sword"></i>ATK</button>` : ''}
+        </div>
+        <div class="terr-owner" style="color:${owner ? owner.color : 'var(--text3)'}">${owner ? owner.name : 'Neutre'}</div>
+        ${isAtked && !isCap ? `<div class="terr-status" style="color:${isMyT ? 'var(--def-color)' : '#d4a020'}">${isMyT ? '⚔ Défense auto' : '⚔ Sous attaque'}</div>` : ''}
+        ${isCap ? `<div class="terr-status" style="color:var(--atk-color)">⚑ Capitulation</div>` : ''}
+      </div>
+    </div>`;
+  }
   return `<div class="org-chip" style="border-color:${dc}44;background:${dc}11">
-    <div class="org-dot" style="background:${dc};box-shadow:0 0 5px ${dc}99"></div>
+    <div class="org-dot" style="background:${dc};box-shadow:0 0 5px ${dc}99;clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%)"></div>
     <div style="flex:1;min-width:0">
       <div class="org-name">${t.name}${t.pi > 1 ? ` <span class="org-pi">×${t.pi}PI</span>` : ''}</div>
       <div class="org-owner" style="color:${owner ? owner.color : 'var(--text3)'}">${owner ? owner.name : 'Neutre'}</div>
