@@ -35,7 +35,7 @@ html, body {
   background: var(--bg0);
   color: var(--text1);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 /* ---- APP LAYOUT ---- */
@@ -51,7 +51,7 @@ html, body {
 #header {
   background: var(--bg1);
   border-bottom: 0.5px solid var(--border);
-  padding: 10px 20px;
+  padding: 12px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -59,7 +59,7 @@ html, body {
   gap: 12px;
 }
 .logo {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--text1);
   display: flex;
@@ -75,17 +75,17 @@ html, body {
   gap: 8px;
   flex-wrap: nowrap;
 }
-.sync-wrap { display: flex; align-items: center; gap: 5px; font-size: 9px; color: var(--text3); }
+.sync-wrap { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text3); }
 .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); transition: background .3s; flex-shrink: 0; }
 .sync-dot.ok { background: var(--success); }
 .sync-dot.loading { background: var(--warn); animation: pulse 1s infinite; }
 .sync-dot.error { background: var(--danger); }
 @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
 .cycle-badge {
-  font-size: 12px;
+  font-size: 13px;
   background: #0a1e34;
   color: #4a9ad4;
-  padding: 4px 12px;
+  padding: 5px 14px;
   border-radius: 4px;
   border: 0.5px solid #1a4070;
   white-space: nowrap;
@@ -97,9 +97,9 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  padding: 7px 13px;
+  padding: 8px 14px;
   border-radius: 5px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   border: 0.5px solid var(--border2);
@@ -124,7 +124,7 @@ html, body {
 #transbar {
   background: #070f1c;
   border-bottom: 0.5px solid var(--border);
-  padding: 7px 16px;
+  padding: 9px 18px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -159,8 +159,8 @@ html, body {
 .tchip:hover { border-color: #2a4a7a; background: #0d1e30; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.3); }
 .tchip.active { border-color: #3a6aaa; background: #0d2040; box-shadow: 0 0 12px rgba(58,106,170,.3); }
 .tchip-flag {
-  width: 28px;
-  height: 20px;
+  width: 34px;
+  height: 24px;
   object-fit: cover;
   border-radius: 3px;
   flex-shrink: 0;
@@ -172,13 +172,13 @@ html, body {
   gap: 1px;
 }
 .tchip-name {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text1);
   white-space: nowrap;
 }
 .tchip-sub {
-  font-size: 9px;
+  font-size: 10px;
   color: var(--text3);
   white-space: nowrap;
 }
@@ -190,7 +190,7 @@ html, body {
 /* ---- BODY GRID ---- */
 #body-grid {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: 1fr 340px;
   flex: 1;
   overflow: hidden;
   min-height: 0;
@@ -249,7 +249,7 @@ html, body {
   z-index: 20;
 }
 .zbtn {
-  width: 28px; height: 28px;
+  width: 32px; height: 32px;
   background: var(--bg1);
   border: 0.5px solid var(--border2);
   border-radius: 5px;
@@ -277,9 +277,9 @@ html, body {
   z-index: 10;
   border: 0.5px solid #111e2e;
 }
-.li { display: flex; align-items: center; gap: 5px; font-size: 9px; color: var(--text3); }
-.ld { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-#map-hint { position: absolute; bottom: 8px; right: 10px; font-size: 9px; color: var(--text4); z-index: 10; }
+.li { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text3); }
+.ld { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+#map-hint { position: absolute; bottom: 8px; right: 10px; font-size: 11px; color: var(--text4); z-index: 10; }
 
 /* ---- PANEL ---- */
 #panel {
@@ -290,7 +290,7 @@ html, body {
   scrollbar-color: var(--border2) transparent;
   min-width: 300px;
 }
-#panel-inner { padding: 10px; }
+#panel-inner { padding: 14px; }
 
 .prompt {
   display: flex;
@@ -306,7 +306,7 @@ html, body {
 .prompt i { font-size: 28px; }
 
 .sec {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--text3);
   text-transform: uppercase;
@@ -316,7 +316,7 @@ html, body {
   border-bottom: 0.5px solid #111e2e;
 }
 .divider { border: none; border-top: 0.5px solid #111e2e; margin: 8px 0; }
-.info-row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 10px; }
+.info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; }
 .ik { color: var(--text3); }
 .iv { color: var(--text1); font-weight: 500; }
 .back-btn {
@@ -350,14 +350,14 @@ html, body {
 }
 .slot.atk { border-style: solid; border-color: var(--danger-border); background: var(--danger-bg); }
 .slot.def { border-style: solid; border-color: var(--info-border); background: var(--info-bg); }
-.slot-text { font-size: 10px; color: var(--text3); }
+.slot-text { font-size: 12px; color: var(--text3); }
 .slot-text.atk { color: var(--danger); }
 .slot-text.def { color: var(--info); }
 .xbtn { background: none; border: none; color: var(--text3); cursor: pointer; padding: 2px; font-size: 12px; display: flex; align-items: center; font-family: inherit; }
 .xbtn:hover { color: var(--danger); }
 
 /* ---- NOTIFS ---- */
-.notif { border-radius: 4px; padding: 6px 8px; font-size: 9px; margin-bottom: 8px; }
+.notif { border-radius: 4px; padding: 8px 10px; font-size: 11px; margin-bottom: 8px; }
 .notif-warn { background: var(--warn-bg); border: 0.5px solid var(--warn-border); color: var(--warn); }
 .notif-info { background: var(--info-bg); border: 0.5px solid var(--info-border); color: var(--info); }
 .cap-choice {
@@ -389,11 +389,11 @@ html, body {
 .terr-ph { width: 100%; height: 54px; background: var(--bg2); display: flex; align-items: center; justify-content: center; color: var(--text4); font-size: 18px; }
 .terr-body { padding: 7px 9px; background: #0a1220; }
 .terr-row { display: flex; align-items: center; justify-content: space-between; gap: 5px; }
-.terr-name { font-size: 11px; font-weight: 500; color: var(--text1); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.terr-owner { font-size: 10px; margin-top: 2px; }
+.terr-name { font-size: 12px; font-weight: 500; color: var(--text1); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.terr-owner { font-size: 11px; margin-top: 2px; }
 .terr-status { font-size: 8px; margin-top: 2px; display: flex; align-items: center; gap: 3px; }
 .pi-badge { font-size: 8px; padding: 1px 5px; border-radius: 3px; background: #0a1e30; color: #3a7aaa; border: 0.5px solid var(--border2); flex-shrink: 0; }
-.tag { font-size: 8px; padding: 1px 4px; border-radius: 3px; flex-shrink: 0; }
+.tag { font-size: 9px; padding: 2px 6px; border-radius: 3px; flex-shrink: 0; }
 .tag-city { background: #0a2a1a; color: #2a9a6a; border: 0.5px solid #1a3a2a; }
 .tag-org { background: #1a1400; color: #b08020; border: 0.5px solid #2a2800; }
 .atk-btn {
@@ -411,9 +411,9 @@ html, body {
 
 /* ---- HENTRY ---- */
 .hentry {
-  padding: 5px 0;
+  padding: 6px 0;
   border-bottom: 0.5px solid #0d1a28;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text2);
   display: flex;
   align-items: center;
@@ -443,7 +443,7 @@ html, body {
   background: #070f1c;
   border-top: 0.5px solid var(--border);
   flex-shrink: 0;
-  height: 104px;
+  height: 116px;
   overflow-x: auto;
   overflow-y: hidden;
   display: flex;
@@ -466,16 +466,17 @@ html, body {
 .dchip.active { background: #0d2040; border-color: #2a5a9a; }
 .dchip.locked { opacity: .28; cursor: not-allowed; }
 .dchip .av {
-  width: 38px; height: 38px; border-radius: 50%;
-  border: 1.5px solid transparent; flex-shrink: 0;
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 2px solid transparent; flex-shrink: 0;
   background: var(--bg3);
   display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 500; overflow: hidden;
+  font-size: 12px; font-weight: 500; overflow: hidden;
+  position: relative;
 }
 .dchip.active .av { border-color: #3a7abf; }
 .dchip .av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.dchip .dn { font-size: 10px; font-weight: 500; color: var(--text2); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
-.dchip .dp { font-size: 8px; color: var(--text3); }
+.dchip .dn { font-size: 11px; font-weight: 500; color: var(--text2); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+.dchip .dp { font-size: 9px; color: var(--text3); }
 .dchip .abadge {
   position: absolute; top: 2px; right: 2px;
   width: 13px; height: 13px; background: #2a0808;
