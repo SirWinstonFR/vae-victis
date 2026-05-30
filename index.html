@@ -785,6 +785,155 @@ html, body {
   font-style: italic;
 }
 
+
+/* ---- RANKING PANEL ---- */
+#ranking-panel {
+  background: var(--bg1);
+  border-right: 0.5px solid var(--border);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+  display: flex;
+  flex-direction: column;
+}
+.ranking-title {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 10px 10px 6px;
+  border-bottom: 0.5px solid var(--border);
+  flex-shrink: 0;
+}
+.ranking-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  cursor: pointer;
+  border-bottom: 0.5px solid #0d1a28;
+  transition: background .12s;
+}
+.ranking-item:hover { background: var(--bg3); }
+.ranking-item.active { background: #0d2040; border-left: 2px solid #3a6aaa; }
+.ranking-rank {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text3);
+  width: 16px;
+  flex-shrink: 0;
+  text-align: center;
+}
+.ranking-img {
+  width: 36px; height: 28px;
+  border-radius: 4px;
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--text4);
+  overflow: hidden;
+  border: 0.5px solid var(--border);
+}
+.ranking-info { flex: 1; min-width: 0; }
+.ranking-name {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ranking-pi { font-size: 9px; color: var(--text3); }
+
+/* ---- NATION PANEL ---- */
+.nation-header { margin-bottom: 10px; }
+.nation-banner {
+  width: 100%;
+  height: 80px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border: 0.5px solid var(--border);
+}
+.nation-info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.nation-leader-portrait {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--border2);
+  flex-shrink: 0;
+  background: var(--bg3);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text3);
+  font-size: 20px;
+}
+.nation-leader-portrait img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.nation-details { flex: 1; min-width: 0; }
+.nation-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text1);
+  margin-bottom: 2px;
+}
+.nation-leader-name {
+  font-size: 10px;
+  color: var(--text2);
+  margin-bottom: 3px;
+}
+.nation-desc {
+  font-size: 9px;
+  color: var(--text3);
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+.nation-pi-total {
+  font-size: 9px;
+  color: var(--text2);
+}
+.nation-triangle-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.align-triangle {
+  width: 90px;
+  height: 80px;
+}
+.nation-gods {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+}
+.nation-god-chip {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--bg3);
+  border: 0.5px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  font-size: 9px;
+  font-weight: 600;
+}
+.nation-god-chip img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+}
 </style>
 </head>
 <body>
@@ -836,6 +985,7 @@ html, body {
   </div>
 
   <div id="body-grid">
+    <div id="ranking-panel"></div>
     <div id="map-wrap">
       <div id="map-loading"><i class="ti ti-world"></i><span>Chargement de la carte…</span></div>
       <svg id="world-svg"></svg>
