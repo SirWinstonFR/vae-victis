@@ -183,9 +183,9 @@ async function loadData() {
     'Costa Rica':'Amérique Centrale','Panama':'Amérique Centrale',
     'Cuba':'Amérique Centrale','Haiti':'Amérique Centrale','Dominican Republic':'Amérique Centrale','Jamaica':'Amérique Centrale',
     // Brésil (+ Amérique du Sud)
-    'Brazil':'Brésil','Argentina':'Brésil','Bolivia':'Brésil','Paraguay':'Brésil',
-    'Uruguay':'Brésil','Chile':'Brésil','Colombia':'Brésil','Venezuela':'Brésil',
-    'Peru':'Brésil','Ecuador':'Brésil','Guyana':'Brésil','Suriname':'Brésil',
+    'Brazil':'Brésil',
+    
+    
     // France
     'France':'France',
     // Espagne-Portugal (Péninsule Ibérique)
@@ -229,9 +229,9 @@ async function loadData() {
     // Inde
     'India':'Inde','Pakistan':'Inde','Bangladesh':'Inde','Sri Lanka':'Inde','Nepal':'Inde','Bhutan':'Inde',
     // Océanie
-    'Australia':'Océanie','New Zealand':'Océanie','Papua New Guinea':'Océanie','Indonesia':'Océanie',
-    'Philippines':'Océanie','Malaysia':'Océanie','Vietnam':'Océanie','Thailand':'Océanie',
-    'Myanmar':'Océanie','Cambodia':'Océanie','Laos':'Océanie','Singapore':'Océanie','Timor-Leste':'Océanie',
+    'Australia':'Océanie','New Zealand':'Océanie','Papua New Guinea':'Océanie',
+    
+    
     // Maghreb (uniquement Afrique du Nord)
     'Morocco':'Maghreb','Algeria':'Maghreb','Tunisia':'Maghreb','Libya':'Maghreb',
     'Egypt':'Maghreb','Western Sahara':'Maghreb',
@@ -1091,7 +1091,10 @@ document.addEventListener('DOMContentLoaded', () => {
   );
 
   // Fandom link
-  $('btn-fandom')?.addEventListener('click', () => window.open(CFG.FANDOM_URL, '_blank'));
+  const btnFandom = $('btn-fandom');
+  if (btnFandom) btnFandom.addEventListener('click', () => {
+    window.open(CFG.FANDOM_URL, '_blank');
+  });
 
   // Login
   $('btn-login')?.addEventListener('click', openLogin);
