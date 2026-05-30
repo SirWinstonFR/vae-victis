@@ -169,8 +169,22 @@ function parseGviz(raw) {
   const match = raw.match(/setResponse\(([\s\S]*)\)/);
   if (!match) throw new Error('Format gviz invalide');
   const data = JSON.parse(match[1]);
-  const cols = data.table.cols.map(c => (c.label || c.id || '').trim());
-  return (data.table.rows || []).map(r =>
+  const rows = data.table.rows || [];
+  if (rows.length === 0) return [];
+
+  // If labels are empty (parsedNumHeaders=0), use first row as headers
+  let cols = data.table.cols.map(c => (c.label || '').trim());
+  const hasLabels = cols.some(c => c.length > 0);
+
+  if (!hasLabels && rows.length > 0) {
+    // First row contains headers
+    cols = rows[0].c.map(cell => String(cell?.v ?? '').trim());
+    return rows.slice(1).map(r =>
+      Object.fromEntries(cols.map((col, i) => [col, String(r?.c?.[i]?.v ?? '').trim()]))
+    );
+  }
+
+  return rows.map(r =>
     Object.fromEntries(cols.map((col, i) => [col, String(r?.c?.[i]?.v ?? '').trim()]))
   );
 }
