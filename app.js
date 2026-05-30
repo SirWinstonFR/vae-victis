@@ -1378,6 +1378,21 @@ document.addEventListener('DOMContentLoaded', () => {
     window.open(CFG.FANDOM_URL, '_blank');
   });
 
+  // Situation toggle
+  document.getElementById('btn-situation')?.addEventListener('click', function() {
+    showSituations = !showSituations;
+    this.classList.toggle('active', showSituations);
+    if (!showSituations) {
+      resetCountryColors();
+      if (svgSel) svgSel.selectAll('.situation-layer').remove();
+      const leg = document.getElementById('situation-legend');
+      if (leg) leg.style.display = 'none';
+    } else {
+      drawSituations();
+      updateSituationLegend();
+    }
+  });
+
   // Login
   $('btn-login')?.addEventListener('click', openLogin);
   $('login-submit')?.addEventListener('click', doLogin);
