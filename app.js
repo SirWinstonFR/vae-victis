@@ -1006,7 +1006,7 @@ function renderZonePanel(zoneName) {
   setPanel(`
     <button class="back-btn" id="back-btn"><i class="ti ti-arrow-left"></i> Vue globale</button>
     ${nationHeader}
-    <div class="sec" style="margin-top:10px">${zoneName.toUpperCase()} — ${data.territories.length} POINT${data.territories.length > 1 ? 'S' : ''}</div>
+    <div class="sec" style="margin-top:10px">${zoneName.toUpperCase()} — ${data.territories.length} TERRITOIRE${data.territories.length > 1 ? 'S' : ''}</div>
     ${data.territories.map(t => terrCard(t)).join('')}
   `);
 
@@ -1189,12 +1189,16 @@ function renderAlignTriangle(ax = 0.5, ay = 0.5) {
   const left  = [4, H-4];
   const right = [W-4, H-4];
   // Point position interpolated in triangle
-  const px = top[0] + (left[0]-top[0])*(1-ax)*(ay) + (right[0]-top[0])*(ax)*(ay);
-  const py = top[1] + (left[1]-top[1])*(1-ax)*(ay) + (right[1]-top[1])*(ax)*(ay);
+  // Barycentric: top=Olympiens(ay=0), bottomLeft=Sovereign(ax=0,ay=1), bottomRight=Shemning(ax=1,ay=1)
+  const wOlympiens = 1 - ay;
+  const wSovereign = ay * (1 - ax);
+  const wShemning  = ay * ax;
+  const px = top[0]*wOlympiens + left[0]*wSovereign + right[0]*wShemning;
+  const py = top[1]*wOlympiens + left[1]*wSovereign + right[1]*wShemning;
   const clampX = Math.max(8, Math.min(W-8, px));
   const clampY = Math.max(8, Math.min(H-8, py));
 
-  return `<svg class="align-triangle" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+  return `<svg class="align-triangle" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;overflow:visible">
     <defs>
       <linearGradient id="tg1" x1="0.5" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c8a020" stop-opacity="0.7"/><stop offset="100%" stop-color="#4a8ad4" stop-opacity="0.7"/></linearGradient>
       <linearGradient id="tg2" x1="0.5" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8a020" stop-opacity="0.7"/><stop offset="100%" stop-color="#cc3030" stop-opacity="0.7"/></linearGradient>
