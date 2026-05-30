@@ -363,49 +363,89 @@ function initMap(world) {
       if (z) onZoneClick(z);
     });
 
-  // Drag pour rotation
-  let dragStart = null;
-  let rotateStart = null;
+  // Rotation via events natifs (plus fiable que D3 drag sur SVG)
+  const svgNode = svgSel.node();
+  let pointerDown = false;
+  let lastX = 0, lastY = 0;
+  let rotStart = [0, 0, 0];
+  let clickStartX = 0, clickStartY = 0;
 
-  const dragBehavior = d3.drag()
-    .on('start', e => {
-      isDragging = false;
-      dragStart = [e.x, e.y];
-      rotateStart = [...proj.rotate()];
-    })
-    .on('drag', e => {
+  svgNode.addEventListener('mousedown', e => {
+    pointerDown = true;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    clickStartX = e.clientX;
+    clickStartY = e.clientY;
+    rotStart = [...proj.rotate()];
+    e.preventDefault();
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (!pointerDown) return;
+    const dx = e.clientX - lastX;
+    const dy = e.clientY - lastY;
+    if (Math.abs(e.clientX - clickStartX) > 3 || Math.abs(e.clientY - clickStartY) > 3) {
       isDragging = true;
       hideTT();
-      const dx = e.x - dragStart[0];
-      const dy = e.y - dragStart[1];
-      const scale = proj.scale();
-      const sensitivity = 90 / scale;
-      const newRotate = [
-        rotateStart[0] + dx * sensitivity,
-        Math.max(-89, Math.min(89, rotateStart[1] - dy * sensitivity)),
-        rotateStart[2]
-      ];
-      proj.rotate(newRotate);
-      redrawGlobe(path, countries);
-    })
-    .on('end', () => {
-      setTimeout(() => { isDragging = false; }, 50);
-    });
-
-  // Scroll pour zoom
-  svgSel.on('wheel', e => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.85 : 1.15;
-    const newScale = Math.max(100, Math.min(proj.scale() * delta, 2000));
-    proj.scale(newScale);
-    // Update ocean circle
-    svgSel.select('circle').attr('r', newScale);
+    }
+    const sensitivity = 90 / proj.scale();
+    proj.rotate([
+      proj.rotate()[0] + dx * sensitivity,
+      Math.max(-89, Math.min(89, proj.rotate()[1] - dy * sensitivity)),
+      proj.rotate()[2]
+    ]);
+    lastX = e.clientX;
+    lastY = e.clientY;
     redrawGlobe(path, countries);
-    applyZoom(newScale / (Math.min(W, H) / 2.1));
-    curK = newScale / (Math.min(W, H) / 2.1);
+  });
+
+  window.addEventListener('mouseup', () => {
+    pointerDown = false;
+    setTimeout(() => { isDragging = false; }, 50);
+  });
+
+  // Touch support
+  let lastTouch = null;
+  svgNode.addEventListener('touchstart', e => {
+    lastTouch = e.touches[0];
+    rotStart = [...proj.rotate()];
+    clickStartX = lastTouch.clientX;
+    clickStartY = lastTouch.clientY;
+    e.preventDefault();
   }, { passive: false });
 
-  svgSel.call(dragBehavior);
+  svgNode.addEventListener('touchmove', e => {
+    const t = e.touches[0];
+    const dx = t.clientX - lastTouch.clientX;
+    const dy = t.clientY - lastTouch.clientY;
+    isDragging = true;
+    const sensitivity = 90 / proj.scale();
+    proj.rotate([
+      proj.rotate()[0] + dx * sensitivity,
+      Math.max(-89, Math.min(89, proj.rotate()[1] - dy * sensitivity)),
+      proj.rotate()[2]
+    ]);
+    lastTouch = t;
+    redrawGlobe(path, countries);
+    e.preventDefault();
+  }, { passive: false });
+
+  svgNode.addEventListener('touchend', () => {
+    setTimeout(() => { isDragging = false; }, 50);
+  });
+
+  // Scroll pour zoom
+  svgNode.addEventListener('wheel', e => {
+    e.preventDefault();
+    const base = Math.min(W, H) / 2.1;
+    const delta = e.deltaY > 0 ? 0.85 : 1.15;
+    const newScale = Math.max(base * 0.5, Math.min(proj.scale() * delta, base * 8));
+    proj.scale(newScale);
+    svgSel.select('circle').attr('r', newScale);
+    curK = newScale / base;
+    redrawGlobe(path, countries);
+    applyZoom(curK);
+  }, { passive: false });
 
   // Store path and countries for redraw
   svgSel.node().__globePath = path;
