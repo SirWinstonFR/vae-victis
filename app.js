@@ -24,20 +24,24 @@ const CFG = {
 const FACTIONS = {
   sovereign: {
     name: 'Sovereign', color: '#4a8ad4', glow: '#4a8ad4',
-    members: ['liberty','capital','judgment','union','manifest','wrath','industry','oldmedia','newmedia','vigil','science']
+    members: ['liberty','capital','judgment','union','manifest','wrath','industry','old media','new media','vigil','science']
   },
   olympien: {
     name: 'Olympiens', color: '#c8a020', glow: '#f0c060',
-    members: ['zeus','hera','poseidon','demeter','persephone','athena','ares','hades','apollo','hermes','dionysus','hestia','hephaiston','aphrodite']
+    members: ['zeus','hera','poseidon','demeter','persephone','athena','artemis','ares','hades','apollon','hermes','dionysos','hestia','hephaistos','aphrodite']
   },
   shemning: {
     name: 'Shemning', color: '#cc3030', glow: '#f07070',
-    members: ['entity','isis','seth','osiris','hel','tyr','loki','shiva','vishnu','brahma','ama']
+    members: ['entite','isis','seth','osiris','hel','tyr','loki','shiva','vishnu','brahma','amaterasu']
   },
 };
+function getFactionNorm(deityId) {
+  return Object.values(FACTIONS).find(f => f.members.includes(deityId)) || null;
+}
 
 function getFaction(deityId) {
-  return Object.values(FACTIONS).find(f => f.members.includes(deityId)) || null;
+  // kept for reference
+  return getFactionNorm(deityId);
 }
 
 // ---- STATE -------------------------------------------------
@@ -569,7 +573,7 @@ function renderDock(filterFaction = null) {
     const n = atkOn(d.id);
     const locked = n >= 2 && (!me || d.id !== me.id);
     const isActive = selDeity === d.id;
-    const faction = getFaction(d.id);
+    const faction = getFactionNorm(d.id);
     const isAttackingMe = attackersOnMe.includes(d.id);
     const factionColor = faction ? faction.color : '#3a6a8a';
     const borderColor = isActive ? factionColor : 'transparent';
@@ -581,7 +585,7 @@ function renderDock(filterFaction = null) {
       <div class="av" style="border-color:${borderColor}">
         ${d.avatar ? `<img src="${d.avatar}" alt="${d.name}" class="av-avatar" onerror="this.style.display='none'">` : ''}
         ${d.logo ? `<img src="${d.logo}" alt="${d.name}" class="av-logo" onerror="this.style.display='none'">` : ''}
-        <span class="av-initials" style="color:#5ab8f5">${d.name.slice(0, 2).toUpperCase()}</span>
+        ${!d.avatar ? `<span class="av-initials" style="color:#5ab8f5">${d.name.slice(0, 2).toUpperCase()}</span>` : ''}
       </div>
       <div class="dn" style="color:${isActive ? factionColor : '#5a8aaa'}">${d.name}</div>
       <div class="dp" style="color:${faction ? faction.color + '99' : '#2a4a6a'}">${faction?.name || ''}</div>
