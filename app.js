@@ -217,6 +217,12 @@ async function loadData() {
       };
     });
     console.log('[VV] Nations:', Object.keys(nations).length);
+    if (Object.keys(nations).length > 0) {
+      console.log('[VV] First nation:', Object.keys(nations)[0], nations[Object.keys(nations)[0]]);
+    } else if (nats && nats.length > 0) {
+      console.log('[VV] Nations raw first row keys:', Object.keys(nats[0]));
+      console.log('[VV] Nations raw first row:', nats[0]);
+    }
 
     // Situations
     situations = (situ || []).filter(r => r.zone && r.type).map(r => ({
@@ -475,11 +481,13 @@ function initMap(world) {
       dragging = true;
       hideTT();
     }
-    const sensitivity = 90 / proj.scale();
+    if (!dragging) return;
+    const sensitivity = 75 / proj.scale();
+    const r = proj.rotate();
     proj.rotate([
-      proj.rotate()[0] + dx * sensitivity,
-      Math.max(-89, Math.min(89, proj.rotate()[1] - dy * sensitivity)),
-      proj.rotate()[2]
+      r[0] + dx * sensitivity,
+      Math.max(-89, Math.min(89, r[1] - dy * sensitivity)),
+      r[2]
     ]);
     lastX = e.clientX;
     lastY = e.clientY;
@@ -563,21 +571,9 @@ function redrawGlobe(path, countries) {
 
 function isVisible(lon, lat) {
   if (!proj) return false;
-  // Use D3's geoPath to check visibility (most reliable method)
-  const coords = proj([lon, lat]);
-  if (!coords) return false;
-  // Check using clip angle — point is visible if proj returns coords
-  // Also verify coordinates are within SVG bounds
-  const W = +svgSel?.attr('width') || 800;
-  const H = +svgSel?.attr('height') || 600;
-  // Use spherical distance from rotation center
-  const r = proj.rotate();
-  const lam = (lon + r[0]) * Math.PI / 180;
-  const phi = lat * Math.PI / 180;
-  const phi0 = (-r[1]) * Math.PI / 180;
-  // Spherical dot product — positive = front hemisphere
-  const dot = Math.sin(phi) * Math.sin(phi0) + Math.cos(phi) * Math.cos(phi0) * Math.cos(lam);
-  return dot > 0;
+  // geoOrthographic with clipAngle(90) returns null for points on back hemisphere
+  const p = proj([lon, lat]);
+  return p !== null && p !== undefined;
 }
 
 function buildDots() {
@@ -814,12 +810,18 @@ function highlightZone(name) {
   // Rotate globe to center on the zone
   const zd = ZONES[name];
   if (zd && zd.cx && zd.cy) {
-    const targetRotate = [-zd.cx, -zd.cy * 0.6];
+    const targetRotate = [-zd.cx, Math.max(-89, Math.min(89, -zd.cy * 0.7))];
     const r0 = proj.rotate();
-    const t = d3.transition().duration(800).ease(d3.easeCubicInOut);
-    d3.transition(t).tween('rotate', () => {
-      const i = d3.interpolate(r0, targetRotate);
-      return t => { proj.rotate(i(t)); redrawGlobe(); };
+    // Normalize longitude difference to avoid spinning the long way around
+    let dLon = targetRotate[0] - r0[0];
+    if (dLon > 180) dLon -= 360;
+    if (dLon < -180) dLon += 360;
+    const r1 = [r0[0] + dLon, targetRotate[1], r0[2]];
+    const interp = d3.interpolate(r0, r1);
+    const tr = d3.transition().duration(800).ease(d3.easeCubicInOut);
+    d3.transition(tr).tween('rotate', () => t => {
+      proj.rotate(interp(t));
+      redrawGlobe();
     });
   }
 }
