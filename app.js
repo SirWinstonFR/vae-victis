@@ -64,7 +64,7 @@ let selTrans      = null;
 let refreshTimer  = null;
 
 // D3 / map state
-let proj, svgSel, gMap, gDots, gBadges, zoomBeh;
+let proj, svgSel, gMap, gDots, gBadges;
 let curK      = 1;
 let dragging  = false;
 const N = 'neutral';
@@ -307,31 +307,52 @@ async function postScript(payload) {
 
 // ---- MAP ---------------------------------------------------
 function initMap(world) {
+  const countries = topojson.feature(world, world.objects.countries);
   const wrap = $('map-wrap');
   const W = wrap.clientWidth, H = wrap.clientHeight;
-  const countries = topojson.feature(world, world.objects.countries);
 
-  proj = d3.geoNaturalEarth1().scale(153).translate([W / 2, H / 2]);
+  // Globe projection
+  proj = d3.geoOrthographic()
+    .scale(Math.min(W, H) / 2.1)
+    .translate([W / 2, H / 2])
+    .clipAngle(90)
+    .rotate([-15, -48]); // Centré sur Europe
+
   const path = d3.geoPath().projection(proj);
 
   svgSel = d3.select('#world-svg')
     .attr('width', W).attr('height', H)
-    .attr('viewBox', `0 0 ${W} ${H}`)
     .style('display', 'block');
 
+  // Fond noir
   svgSel.append('rect').attr('width', W).attr('height', H).attr('fill', '#060d1a');
-  // Pas de sphère — fond plat uniquement
+
+  // Océan (sphère)
+  svgSel.append('circle')
+    .attr('cx', W / 2).attr('cy', H / 2)
+    .attr('r', proj.scale())
+    .attr('fill', '#0a1628')
+    .attr('stroke', '#1a3060').attr('stroke-width', 1);
 
   gMap    = svgSel.append('g');
   gDots   = svgSel.append('g');
   gBadges = svgSel.append('g');
 
-  // Countries
-  gMap.selectAll('path')
+  // Graticule (lignes de latitude/longitude)
+  const graticule = d3.geoGraticule()();
+  gMap.append('path').datum(graticule)
+    .attr('d', path)
+    .attr('fill', 'none')
+    .attr('stroke', '#1a2e4a')
+    .attr('stroke-width', 0.3)
+    .attr('opacity', 0.5);
+
+  // Pays
+  gMap.selectAll('path.country')
     .data(countries.features)
     .join('path')
-    .attr('d', path)
     .attr('class', d => `country${COUNTRY_MAP[d.properties?.name] ? ' has-zone' : ''}`)
+    .attr('d', path)
     .on('mouseenter', (e, d) => {
       const z = COUNTRY_MAP[d.properties?.name];
       if (z) showTT(e, z);
@@ -342,21 +363,81 @@ function initMap(world) {
       if (z) onZoneClick(z);
     });
 
-  // Zoom
-  zoomBeh = d3.zoom()
-    .scaleExtent([.6, 18])
-    .on('start', () => { dragging = true; hideTT(); })
-    .on('zoom', e => {
-      curK = e.transform.k;
-      gMap.attr('transform', e.transform);
-      gDots.attr('transform', e.transform);
-      gBadges.attr('transform', e.transform);
-      applyZoom(curK);
-    })
-    .on('end', () => setTimeout(() => { dragging = false; }, 50));
+  // Drag pour rotation
+  let dragStart = null;
+  let rotateStart = null;
 
-  svgSel.call(zoomBeh);
+  const dragBehavior = d3.drag()
+    .on('start', e => {
+      isDragging = false;
+      dragStart = [e.x, e.y];
+      rotateStart = [...proj.rotate()];
+    })
+    .on('drag', e => {
+      isDragging = true;
+      hideTT();
+      const dx = e.x - dragStart[0];
+      const dy = e.y - dragStart[1];
+      const scale = proj.scale();
+      const sensitivity = 90 / scale;
+      const newRotate = [
+        rotateStart[0] + dx * sensitivity,
+        Math.max(-89, Math.min(89, rotateStart[1] - dy * sensitivity)),
+        rotateStart[2]
+      ];
+      proj.rotate(newRotate);
+      redrawGlobe(path, countries);
+    })
+    .on('end', () => {
+      setTimeout(() => { isDragging = false; }, 50);
+    });
+
+  // Scroll pour zoom
+  svgSel.on('wheel', e => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.85 : 1.15;
+    const newScale = Math.max(100, Math.min(proj.scale() * delta, 2000));
+    proj.scale(newScale);
+    // Update ocean circle
+    svgSel.select('circle').attr('r', newScale);
+    redrawGlobe(path, countries);
+    applyZoom(newScale / (Math.min(W, H) / 2.1));
+    curK = newScale / (Math.min(W, H) / 2.1);
+  }, { passive: false });
+
+  svgSel.call(dragBehavior);
+
+  // Store path and countries for redraw
+  svgSel.node().__globePath = path;
+  svgSel.node().__globeCountries = countries;
+
   $('map-loading').style.display = 'none';
+  buildDots();
+  buildBadges();
+  applyZoom(1);
+}
+
+function redrawGlobe(path, countries) {
+  if (!path) {
+    path = svgSel.node().__globePath;
+    countries = svgSel.node().__globeCountries;
+  }
+  // Redraw graticule
+  gMap.select('path:first-child').attr('d', d3.geoPath().projection(proj)(d3.geoGraticule()()));
+  // Redraw countries
+  gMap.selectAll('path.country').attr('d', d3.geoPath().projection(proj));
+  // Redraw dots
+  buildDots();
+  buildBadges();
+  applyZoom(curK);
+}
+
+
+function isVisible(lon, lat) {
+  // Check if point is on the front of the globe
+  const r = proj.rotate();
+  const x = Math.cos((lat) * Math.PI/180) * Math.cos((lon + r[0]) * Math.PI/180);
+  return x > 0;
 }
 
 function buildDots() {
@@ -365,9 +446,11 @@ function buildDots() {
   const tm = tzMap();
 
   Object.values(ZONES).flatMap(z => z.territories).forEach(t => {
+    if (!isVisible(t.lon, t.lat)) return; // Skip points on back of globe
     const fill  = dotColor(t);
     const baseR = t.pi >= 3 ? 2.8 : t.pi >= 2 ? 2.3 : 1.9;
     const [px, py] = proj([t.lon, t.lat]);
+    if (!px || !py) return;
 
     // Halo
     gDots.append('circle').datum(t)
@@ -436,7 +519,9 @@ function buildBadges() {
 
   Object.entries(ZONES).forEach(([zoneName, zd]) => {
     if (!zd.cx && !zd.cy) return;
+    if (!isVisible(zd.cx, zd.cy)) return; // Skip badges on back of globe
     const [px, py] = proj([zd.cx, zd.cy]);
+    if (!px || !py) return;
     const n = zd.territories.length;
 
     const g = gBadges.append('g')
@@ -458,36 +543,17 @@ function buildBadges() {
 }
 
 function applyZoom(k) {
+  // Sur le globe, k reflète le niveau de zoom par rapport à la taille de base
   const bOp = k < BADGE_FADE ? 1 : k > BADGE_HIDE ? 0 : 1 - (k - BADGE_FADE) / (BADGE_HIDE - BADGE_FADE);
   const dOp = k < DOTS_SHOW  ? 0 : k > BADGE_HIDE ? 1 : (k - DOTS_SHOW)  / (BADGE_HIDE - DOTS_SHOW);
 
-  gBadges.style('opacity', bOp).style('pointer-events', bOp > .1 ? 'auto' : 'none');
-  gDots.style('opacity', dOp).style('pointer-events', dOp > .2 ? 'auto' : 'none');
-
-  const s = Math.pow(k, .45);
-  gDots.selectAll('.tpt').each(function (d) {
-    const b = (d.pi >= 3 ? 2.8 : d.pi >= 2 ? 2.3 : 1.9) / s;
-    const el = d3.select(this);
-    if (this.tagName === 'circle') {
-      el.attr('r', b);
-    } else {
-      // losange org
-      const [px, py] = proj([d.lon, d.lat]);
-      const sv = b * 1.4;
-      el.attr('d', `M${px},${py - sv} L${px + sv},${py} L${px},${py + sv} L${px - sv},${py} Z`);
-    }
-  });
-  gDots.selectAll('.thl').each(function (d) { d3.select(this).attr('r', (d.pi >= 3 ? 2.8 : d.pi >= 2 ? 2.3 : 1.9) * 2.2 / s); });
-
-  gBadges.selectAll('.zone-badge').attr('transform', function () {
-    const t = d3.select(this).attr('transform');
-    const m = t.match(/translate\(([^,]+),([^)]+)\)/);
-    return m ? `translate(${m[1]},${m[2]}) scale(${1 / k})` : t;
-  });
+  if (gBadges) gBadges.style('opacity', bOp).style('pointer-events', bOp > .1 ? 'auto' : 'none');
+  if (gDots)   gDots.style('opacity', dOp).style('pointer-events', dOp > .2 ? 'auto' : 'none');
 }
 
 function refreshDotColors() {
-  if (!gDots) return;
+  if (!gDots || !proj) return;
+  buildDots(); return; // Globe: rebuild all dots
   gDots.selectAll('.tpt').each(function (d) {
     const fill = dotColor(d);
     const el = d3.select(this);
@@ -530,9 +596,19 @@ function highlightZone(name) {
   const list = targets.length ? targets : [name];
   list.forEach(cn =>
     gMap.selectAll('.country').filter(d => d.properties?.name === cn)
-      .classed('active', true)
-      .classed('zone-member', true)
+      .classed('active', true).classed('zone-member', true)
   );
+  // Rotate globe to center on the zone
+  const zd = ZONES[name];
+  if (zd && zd.cx && zd.cy) {
+    const targetRotate = [-zd.cx, -zd.cy * 0.6];
+    const r0 = proj.rotate();
+    const t = d3.transition().duration(800).ease(d3.easeCubicInOut);
+    d3.transition(t).tween('rotate', () => {
+      const i = d3.interpolate(r0, targetRotate);
+      return t => { proj.rotate(i(t)); redrawGlobe(); };
+    });
+  }
 }
 
 function showTT(e, txt) {
@@ -1032,7 +1108,8 @@ async function fullRefresh() {
   const ok = await loadData();
   if (!ok) return;
   if (gDots)   buildDots();
-  if (gBadges) { buildBadges(); applyZoom(curK); }
+  if (gBadges) { buildBadges(); }
+  if (gMap)    redrawGlobe();
   renderDock();
   // Mettre à jour le highlight des pays
   if (gMap) {
@@ -1110,10 +1187,31 @@ document.addEventListener('DOMContentLoaded', () => {
   // Atk confirm
   $('atk-confirm')?.addEventListener('click', confirmAttack);
 
-  // Zoom
-  $('zoom-in')?.addEventListener('click',    () => svgSel.transition().duration(280).call(zoomBeh.scaleBy, 1.7));
-  $('zoom-out')?.addEventListener('click',   () => svgSel.transition().duration(280).call(zoomBeh.scaleBy, .6));
-  $('zoom-reset')?.addEventListener('click', () => svgSel.transition().duration(450).call(zoomBeh.transform, d3.zoomIdentity));
+  // Zoom globe
+  $('zoom-in')?.addEventListener('click', () => {
+    if (!proj) return;
+    const W = +svgSel.attr('width'), H = +svgSel.attr('height');
+    const base = Math.min(W, H) / 2.1;
+    const ns = Math.min(proj.scale() * 1.5, base * 8);
+    proj.scale(ns); svgSel.select('circle').attr('r', ns);
+    curK = ns / base; redrawGlobe(); applyZoom(curK);
+  });
+  $('zoom-out')?.addEventListener('click', () => {
+    if (!proj) return;
+    const W = +svgSel.attr('width'), H = +svgSel.attr('height');
+    const base = Math.min(W, H) / 2.1;
+    const ns = Math.max(proj.scale() * 0.67, base * 0.5);
+    proj.scale(ns); svgSel.select('circle').attr('r', ns);
+    curK = ns / base; redrawGlobe(); applyZoom(curK);
+  });
+  $('zoom-reset')?.addEventListener('click', () => {
+    if (!proj) return;
+    const W = +svgSel.attr('width'), H = +svgSel.attr('height');
+    const base = Math.min(W, H) / 2.1;
+    proj.scale(base).rotate([-15, -48]);
+    svgSel.select('circle').attr('r', base);
+    curK = 1; redrawGlobe(); applyZoom(1);
+  });
 
   // Transnationales
   const TRANS_MEMBERS = {
