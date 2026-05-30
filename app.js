@@ -18,6 +18,7 @@ const CFG = {
     cycles:       '1122856746',
     zones_config: '851605217',
     situations:   '1166964994',
+    nations:      '1443319453',
   },
 };
 
@@ -114,6 +115,7 @@ let CYCLE         = 7;
 let me            = null;
 let situations    = [];
 let showSituations = false;
+let nations       = {}; // zone -> nation info
 let attacks       = [];
 let capitulation  = null;
 let pendingAtk    = null;
@@ -194,10 +196,27 @@ async function loadData() {
   setSyncState('loading', 'Synchronisation…');
   console.log('[VV] Chargement depuis:', gvizUrl('divinites'));
   try {
-    const [div, terr, atk, cyc, zones, situ] = await Promise.all([
+    const [div, terr, atk, cyc, zones, situ, nats] = await Promise.all([
       fetchTab('divinites'), fetchTab('territoires'), fetchTab('attaques'),
       fetchTab('cycles'),    fetchTab('zones_config'), fetchTab('situations'),
+      fetchTab('nations'),
     ]);
+
+    // Nations
+    nations = {};
+    (nats || []).filter(r => r.zone).forEach(r => {
+      nations[r.zone.trim()] = {
+        leader:      (r.leader || '').trim(),
+        portrait:    (r.portrait_url || '').trim(),
+        image:       (r.image_url || '').trim(),
+        description: (r.description || '').trim(),
+        alignX:      parseFloat(r.alignement_x) || 0.5,
+        alignY:      parseFloat(r.alignement_y) || 0.5,
+        dieu1:       (r.dieu1 || '').trim(),
+        dieu2:       (r.dieu2 || '').trim(),
+      };
+    });
+    console.log('[VV] Nations:', Object.keys(nations).length);
 
     // Situations
     situations = (situ || []).filter(r => r.zone && r.type).map(r => ({
@@ -543,10 +562,22 @@ function redrawGlobe(path, countries) {
 
 
 function isVisible(lon, lat) {
-  // Check if point is on the front of the globe
+  if (!proj) return false;
+  // Use D3's geoPath to check visibility (most reliable method)
+  const coords = proj([lon, lat]);
+  if (!coords) return false;
+  // Check using clip angle — point is visible if proj returns coords
+  // Also verify coordinates are within SVG bounds
+  const W = +svgSel?.attr('width') || 800;
+  const H = +svgSel?.attr('height') || 600;
+  // Use spherical distance from rotation center
   const r = proj.rotate();
-  const x = Math.cos((lat) * Math.PI/180) * Math.cos((lon + r[0]) * Math.PI/180);
-  return x > 0;
+  const lam = (lon + r[0]) * Math.PI / 180;
+  const phi = lat * Math.PI / 180;
+  const phi0 = (-r[1]) * Math.PI / 180;
+  // Spherical dot product — positive = front hemisphere
+  const dot = Math.sin(phi) * Math.sin(phi0) + Math.cos(phi) * Math.cos(phi0) * Math.cos(lam);
+  return dot > 0;
 }
 
 function buildDots() {
@@ -926,6 +957,7 @@ function renderTransPanel(key) {
 function renderZonePanel(zoneName) {
   selZone = zoneName;
   const data = ZONES[zoneName];
+  const nation = nations[zoneName] || {};
 
   if (!data || data.territories.length === 0) {
     setPanel(`
@@ -936,9 +968,45 @@ function renderZonePanel(zoneName) {
     return;
   }
 
+  // Nation header
+  const totalPI = data.territories.reduce((sum, t) => sum + (t.pi || 1), 0);
+  const d1 = nation.dieu1 ? getD(nation.dieu1) : null;
+  const d2 = nation.dieu2 ? getD(nation.dieu2) : null;
+  const nationHeader = `
+    <div class="nation-header">
+      ${nation.image ? `<div class="nation-banner" style="background-image:url('${nation.image}')"></div>` : ''}
+      <div class="nation-info-row">
+        ${nation.portrait
+          ? `<div class="nation-leader-portrait"><img src="${nation.portrait}" alt="${nation.leader}"></div>`
+          : `<div class="nation-leader-portrait nation-leader-empty"><i class="ti ti-user"></i></div>`
+        }
+        <div class="nation-details">
+          <div class="nation-name">${zoneName}</div>
+          ${nation.leader ? `<div class="nation-leader-name">${nation.leader}</div>` : ''}
+          ${nation.description ? `<div class="nation-desc">${nation.description}</div>` : ''}
+          <div class="nation-pi-total"><i class="ti ti-star"></i> ${totalPI} PI — ${data.territories.length} territoires</div>
+        </div>
+        ${(d1 || d2) ? `
+          <div class="nation-triangle-wrap">
+            ${renderAlignTriangle(nation.alignX, nation.alignY)}
+            <div class="nation-gods">
+              ${d1 ? `<div class="nation-god-chip" title="${d1.name}">
+                ${d1.logo ? `<img src="${d1.logo}" alt="${d1.name}">` : `<span style="color:${d1.color}">${d1.name.slice(0,2)}</span>`}
+              </div>` : ''}
+              ${d2 ? `<div class="nation-god-chip" title="${d2.name}">
+                ${d2.logo ? `<img src="${d2.logo}" alt="${d2.name}">` : `<span style="color:${d2.color}">${d2.name.slice(0,2)}</span>`}
+              </div>` : ''}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+
   setPanel(`
     <button class="back-btn" id="back-btn"><i class="ti ti-arrow-left"></i> Vue globale</button>
-    <div class="sec">${zoneName.toUpperCase()} — ${data.territories.length} POINT${data.territories.length > 1 ? 'S' : ''}</div>
+    ${nationHeader}
+    <div class="sec" style="margin-top:10px">${zoneName.toUpperCase()} — ${data.territories.length} POINT${data.territories.length > 1 ? 'S' : ''}</div>
     ${data.territories.map(t => terrCard(t)).join('')}
   `);
 
@@ -1112,6 +1180,47 @@ function updateSituationLegend() {
   }).join('');
 }
 
+function renderAlignTriangle(ax = 0.5, ay = 0.5) {
+  // Triangle SVG with 3 colored zones
+  // Corners: top=Olympiens(gold), bottom-left=Sovereign(blue), bottom-right=Shemning(red)
+  const W = 90, H = 80;
+  // Triangle vertices
+  const top   = [W/2, 4];
+  const left  = [4, H-4];
+  const right = [W-4, H-4];
+  // Point position interpolated in triangle
+  const px = top[0] + (left[0]-top[0])*(1-ax)*(ay) + (right[0]-top[0])*(ax)*(ay);
+  const py = top[1] + (left[1]-top[1])*(1-ax)*(ay) + (right[1]-top[1])*(ax)*(ay);
+  const clampX = Math.max(8, Math.min(W-8, px));
+  const clampY = Math.max(8, Math.min(H-8, py));
+
+  return `<svg class="align-triangle" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="tg1" x1="0.5" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c8a020" stop-opacity="0.7"/><stop offset="100%" stop-color="#4a8ad4" stop-opacity="0.7"/></linearGradient>
+      <linearGradient id="tg2" x1="0.5" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8a020" stop-opacity="0.7"/><stop offset="100%" stop-color="#cc3030" stop-opacity="0.7"/></linearGradient>
+      <linearGradient id="tg3" x1="0" y1="1" x2="1" y2="1"><stop offset="0%" stop-color="#4a8ad4" stop-opacity="0.7"/><stop offset="100%" stop-color="#cc3030" stop-opacity="0.7"/></linearGradient>
+      <clipPath id="tri-clip"><polygon points="${top[0]},${top[1]} ${left[0]},${left[1]} ${right[0]},${right[1]}"/></clipPath>
+    </defs>
+    <!-- Triangle background -->
+    <polygon points="${top[0]},${top[1]} ${left[0]},${left[1]} ${right[0]},${right[1]}"
+      fill="#0a1628" stroke="#1a3a5a" stroke-width="1"/>
+    <!-- Color zones -->
+    <polygon points="${top[0]},${top[1]} ${left[0]},${left[1]} ${W/2},${H-4}"
+      fill="#4a8ad4" opacity="0.25" clip-path="url(#tri-clip)"/>
+    <polygon points="${top[0]},${top[1]} ${right[0]},${right[1]} ${W/2},${H-4}"
+      fill="#cc3030" opacity="0.25" clip-path="url(#tri-clip)"/>
+    <polygon points="${left[0]},${left[1]} ${right[0]},${right[1]} ${W/2},${H-4}"
+      fill="#888" opacity="0.1" clip-path="url(#tri-clip)"/>
+    <!-- Labels -->
+    <text x="${top[0]}" y="${top[1]-1}" text-anchor="middle" font-size="6" fill="#c8a020" font-family="sans-serif">Olympiens</text>
+    <text x="${left[0]-2}" y="${left[1]+1}" text-anchor="start" font-size="5.5" fill="#4a8ad4" font-family="sans-serif">Sovereign</text>
+    <text x="${right[0]+2}" y="${right[1]+1}" text-anchor="end" font-size="5.5" fill="#cc3030" font-family="sans-serif">Shemning</text>
+    <!-- Alignment point -->
+    <circle cx="${clampX}" cy="${clampY}" r="4" fill="white" stroke="#060d1a" stroke-width="1.5"
+      style="filter:drop-shadow(0 0 3px white)"/>
+  </svg>`;
+}
+
 function updateWarningTicker() {
   const ticker = $('warning-ticker');
   if (!ticker) return;
@@ -1155,6 +1264,45 @@ function updateWarningTicker() {
 function clearZone() {
   selZone = null; highlightZone(null);
   if (me) renderPlayerPanel(); else showPrompt();
+  renderRankingPanel();
+}
+
+function renderRankingPanel() {
+  const ranking = $('ranking-panel');
+  if (!ranking) return;
+
+  // Calculate total PI per zone
+  const zonePI = Object.entries(ZONES).map(([name, zd]) => {
+    const total = zd.territories.reduce((s, t) => s + (t.pi || 1), 0);
+    const nation = nations[name] || {};
+    return { name, total, image: nation.image || '', leader: nation.leader || '' };
+  }).sort((a, b) => b.total - a.total);
+
+  ranking.innerHTML = `
+    <div class="ranking-title">Classement des Nations</div>
+    ${zonePI.map((z, i) => `
+      <div class="ranking-item${selZone === z.name ? ' active' : ''}" data-zone="${z.name}">
+        <div class="ranking-rank">${i + 1}</div>
+        <div class="ranking-img" style="${z.image ? `background-image:url('${z.image}')` : 'background:#0d2040'}">
+          ${!z.image ? `<i class="ti ti-map"></i>` : ''}
+        </div>
+        <div class="ranking-info">
+          <div class="ranking-name">${z.name}</div>
+          <div class="ranking-pi">${z.total} PI</div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+
+  ranking.querySelectorAll('.ranking-item').forEach(el =>
+    el.addEventListener('click', () => {
+      const zone = el.dataset.zone;
+      highlightZone(zone);
+      renderZonePanel(zone);
+      selDeity = null;
+      renderDock();
+    })
+  );
 }
 
 // ---- ATTACKS -----------------------------------------------
@@ -1265,6 +1413,7 @@ function doLogin() {
   selDeity = d.id;
   renderDock(); refreshDotColors(); renderPlayerPanel();
   updateWarningTicker();
+  renderRankingPanel();
 }
 
 // ---- ADMIN -------------------------------------------------
