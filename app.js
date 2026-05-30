@@ -385,7 +385,7 @@ function initMap(world) {
     const dx = e.clientX - lastX;
     const dy = e.clientY - lastY;
     if (Math.abs(e.clientX - clickStartX) > 3 || Math.abs(e.clientY - clickStartY) > 3) {
-      isDragging = true;
+      dragging = true;
       hideTT();
     }
     const sensitivity = 90 / proj.scale();
@@ -401,7 +401,7 @@ function initMap(world) {
 
   window.addEventListener('mouseup', () => {
     pointerDown = false;
-    setTimeout(() => { isDragging = false; }, 50);
+    setTimeout(() => { dragging = false; }, 50);
   });
 
   // Touch support
@@ -418,7 +418,7 @@ function initMap(world) {
     const t = e.touches[0];
     const dx = t.clientX - lastTouch.clientX;
     const dy = t.clientY - lastTouch.clientY;
-    isDragging = true;
+    dragging = true;
     const sensitivity = 90 / proj.scale();
     proj.rotate([
       proj.rotate()[0] + dx * sensitivity,
@@ -431,7 +431,7 @@ function initMap(world) {
   }, { passive: false });
 
   svgNode.addEventListener('touchend', () => {
-    setTimeout(() => { isDragging = false; }, 50);
+    setTimeout(() => { dragging = false; }, 50);
   });
 
   // Scroll pour zoom
