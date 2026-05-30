@@ -198,7 +198,7 @@ html, body {
 /* ---- BODY GRID ---- */
 #body-grid {
   display: grid;
-  grid-template-columns: 1fr 340px;
+  grid-template-columns: 200px 1fr 340px;
   flex: 1;
   overflow: hidden;
   min-height: 0;
@@ -797,6 +797,11 @@ html, body {
   min-width: 0;
 }
 
+
+/* Force explicit grid positions */
+#ranking-panel { grid-column: 1; }
+#map-wrap      { grid-column: 2; }
+#panel         { grid-column: 3; }
 </style>
 </head>
 <body>
