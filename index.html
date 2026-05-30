@@ -733,6 +733,58 @@ html, body {
 
 
 
+/* ---- SITUATION TOGGLE ---- */
+#btn-situation.active {
+  border-color: #cc5500;
+  color: #ff8844;
+  background: #1a0a00;
+  box-shadow: 0 0 8px #ff884444;
+}
+
+/* ---- SITUATION LEGEND ---- */
+#situation-legend {
+  background: #08111f;
+  border-top: 0.5px solid #1a2e4a;
+  padding: 6px 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex-shrink: 0;
+  max-height: 80px;
+  overflow-y: auto;
+}
+.sit-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  min-width: 180px;
+}
+.sit-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.sit-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.sit-zone {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text1);
+}
+.sit-type {
+  font-size: 9px;
+  font-weight: 500;
+}
+.sit-desc {
+  font-size: 9px;
+  color: var(--text3);
+  font-style: italic;
+}
+
 </style>
 </head>
 <body>
@@ -755,6 +807,7 @@ html, body {
         </button>
       </div>
       <button class="btn icon-btn" id="btn-fandom" title="Wiki Fandom"><i class="ti ti-book" aria-hidden="true"></i></button>
+      <button class="btn icon-btn" id="btn-situation" title="Situations mondiales"><i class="ti ti-world-bolt" aria-hidden="true"></i></button>
       <button class="btn icon-btn" id="btn-refresh" title="Rafraîchir"><i class="ti ti-refresh" aria-hidden="true"></i></button>
       <button class="btn" id="btn-login"><i class="ti ti-user" aria-hidden="true"></i> Connexion</button>
       <button class="btn btn-warn" id="btn-admin" style="display:none"><i class="ti ti-shield" aria-hidden="true"></i> Admin</button>
@@ -811,6 +864,7 @@ html, body {
     </aside>
   </div>
 
+  <div id="situation-legend" style="display:none"></div>
   <div id="dock"></div>
 </div>
 
