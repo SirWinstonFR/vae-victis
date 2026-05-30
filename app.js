@@ -128,6 +128,7 @@ let refreshTimer  = null;
 let proj, svgSel, gMap, gDots, gBadges;
 let curK      = 1;
 let dragging  = false;
+let isRotating = false; // blocks drag during globe animation
 const N = 'neutral';
 const BADGE_FADE = 1.5, BADGE_HIDE = 2.2, DOTS_SHOW = 1.6;
 
@@ -488,7 +489,7 @@ function initMap(world) {
   });
 
   window.addEventListener('mousemove', e => {
-    if (!pointerDown) return;
+    if (!pointerDown || isRotating) return;
     const dx = e.clientX - lastX;
     const dy = e.clientY - lastY;
     if (Math.abs(e.clientX - clickStartX) > 3 || Math.abs(e.clientY - clickStartY) > 3) {
@@ -596,11 +597,15 @@ function buildDots() {
   const tm = tzMap();
 
   Object.values(ZONES).flatMap(z => z.territories).forEach(t => {
-    if (!isVisible(t.lon, t.lat)) return; // Skip points on back of globe
+    const _p = proj([t.lon, t.lat]);
+    if (!_p) return; // On back of globe (clipped by geoOrthographic)
     const fill  = dotColor(t);
     const baseR = t.pi >= 3 ? 2.8 : t.pi >= 2 ? 2.3 : 1.9;
-    const [px, py] = proj([t.lon, t.lat]);
-    if (!px || !py) return;
+    const [px, py] = _p;
+    // Extra check: point must be within globe circle bounds
+    const _W = +svgSel.attr('width'), _H = +svgSel.attr('height');
+    const _cx = _W/2, _cy = _H/2, _r = proj.scale();
+    if (Math.hypot(px - _cx, py - _cy) > _r * 1.01) return;
 
     // Halo
     gDots.append('circle').datum(t)
@@ -669,9 +674,11 @@ function buildBadges() {
 
   Object.entries(ZONES).forEach(([zoneName, zd]) => {
     if (!zd.cx && !zd.cy) return;
-    if (!isVisible(zd.cx, zd.cy)) return; // Skip badges on back of globe
-    const [px, py] = proj([zd.cx, zd.cy]);
-    if (!px || !py) return;
+    const _bp = proj([zd.cx, zd.cy]);
+    if (!_bp) return;
+    const [px, py] = _bp;
+    const _bW = +svgSel.attr('width'), _bH = +svgSel.attr('height');
+    if (Math.hypot(px - _bW/2, py - _bH/2) > proj.scale() * 1.01) return;
     const n = zd.territories.length;
 
     const g = gBadges.append('g')
@@ -832,11 +839,15 @@ function highlightZone(name) {
     if (dLon < -180) dLon += 360;
     const r1 = [r0[0] + dLon, targetRotate[1], r0[2]];
     const interp = d3.interpolate(r0, r1);
+    isRotating = true;
+    pointerDown = false; // cancel any active drag
     const tr = d3.transition().duration(800).ease(d3.easeCubicInOut);
-    d3.transition(tr).tween('rotate', () => t => {
-      proj.rotate(interp(t));
-      redrawGlobe();
-    });
+    d3.transition(tr)
+      .tween('rotate', () => t => {
+        proj.rotate(interp(t));
+        redrawGlobe();
+      })
+      .on('end', () => { isRotating = false; });
   }
 }
 
@@ -990,27 +1001,25 @@ function renderZonePanel(zoneName) {
   const d2 = nation.dieu2 ? getD(nation.dieu2) : null;
   const nationHeader = `
     <div class="nation-header">
-      ${nation.image ? `<div class="nation-banner" style="background-image:url('${nation.image}')"></div>` : ''}
-      <div class="nation-info-row">
-        ${nation.portrait
-          ? `<div class="nation-leader-portrait"><img src="${nation.portrait}" alt="${nation.leader}"></div>`
-          : `<div class="nation-leader-portrait nation-leader-empty"><i class="ti ti-user"></i></div>`
-        }
-        <div class="nation-details">
-          <div class="nation-name">${zoneName}</div>
-          ${nation.leader ? `<div class="nation-leader-name">${nation.leader}</div>` : ''}
-          ${nation.description ? `<div class="nation-desc">${nation.description}</div>` : ''}
-          <div class="nation-pi-total"><i class="ti ti-star"></i> ${totalPI} PI — ${data.territories.length} territoires</div>
-        </div>
-        ${(d1 || d2) ? `
+      ${nation.image ? `<div class="nation-banner" style="background-image:url('${nation.image}')">
+        ${nation.portrait ? `<div class="nation-leader-portrait"><img src="${nation.portrait}" alt="${nation.leader}"></div>` : ''}
+      </div>` : ''}
+      <div class="nation-meta">
+        <div class="nation-name">${zoneName}</div>
+        ${nation.leader ? `<div class="nation-leader-name">${nation.leader}</div>` : ''}
+        ${nation.description ? `<div class="nation-desc">${nation.description}</div>` : ''}
+        <div class="nation-pi-total">${totalPI} PI — ${data.territories.length} territoires</div>
+      </div>
+      <div class="nation-bottom-row">
+        ${(d1 || d2 || nation.alignX !== undefined) ? `
           <div class="nation-triangle-wrap">
-            ${renderAlignTriangle(nation.alignX, nation.alignY)}
+            ${renderAlignTriangle(nation.alignX ?? 0.5, nation.alignY ?? 0.5)}
             <div class="nation-gods">
-              ${d1 ? `<div class="nation-god-chip" title="${d1.name}">
-                ${d1.logo ? `<img src="${d1.logo}" alt="${d1.name}">` : `<span style="color:${d1.color}">${d1.name.slice(0,2)}</span>`}
+              ${d1 ? `<div class="nation-god-chip" title="${d1.name}" style="border-color:${d1.color}44">
+                ${d1.logo ? `<img src="${d1.logo}" alt="${d1.name}">` : `<span style="color:${d1.color};font-size:9px;font-weight:600">${d1.name.slice(0,2).toUpperCase()}</span>`}
               </div>` : ''}
-              ${d2 ? `<div class="nation-god-chip" title="${d2.name}">
-                ${d2.logo ? `<img src="${d2.logo}" alt="${d2.name}">` : `<span style="color:${d2.color}">${d2.name.slice(0,2)}</span>`}
+              ${d2 ? `<div class="nation-god-chip" title="${d2.name}" style="border-color:${d2.color}44">
+                ${d2.logo ? `<img src="${d2.logo}" alt="${d2.name}">` : `<span style="color:${d2.color};font-size:9px;font-weight:600">${d2.name.slice(0,2).toUpperCase()}</span>`}
               </div>` : ''}
             </div>
           </div>
@@ -1197,49 +1206,52 @@ function updateSituationLegend() {
 }
 
 function renderAlignTriangle(ax = 0.5, ay = 0.5) {
-  // Triangle SVG with 3 colored zones
-  // Corners: top=Olympiens(gold), bottom-left=Sovereign(blue), bottom-right=Shemning(red)
-  const W = 90, H = 80;
-  // Triangle vertices
-  const top   = [W/2, 4];
-  const left  = [4, H-4];
-  const right = [W-4, H-4];
-  // Point position interpolated in triangle
-  // Barycentric: top=Olympiens(ay=0), bottomLeft=Sovereign(ax=0,ay=1), bottomRight=Shemning(ax=1,ay=1)
-  const wOlympiens = 1 - ay;
-  const wSovereign = ay * (1 - ax);
-  const wShemning  = ay * ax;
-  const px = top[0]*wOlympiens + left[0]*wSovereign + right[0]*wShemning;
-  const py = top[1]*wOlympiens + left[1]*wSovereign + right[1]*wShemning;
-  const clampX = Math.max(8, Math.min(W-8, px));
-  const clampY = Math.max(8, Math.min(H-8, py));
+  const W = 100, H = 88;
+  const top   = [W/2, 6];
+  const left  = [6, H-6];
+  const right = [W-6, H-6];
 
-  return `<svg class="align-triangle" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;overflow:visible">
+  // Barycentric interpolation
+  const wO = 1 - ay;
+  const wS = ay * (1 - ax);
+  const wSh = ay * ax;
+  const px = Math.max(10, Math.min(W-10, top[0]*wO + left[0]*wS + right[0]*wSh));
+  const py = Math.max(10, Math.min(H-10, top[1]*wO + left[1]*wS + right[1]*wSh));
+
+  const pts = `${top[0]},${top[1]} ${left[0]},${left[1]} ${right[0]},${right[1]}`;
+
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100px;height:88px;display:block;overflow:visible">
     <defs>
-      <linearGradient id="tg1" x1="0.5" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c8a020" stop-opacity="0.7"/><stop offset="100%" stop-color="#4a8ad4" stop-opacity="0.7"/></linearGradient>
-      <linearGradient id="tg2" x1="0.5" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8a020" stop-opacity="0.7"/><stop offset="100%" stop-color="#cc3030" stop-opacity="0.7"/></linearGradient>
-      <linearGradient id="tg3" x1="0" y1="1" x2="1" y2="1"><stop offset="0%" stop-color="#4a8ad4" stop-opacity="0.7"/><stop offset="100%" stop-color="#cc3030" stop-opacity="0.7"/></linearGradient>
-      <clipPath id="tri-clip"><polygon points="${top[0]},${top[1]} ${left[0]},${left[1]} ${right[0]},${right[1]}"/></clipPath>
+      <clipPath id="triclip"><polygon points="${pts}"/></clipPath>
+      <!-- 3 gradient overlays for each corner -->
+      <radialGradient id="gO" cx="${top[0]/W}" cy="${top[1]/H}" r="0.9">
+        <stop offset="0%" stop-color="#c8a020" stop-opacity="0.8"/>
+        <stop offset="100%" stop-color="#c8a020" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="gS" cx="${left[0]/W}" cy="${left[1]/H}" r="0.9">
+        <stop offset="0%" stop-color="#4a8ad4" stop-opacity="0.8"/>
+        <stop offset="100%" stop-color="#4a8ad4" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="gSh" cx="${right[0]/W}" cy="${right[1]/H}" r="0.9">
+        <stop offset="0%" stop-color="#cc3030" stop-opacity="0.8"/>
+        <stop offset="100%" stop-color="#cc3030" stop-opacity="0"/>
+      </radialGradient>
     </defs>
-    <!-- Triangle background -->
-    <polygon points="${top[0]},${top[1]} ${left[0]},${left[1]} ${right[0]},${right[1]}"
-      fill="#0a1628" stroke="#1a3a5a" stroke-width="1"/>
+    <!-- Base -->
+    <polygon points="${pts}" fill="#0a1628" stroke="#1a3a5a" stroke-width="1"/>
     <!-- Color zones -->
-    <polygon points="${top[0]},${top[1]} ${left[0]},${left[1]} ${W/2},${H-4}"
-      fill="#4a8ad4" opacity="0.25" clip-path="url(#tri-clip)"/>
-    <polygon points="${top[0]},${top[1]} ${right[0]},${right[1]} ${W/2},${H-4}"
-      fill="#cc3030" opacity="0.25" clip-path="url(#tri-clip)"/>
-    <polygon points="${left[0]},${left[1]} ${right[0]},${right[1]} ${W/2},${H-4}"
-      fill="#888" opacity="0.1" clip-path="url(#tri-clip)"/>
-    <!-- Labels -->
-    <text x="${top[0]}" y="${top[1]-1}" text-anchor="middle" font-size="6" fill="#c8a020" font-family="sans-serif">Olympiens</text>
-    <text x="${left[0]-2}" y="${left[1]+1}" text-anchor="start" font-size="5.5" fill="#4a8ad4" font-family="sans-serif">Sovereign</text>
-    <text x="${right[0]+2}" y="${right[1]+1}" text-anchor="end" font-size="5.5" fill="#cc3030" font-family="sans-serif">Shemning</text>
-    <!-- Alignment point -->
-    <circle cx="${clampX}" cy="${clampY}" r="4" fill="white" stroke="#060d1a" stroke-width="1.5"
-      style="filter:drop-shadow(0 0 3px white)"/>
+    <polygon points="${pts}" fill="url(#gO)" clip-path="url(#triclip)"/>
+    <polygon points="${pts}" fill="url(#gS)" clip-path="url(#triclip)"/>
+    <polygon points="${pts}" fill="url(#gSh)" clip-path="url(#triclip)"/>
+    <!-- Corner labels -->
+    <text x="${top[0]}" y="${top[1]-3}" text-anchor="middle" font-size="6" fill="#c8a020" font-family="sans-serif" font-weight="600">Olympiens</text>
+    <text x="${left[0]}" y="${left[1]+8}" text-anchor="middle" font-size="6" fill="#4a8ad4" font-family="sans-serif" font-weight="600">Sovereign</text>
+    <text x="${right[0]}" y="${right[1]+8}" text-anchor="middle" font-size="6" fill="#cc3030" font-family="sans-serif" font-weight="600">Shemning</text>
+    <!-- Alignment dot -->
+    <circle cx="${px}" cy="${py}" r="4" fill="white" stroke="#060d1a" stroke-width="1.5" style="filter:drop-shadow(0 0 4px rgba(255,255,255,0.9))"/>
   </svg>`;
 }
+
 
 function updateWarningTicker() {
   const ticker = $('warning-ticker');
