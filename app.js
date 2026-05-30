@@ -17,6 +17,7 @@ const CFG = {
     attaques:     '2093054741',
     cycles:       '1122856746',
     zones_config: '851605217',
+    situations:   '1166964994',
   },
 };
 
@@ -39,6 +40,62 @@ function getFactionNorm(deityId) {
   return Object.values(FACTIONS).find(f => f.members.includes(deityId)) || null;
 }
 
+// ---- SITUATIONS --------------------------------------------
+const SITUATION_TYPES = {
+  crise: {
+    label: 'Crise',
+    icon: '⚠',
+    levels: [
+      { intensity: 1, color: '#ff9944', label: 'Crise légère' },
+      { intensity: 2, color: '#ff5500', label: 'Crise modérée' },
+      { intensity: 3, color: '#cc1100', label: 'Crise majeure' },
+    ]
+  },
+  guerre: {
+    label: 'Guerre',
+    icon: '⚔',
+    levels: [
+      { intensity: 1, color: '#ff3030', label: 'Conflit localisé' },
+      { intensity: 2, color: '#cc0000', label: 'Guerre ouverte' },
+      { intensity: 3, color: '#880000', label: 'Guerre totale' },
+    ]
+  },
+  pandemie: {
+    label: 'Pandémie',
+    icon: '☣',
+    levels: [
+      { intensity: 1, color: '#44cc44', label: 'Épidémie localisée' },
+      { intensity: 2, color: '#228822', label: 'Pandémie régionale' },
+      { intensity: 3, color: '#115511', label: 'Pandémie mondiale' },
+    ]
+  },
+  catastrophe: {
+    label: 'Catastrophe',
+    icon: '☢',
+    levels: [
+      { intensity: 1, color: '#ffcc00', label: 'Incident' },
+      { intensity: 2, color: '#ff8800', label: 'Catastrophe' },
+      { intensity: 3, color: '#ff4400', label: 'Catastrophe majeure' },
+    ]
+  },
+  occupation: {
+    label: 'Occupation',
+    icon: '◆',
+    levels: [
+      { intensity: 1, color: '#9966cc', label: 'Présence étrangère' },
+      { intensity: 2, color: '#6633aa', label: 'Occupation partielle' },
+      { intensity: 3, color: '#441188', label: 'Occupation totale' },
+    ]
+  },
+};
+
+function getSituationColor(type, intensity) {
+  const st = SITUATION_TYPES[type];
+  if (!st) return null;
+  const lvl = st.levels.find(l => l.intensity === Number(intensity));
+  return lvl ? lvl.color : st.levels[0].color;
+}
+
 function getFaction(deityId) {
   // kept for reference
   return getFactionNorm(deityId);
@@ -55,6 +112,8 @@ let TRANS_ZONES   = {
 let COUNTRY_MAP   = {}; // countryName → zoneName
 let CYCLE         = 7;
 let me            = null;
+let situations    = [];
+let showSituations = false;
 let attacks       = [];
 let capitulation  = null;
 let pendingAtk    = null;
@@ -135,10 +194,19 @@ async function loadData() {
   setSyncState('loading', 'Synchronisation…');
   console.log('[VV] Chargement depuis:', gvizUrl('divinites'));
   try {
-    const [div, terr, atk, cyc, zones] = await Promise.all([
+    const [div, terr, atk, cyc, zones, situ] = await Promise.all([
       fetchTab('divinites'), fetchTab('territoires'), fetchTab('attaques'),
-      fetchTab('cycles'),    fetchTab('zones_config'),
+      fetchTab('cycles'),    fetchTab('zones_config'), fetchTab('situations'),
     ]);
+
+    // Situations
+    situations = (situ || []).filter(r => r.zone && r.type).map(r => ({
+      zone:        r.zone.trim(),
+      type:        r.type.trim().toLowerCase(),
+      intensity:   Number(r.intensite) || 1,
+      description: (r.description || '').trim(),
+    }));
+    console.log('[VV] Situations:', situations.length);
     console.log('[VV] Divinités chargées:', div.length);
     console.log('[VV] Territoires chargés:', terr.length);
     console.log('[VV] Attaques:', atk.length);
@@ -470,6 +538,7 @@ function redrawGlobe(path, countries) {
   buildDots();
   buildBadges();
   applyZoom(curK);
+  if (showSituations) drawSituations();
 }
 
 
@@ -579,6 +648,79 @@ function buildBadges() {
       .attr('font-size', n >= 10 ? 6.5 : 7.5).attr('font-weight', '700')
       .attr('fill', '#7ab8f5').attr('font-family', 'sans-serif')
       .text(n);
+  });
+}
+
+function drawSituations() {
+  // Remove old situation layer
+  svgSel.selectAll('.situation-layer').remove();
+  if (!showSituations || situations.length === 0 || !proj) return;
+
+  const pathGen = d3.geoPath().projection(proj);
+  const situLayer = svgSel.insert('g', '.g-dots')
+    .attr('class', 'situation-layer')
+    .style('pointer-events', 'none');
+
+  // Group situations by zone
+  situations.forEach(s => {
+    const color = getSituationColor(s.type, s.intensity);
+    if (!color) return;
+
+    // Find countries in this zone
+    const countries = Object.entries(COUNTRY_MAP)
+      .filter(([, z]) => z === s.zone)
+      .map(([c]) => c);
+
+    // Color matching countries
+    gMap.selectAll('path.country').each(function(d) {
+      const cn = d.properties?.name;
+      if (countries.includes(cn) || COUNTRY_MAP[cn] === s.zone) {
+        d3.select(this)
+          .style('fill', color)
+          .style('opacity', 0.75 + (s.intensity - 1) * 0.08)
+          .style('stroke', color)
+          .style('stroke-width', 0.8);
+      }
+    });
+
+    // Add situation icon at zone centroid
+    const zd = ZONES[s.zone];
+    if (zd && zd.cx && zd.cy && isVisible(zd.cx, zd.cy)) {
+      const [px, py] = proj([zd.cx, zd.cy]);
+      if (px && py) {
+        const st = SITUATION_TYPES[s.type];
+        situLayer.append('text')
+          .attr('x', px).attr('y', py)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'central')
+          .attr('font-size', 14 + s.intensity * 2)
+          .attr('fill', color)
+          .attr('stroke', '#060d1a')
+          .attr('stroke-width', 2)
+          .attr('paint-order', 'stroke')
+          .style('filter', `drop-shadow(0 0 4px ${color})`)
+          .text(st?.icon || '!');
+      }
+    }
+  });
+}
+
+function resetCountryColors() {
+  if (!gMap) return;
+  gMap.selectAll('path.country')
+    .style('fill', null)
+    .style('opacity', null)
+    .style('stroke', null)
+    .style('stroke-width', null);
+  // Re-apply active/zone-member classes
+  gMap.selectAll('path.country').each(function(d) {
+    const el = d3.select(this);
+    const cn = d.properties?.name;
+    const hasZone = !!COUNTRY_MAP[cn];
+    el.attr('class', `country${hasZone ? ' has-zone' : ''}${
+      el.classed('active') ? ' active' : ''}${
+      el.classed('zone-member') ? ' zone-member' : ''}${
+      el.classed('trans-member') ? ' trans-member' : ''}`);
   });
 }
 
@@ -948,6 +1090,28 @@ function showPrompt() {
   setPanel(`<div class="prompt"><i class="ti ti-login"></i><span>Connectez-vous<br>puis cliquez un pays<br>ou une divinité</span></div>`);
 }
 
+function updateSituationLegend() {
+  const leg = $('situation-legend');
+  if (!leg) return;
+  if (!showSituations || situations.length === 0) {
+    leg.style.display = 'none';
+    return;
+  }
+  leg.style.display = 'flex';
+  leg.innerHTML = situations.map(s => {
+    const color = getSituationColor(s.type, s.intensity);
+    const st = SITUATION_TYPES[s.type];
+    return `<div class="sit-item">
+      <div class="sit-dot" style="background:${color};box-shadow:0 0 4px ${color}"></div>
+      <div class="sit-info">
+        <span class="sit-zone">${s.zone}</span>
+        <span class="sit-type" style="color:${color}">${st?.icon || ''} ${st?.label || s.type} niv.${s.intensity}</span>
+        ${s.description ? `<span class="sit-desc">${s.description}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function updateWarningTicker() {
   const ticker = $('warning-ticker');
   if (!ticker) return;
@@ -1150,6 +1314,7 @@ async function fullRefresh() {
   if (gDots)   buildDots();
   if (gBadges) { buildBadges(); }
   if (gMap)    redrawGlobe();
+  updateSituationLegend();
   renderDock();
   // Mettre à jour le highlight des pays
   if (gMap) {
