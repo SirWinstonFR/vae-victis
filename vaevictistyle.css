@@ -1090,3 +1090,57 @@ html, body {
 .nation-leader-name { font-size: 12px; color: var(--c-text2); margin-top: 1px; }
 .nation-desc { font-size: 12px; color: var(--c-text3); line-height: 1.5; margin-bottom: 5px; padding: 0 2px; }
 .nation-pi-total { font-size: 12px; color: var(--c-text3); padding: 0 2px; }
+/* ---- TRANSBAR SEPARATOR ---- */
+.transbar-sep {
+  width: 1px;
+  height: 24px;
+  background: var(--c-border2);
+  flex-shrink: 0;
+  margin: 0 6px;
+}
+
+/* ---- FACTION ORG BUTTONS ---- */
+.faction-org-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--c-border2);
+  background: var(--c-bg2);
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  color: var(--c-text2);
+  transition: all .15s;
+  white-space: nowrap;
+}
+.faction-org-btn:hover {
+  background: var(--c-bg3);
+  transform: translateY(-1px);
+}
+.faction-org-sovereign { border-color: var(--c-sovereign)44; color: var(--c-sovereign); }
+.faction-org-sovereign:hover { border-color: var(--c-sovereign); background: var(--c-sovereign)11; box-shadow: 0 0 10px var(--c-sovereign)33; }
+.faction-org-olympien  { border-color: var(--c-olympien)44;  color: var(--c-olympien);  }
+.faction-org-olympien:hover  { border-color: var(--c-olympien);  background: var(--c-olympien)11;  box-shadow: 0 0 10px var(--c-olympien)33; }
+.faction-org-shemning  { border-color: var(--c-shemning)44;  color: var(--c-shemning);  }
+.faction-org-shemning:hover  { border-color: var(--c-shemning);  background: var(--c-shemning)11;  box-shadow: 0 0 10px var(--c-shemning)33; }
+
+/* Faction org buttons — locked state */
+.faction-org-btn.locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+  pointer-events: none;
+}
+.faction-org-btn.locked::after {
+  content: ' 🔒';
+  font-size: 10px;
+  opacity: 0.7;
+}
+.faction-org-btn:not(.locked) {
+  pointer-events: auto;
+}
