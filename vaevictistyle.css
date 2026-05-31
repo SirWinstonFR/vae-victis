@@ -65,7 +65,7 @@ html, body {
   background: var(--c-bg);
   color: var(--c-text1);
   font-family: 'Inter', sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -423,7 +423,7 @@ html, body {
 .ranking-info { flex: 1; min-width: 0; }
 .ranking-name {
   font-family: 'Rajdhani', sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--c-text1);
   white-space: nowrap;
@@ -431,7 +431,7 @@ html, body {
   text-overflow: ellipsis;
 }
 .ranking-pi {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--c-text3);
   display: flex;
   align-items: center;
@@ -660,15 +660,15 @@ html, body {
 
 .nation-name {
   font-family: 'Rajdhani', sans-serif;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: .06em;
   color: var(--c-text1);
   line-height: 1.1;
 }
-.nation-leader-name { font-size: 10px; color: var(--c-text2); margin-top: 1px; }
-.nation-desc { font-size: 10px; color: var(--c-text3); line-height: 1.5; margin-bottom: 5px; padding: 0 2px; }
-.nation-pi-total { font-size: 10px; color: var(--c-text3); padding: 0 2px; }
+.nation-leader-name { font-size: 11px; color: var(--c-text2); margin-top: 1px; }
+.nation-desc { font-size: 11px; color: var(--c-text3); line-height: 1.5; margin-bottom: 5px; padding: 0 2px; }
+.nation-pi-total { font-size: 11px; color: var(--c-text3); padding: 0 2px; }
 
 .nation-bottom-row {
   padding: 8px 0;
@@ -731,8 +731,8 @@ html, body {
 }
 .terr-body { padding: 8px 10px; background: var(--c-bg2); }
 .terr-row { display: flex; align-items: center; justify-content: space-between; gap: 5px; }
-.terr-name { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; color: var(--c-text1); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.terr-owner { font-size: 10px; margin-top: 2px; }
+.terr-name { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; color: var(--c-text1); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.terr-owner { font-size: 11px; margin-top: 2px; }
 .terr-status { font-size: 9px; margin-top: 2px; display: flex; align-items: center; gap: 3px; }
 
 .tag { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: .06em; padding: 1px 5px; border-radius: 3px; flex-shrink: 0; }
@@ -756,8 +756,8 @@ html, body {
 }
 .org-chip:hover { border-color: var(--c-border2); }
 .org-dot { width: 9px; height: 9px; flex-shrink: 0; clip-path: polygon(50% 0%,100% 50%,50% 100%,0% 50%); }
-.org-name { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; color: var(--c-text1); }
-.org-owner { font-size: 10px; margin-top: 1px; }
+.org-name { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; color: var(--c-text1); }
+.org-owner { font-size: 11px; margin-top: 1px; }
 .org-pi { font-size: 10px; color: var(--c-accent); margin-left: 4px; }
 
 /* Attack button */
@@ -778,7 +778,7 @@ html, body {
 .hentry {
   padding: 5px 0;
   border-bottom: 1px solid var(--c-border);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--c-text2);
   display: flex;
   align-items: center;
@@ -800,7 +800,7 @@ html, body {
 }
 .d-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-.info-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 11px; }
+.info-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; }
 .ik { color: var(--c-text3); }
 .iv { color: var(--c-text1); font-weight: 500; }
 
@@ -817,7 +817,7 @@ html, body {
 }
 .slot.atk { border-style: solid; border-color: #2a1000; background: var(--c-danger-bg); }
 .slot.def { border-style: solid; border-color: #0e2240; background: var(--c-info-bg); }
-.slot-text { font-size: 11px; color: var(--c-text3); }
+.slot-text { font-size: 12px; color: var(--c-text3); }
 .slot-text.atk { color: var(--c-danger); }
 .slot-text.def { color: var(--c-info); }
 
@@ -1082,12 +1082,12 @@ html, body {
 .nation-meta { flex: 1; min-width: 0; }
 .nation-name {
   font-family: 'Rajdhani', sans-serif;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: .06em;
   color: var(--c-text1);
   line-height: 1.1;
 }
-.nation-leader-name { font-size: 10px; color: var(--c-text2); margin-top: 1px; }
-.nation-desc { font-size: 10px; color: var(--c-text3); line-height: 1.5; margin-bottom: 5px; padding: 0 2px; }
-.nation-pi-total { font-size: 10px; color: var(--c-text3); padding: 0 2px; }
+.nation-leader-name { font-size: 11px; color: var(--c-text2); margin-top: 1px; }
+.nation-desc { font-size: 11px; color: var(--c-text3); line-height: 1.5; margin-bottom: 5px; padding: 0 2px; }
+.nation-pi-total { font-size: 11px; color: var(--c-text3); padding: 0 2px; }
