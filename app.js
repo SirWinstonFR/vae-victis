@@ -1032,13 +1032,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.VV.showSituations = !window.VV.showSituations;
     this.classList.toggle('active', window.VV.showSituations);
     if (!window.VV.showSituations) {
-      window.VV.globe.resetCountryColors();
-      window.VV.globe.redraw();
-      updateSituationLegend();
+      window.VV.globe.resetCountryColors(); // redraw inclus
     } else {
       window.VV.globe.drawSituations();
-      updateSituationLegend();
     }
+    updateSituationLegend();
   });
 
   // Login
