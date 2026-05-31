@@ -669,12 +669,15 @@ function renderAlignTriangle(ax=0.5, ay=0.5) {
 function terrCard(t) {
   const owner   = t.owner && t.owner!==N ? getD(t.owner) : null;
   const isAtked = window.VV.attacks.some(a => a.territory===t.id);
-  const isCap   = capitulation===t.id;
+  // Check capitulation — compare both territory_id and direct match
+  const myCapAtk = me ? window.VV.attacks.find(a => a.attacker===me.id && a.capitulation) : null;
+  const capTerr  = myCapAtk ? myCapAtk.capitulation : capitulation;
+  const isCap    = capTerr === t.id;
   const isMyT   = me && t.owner===me.id;
   const canA    = me && owner && owner.id!==me.id && myAtks().length<2 && atkOn(owner.id)<2;
   const dc      = window.VV.dotColor(t);
 
-  const shatterOverlay = isCap ? `<div class="shatter-overlay">
+  const shatterOverlay = (capTerr === t.id) ? `<div class="shatter-overlay">
     <svg viewBox="0 0 100 56" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
       <polygon points="0,0 35,0 20,20 0,28" fill="rgba(200,50,50,.15)" stroke="rgba(255,80,80,.6)" stroke-width=".8"/>
       <polygon points="35,0 100,0 100,15 60,22 45,8" fill="rgba(180,40,40,.1)" stroke="rgba(255,80,80,.5)" stroke-width=".8"/>
