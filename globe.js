@@ -355,28 +355,45 @@ function highlightZone(name) {
       .classed('active', true).classed('zone-member', true)
   );
 
-  // Rotation vers la zone — toujours active, amplitude normalisée
+  // Rotation + dezoom animé vers la zone
   const zd = (window.VV.ZONES || {})[name];
   if (zd?.cx !== undefined) {
+    const svgNode = svgSel.node();
+    const W = +svgSel.attr('width'), H = +svgSel.attr('height');
+    const base = Math.min(W, H) / 2.05;
+
     const r0 = proj.rotate();
+    const s0 = proj.scale();
     const targetLon = -zd.cx;
     const targetLat = Math.max(-80, Math.min(80, -zd.cy * 0.6));
-    // Normaliser la différence de longitude (chemin le plus court)
     let dLon = targetLon - r0[0];
     while (dLon > 180)  dLon -= 360;
     while (dLon < -180) dLon += 360;
-    const dLat = targetLat - r0[1];
-    // Si déjà très proche, pas de rotation inutile
-    if (Math.abs(dLon) < 1 && Math.abs(dLat) < 1) return;
-    const r1 = [r0[0] + dLon, r0[1] + dLat, r0[2]];
-    const interp = d3.interpolate(r0, r1);
-    // Durée proportionnelle à la distance (rapide si proche)
-    const dist = Math.hypot(dLon, dLat);
-    const duration = Math.min(900, Math.max(300, dist * 6));
+    const r1 = [r0[0] + dLon, r0[1] + (targetLat - r0[1]), r0[2]];
+
+    // Cible de zoom : revenir à 1x si trop zoomé
+    const targetScale = curK > 1.5 ? base * 1.1 : s0;
+    const interpR = d3.interpolate(r0, r1);
+    const interpS = d3.interpolate(s0, targetScale);
+
+    const dist = Math.hypot(dLon, targetLat - r0[1]);
+    const duration = Math.min(900, Math.max(400, dist * 5));
+
     isRotating = true;
     d3.transition().duration(duration).ease(d3.easeCubicInOut)
-      .tween('rotate', () => t => { proj.rotate(interp(t)); redrawGlobe(); })
-      .on('end', () => { isRotating = false; });
+      .tween('navigate', () => t => {
+        proj.rotate(interpR(t));
+        const ns = interpS(t);
+        proj.scale(ns);
+        svgSel.select('.globe-ocean').attr('r', ns);
+        svgSel.select('.globe-atmo').attr('r', ns + 6);
+        curK = ns / base;
+        redrawGlobe();
+      })
+      .on('end', () => {
+        isRotating = false;
+        applyGlobeZoom();
+      });
   }
 }
 
