@@ -407,9 +407,16 @@ function highlightTransMembers(members) {
 
 function resetCountryColors() {
   if (!gMap) return;
+  // Reset inline styles
   gMap.selectAll('path.country')
-    .style('fill', null).style('opacity', null)
-    .style('stroke', null).style('stroke-width', null);
+    .style('fill', null)
+    .style('opacity', null)
+    .style('stroke', null)
+    .style('stroke-width', null);
+  // Remove situation layer
+  if (svgSel) svgSel.selectAll('.situation-layer').remove();
+  // Redraw to restore proper state
+  redrawGlobe();
 }
 
 // ---- ZOOM --------------------------------------------------
