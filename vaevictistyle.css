@@ -640,7 +640,7 @@ html, body {
 }
 .nation-leader-portrait {
   position: absolute;
-  bottom: 6px; left: 10px;
+  bottom: -24px; left: 12px;
   width: 48px; height: 48px;
   border-radius: 50%;
   overflow: hidden;
