@@ -1112,8 +1112,12 @@ document.addEventListener('DOMContentLoaded', () => {
   $('login-submit')?.addEventListener('click', doLogin);
   $('login-pw')?.addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
 
-  // Admin + refresh
-  $('btn-admin')?.addEventListener('click', openAdminPanel);
+  // Admin + refresh (protégé par mot de passe)
+  $('btn-admin')?.addEventListener('click', () => {
+    const pw = prompt('Mot de passe admin :');
+    if (pw !== 'VaeVictis2025!') { alert('Mot de passe incorrect.'); return; }
+    openAdminPanel();
+  });
   $('btn-refresh')?.addEventListener('click', fullRefresh);
 
   // Attaque
