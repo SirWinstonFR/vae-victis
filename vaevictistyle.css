@@ -623,7 +623,7 @@ html, body {
 /* ---- NATION PANEL ---- */
 .nation-banner {
   width: 100%;
-  height: 80px;
+  height: 90px;
   background-size: cover;
   background-position: center;
   border-radius: var(--radius);
@@ -640,7 +640,7 @@ html, body {
 }
 .nation-leader-portrait {
   position: absolute;
-  bottom: 8px; left: 10px;
+  bottom: 6px; left: 10px;
   width: 48px; height: 48px;
   border-radius: 50%;
   overflow: hidden;
@@ -654,7 +654,7 @@ html, body {
   display: flex; align-items: center; justify-content: center;
   color: var(--c-text4); font-size: 20px;
 }
-.nation-meta { padding: 0 2px 8px; }
+.nation-meta { padding: 28px 2px 8px 64px; }
 .nation-name {
   font-family: 'Rajdhani', sans-serif;
   font-size: 16px;
