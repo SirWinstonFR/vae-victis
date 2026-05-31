@@ -372,7 +372,7 @@ function highlightZone(name) {
     const r1 = [r0[0] + dLon, r0[1] + (targetLat - r0[1]), r0[2]];
 
     // Cible de zoom : revenir à 1x si trop zoomé
-    const targetScale = curK > 1.5 ? base * 1.1 : s0;
+    const targetScale = curK > 2.5 ? base * 2.0 : s0;
     const interpR = d3.interpolate(r0, r1);
     const interpS = d3.interpolate(s0, targetScale);
 
