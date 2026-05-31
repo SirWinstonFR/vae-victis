@@ -203,6 +203,7 @@ function renderExperreducti() {
       @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap');
       @keyframes exp-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
       @keyframes exp-glow  { 0%,100%{box-shadow:0 0 6px #c8901a44} 50%{box-shadow:0 0 14px #c8901a88} }
+      @keyframes seat-appear { from{opacity:0;r:0} to{opacity:var(--op,.85);r:4.2} }
       .exp-pnj-card { cursor:pointer; transition:all .15s; }
       .exp-pnj-card:hover { transform:translateY(-2px); }
       .exp-pnj-card.active { border-color:#c8901a !important; box-shadow:0 0 12px #c8901a44; }
@@ -374,7 +375,8 @@ function renderHemicycle() {
     else if (idx < nContre + nAbst)          { color = '#3a5a7a'; opacity = '.7'; }
     else if (idx < nContre + nAbst + nNonVot){ color = '#1a3050'; opacity = '.5'; }
     else                                      { color = '#2a9a4a'; opacity = '.9'; }
-    return `<circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="4.2" fill="${color}" opacity="${opacity}"/>`;
+    const delay = (idx * 0.8).toFixed(0); // ms delay for animation
+    return `<circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="4.2" fill="${color}" opacity="0" style="animation:seat-appear .3s ease forwards ${delay}ms"/>`;
   }).join('');
 
   // Vote counts (based on 705 real seats)
@@ -392,13 +394,17 @@ function renderHemicycle() {
       <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:480px;max-height:270px" xmlns="http://www.w3.org/2000/svg">
         <path d="M ${cx-outerR-10},${cy} A ${outerR+10},${outerR+10} 0 0,1 ${cx+outerR+10},${cy}" fill="#04080f" stroke="#1a2e4a" stroke-width="1"/>
         ${seats}
-        <circle cx="${cx}" cy="${cy}" r="26" fill="#0a1628" stroke="#c8901a55" stroke-width="1.5"/>
-        <circle cx="${cx}" cy="${cy}" r="20" fill="#0d1e34" stroke="#c8901a33" stroke-width="1"/>
-        <text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="7.5" font-family="Cinzel,serif" fill="#c8901a" font-weight="700">EXP</text>
+        <circle cx="${cx}" cy="${cy}" r="28" fill="#04080f" stroke="#1a2e4a" stroke-width="1"/>
         <line x1="${cx-outerR-10}" y1="${cy}" x2="${cx+outerR+10}" y2="${cy}" stroke="#1a3050" stroke-width="1.5"/>
-        <!-- Pourcentages aux extrémités -->
-        <text x="${cx-outerR+10}" y="${cy-8}" text-anchor="middle" font-size="11" font-family="Rajdhani,sans-serif" fill="#cc3030" font-weight="700">${pctContre}%</text>
-        <text x="${cx+outerR-10}" y="${cy-8}" text-anchor="middle" font-size="11" font-family="Rajdhani,sans-serif" fill="#2a9a4a" font-weight="700">${pctPour}%</text>
+        <!-- Président du Parlement (UEPresident) -->
+        ${expPNJ.find(p=>p.fonction?.trim()==='UEPresident') ? (() => {
+          const pres = expPNJ.find(p=>p.fonction?.trim()==='UEPresident');
+          return `<image href="${pres.portrait_url||''}" x="${cx-14}" y="${cy-28}" width="28" height="28" clip-path="url(#pres-clip)" style="cursor:pointer" onclick="expSelectPNJ('${pres.id}')"/>
+          <defs><clipPath id="pres-clip"><circle cx="${cx}" cy="${cy-14}" r="14"/></clipPath></defs>
+          <circle cx="${cx}" cy="${cy-14}" r="14" fill="${pres.portrait_url?'none':'#0d2040'}" stroke="#c8901a" stroke-width="1.5" style="cursor:pointer" onclick="expSelectPNJ('${pres.id}')"/>
+          ${!pres.portrait_url?`<text x="${cx}" y="${cy-10}" text-anchor="middle" font-size="9" font-family="Cinzel,serif" fill="#c8901a" font-weight="700">${(pres.nom||'?').slice(0,1)}</text>`:''}`;
+        })() : `<circle cx="${cx}" cy="${cy-10}" r="20" fill="#0a1628" stroke="#c8901a55" stroke-width="1.5"/>
+          <text x="${cx}" y="${cy-6}" text-anchor="middle" font-size="7.5" font-family="Cinzel,serif" fill="#c8901a" font-weight="700">EXP</text>`}
       </svg>
       <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
         ${[
