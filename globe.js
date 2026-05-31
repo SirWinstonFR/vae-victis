@@ -48,13 +48,36 @@ function initGlobe(world) {
   atmoGrad.append('stop').attr('offset', '85%').attr('stop-color', '#0a2040').attr('stop-opacity', 0);
   atmoGrad.append('stop').attr('offset', '100%').attr('stop-color', '#1a5090').attr('stop-opacity', .35);
 
-  // Océan
+  // Texture lune en fond
+  const moonId = 'moon-pattern-' + Date.now();
+  defs.append('pattern')
+    .attr('id', moonId)
+    .attr('patternUnits', 'userSpaceOnUse')
+    .attr('width', proj.scale() * 2)
+    .attr('height', proj.scale() * 2)
+    .attr('x', W/2 - proj.scale())
+    .attr('y', H/2 - proj.scale())
+    .append('image')
+      .attr('href', 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/600px-FullMoon2010.jpg')
+      .attr('width', proj.scale() * 2)
+      .attr('height', proj.scale() * 2)
+      .attr('preserveAspectRatio', 'xMidYMid slice');
+
+  // Océan avec texture lune
   svgSel.append('circle')
     .attr('class', 'globe-ocean')
     .attr('cx', W / 2).attr('cy', H / 2)
     .attr('r', proj.scale())
-    .attr('fill', '#081422')
-    .attr('stroke', '#1a3060').attr('stroke-width', .8);
+    .attr('fill', `url(#${moonId})`)
+    .attr('stroke', '#2a4a80').attr('stroke-width', 1);
+
+  // Overlay sombre pour que les pays restent lisibles
+  svgSel.append('circle')
+    .attr('class', 'globe-overlay')
+    .attr('cx', W / 2).attr('cy', H / 2)
+    .attr('r', proj.scale())
+    .attr('fill', 'rgba(2,8,20,0.55)')
+    .style('pointer-events', 'none');
 
   // Atmosphère
   svgSel.append('circle')
@@ -157,7 +180,10 @@ function initGlobe(world) {
     const ns = Math.max(base * 0.5, Math.min(proj.scale() * factor, base * 9));
     proj.scale(ns);
     svgSel.select('.globe-ocean').attr('r', ns);
+    svgSel.select('.globe-overlay').attr('r', ns);
     svgSel.select('.globe-atmo').attr('r', ns + 6);
+    svgSel.select('pattern image').attr('width', ns*2).attr('height', ns*2);
+    svgSel.select('pattern').attr('width', ns*2).attr('height', ns*2).attr('x', W/2-ns).attr('y', H/2-ns);
     curK = ns / base;
     redrawGlobe();
     applyGlobeZoom();
@@ -452,6 +478,7 @@ function zoomGlobeIn() {
   const ns = Math.min(proj.scale() * 1.5, base * 9);
   proj.scale(ns);
   svgSel.select('.globe-ocean').attr('r', ns);
+  svgSel.select('.globe-overlay').attr('r', ns);
   svgSel.select('.globe-atmo').attr('r', ns + 6);
   curK = ns / base; redrawGlobe(); applyGlobeZoom();
 }
@@ -462,6 +489,7 @@ function zoomGlobeOut() {
   const ns = Math.max(proj.scale() * 0.67, base * 0.5);
   proj.scale(ns);
   svgSel.select('.globe-ocean').attr('r', ns);
+  svgSel.select('.globe-overlay').attr('r', ns);
   svgSel.select('.globe-atmo').attr('r', ns + 6);
   curK = ns / base; redrawGlobe(); applyGlobeZoom();
 }
@@ -471,6 +499,7 @@ function zoomGlobeReset() {
   const base = Math.min(W, H) / 2.05;
   proj.scale(base).rotate([-15, -46]);
   svgSel.select('.globe-ocean').attr('r', base);
+  svgSel.select('.globe-overlay').attr('r', base);
   svgSel.select('.globe-atmo').attr('r', base + 6);
   curK = 1; redrawGlobe(); applyGlobeZoom();
 }
