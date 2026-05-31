@@ -21,6 +21,7 @@ const CFG = {
     zones_config: '851605217',
     situations:   '1166964994',
     nations:      '1443319453',
+    historique:   '1432315292',
   },
 };
 
@@ -54,6 +55,9 @@ window.VV.COUNTRY_MAP = {};
 window.VV.attacks     = [];
 window.VV.situations  = [];
 window.VV.showSituations = false;
+let histMode = false;
+let histCycle = null;
+let histData  = {}; // cycle -> { territoire_id: proprietaire }
 
 const TRANS_ZONES = {
   UE:   { icon:'🇪🇺', name:'Union Européenne', territories:[] },
@@ -269,6 +273,131 @@ async function loadData() {
     setSyncState('error', 'Erreur');
     return false;
   }
+}
+
+// ---- HISTORIQUE --------------------------------------------
+async function loadHistorique() {
+  try {
+    const rows = await fetchTab('historique');
+    histData = {};
+    rows.forEach(r => {
+      const c = Number(r.cycle);
+      if (!histData[c]) histData[c] = {};
+      histData[c][r.territoire_id] = (r.proprietaire || 'neutral').trim();
+    });
+    console.log('[VV] Historique chargé — cycles:', Object.keys(histData).join(', '));
+    return Object.keys(histData).map(Number).sort((a,b) => a-b);
+  } catch(e) {
+    console.warn('[VV] Historique:', e);
+    return [];
+  }
+}
+
+function enterHistMode(cycle) {
+  histMode  = true;
+  histCycle = cycle;
+  // Remplacer les propriétaires par ceux du snapshot
+  const snap = histData[cycle] || {};
+  Object.values(window.VV.ZONES).flatMap(z => z.territories).forEach(t => {
+    t._ownerReal = t.owner; // backup
+    t.owner = snap[t.id] ?? t.owner;
+  });
+  window.VV.globe.buildDots();
+  window.VV.globe.buildBadges();
+  // Bandeau mode historique
+  showHistBanner(cycle);
+  renderRankingPanel();
+}
+
+function exitHistMode() {
+  if (!histMode) return;
+  // Restaurer les propriétaires réels
+  Object.values(window.VV.ZONES).flatMap(z => z.territories).forEach(t => {
+    if (t._ownerReal !== undefined) { t.owner = t._ownerReal; delete t._ownerReal; }
+  });
+  histMode = false; histCycle = null;
+  window.VV.globe.buildDots();
+  window.VV.globe.buildBadges();
+  hideHistBanner();
+  renderRankingPanel();
+  if (me) renderPlayerPanel(); else showPrompt();
+}
+
+function showHistBanner(cycle) {
+  let banner = document.getElementById('hist-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'hist-banner';
+    banner.style.cssText = `
+      position:fixed;top:0;left:0;right:0;z-index:500;
+      background:linear-gradient(90deg,#1a0a00,#2a1400,#1a0a00);
+      border-bottom:1px solid #c87020;
+      padding:6px 16px;
+      display:flex;align-items:center;justify-content:space-between;
+      font-family:Rajdhani,sans-serif;font-size:12px;font-weight:600;letter-spacing:.06em;
+      color:#f0b830;
+    `;
+    document.body.appendChild(banner);
+    // Push app down
+    document.getElementById('app').style.marginTop = '33px';
+  }
+  banner.innerHTML = `
+    <span>MODE HISTORIQUE — CYCLE ${cycle} (lecture seule)</span>
+    <button onclick="exitHistMode()" style="background:#1a0a00;border:1px solid #c87020;border-radius:4px;
+      color:#f0b830;padding:3px 10px;cursor:pointer;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:600">
+      Retour au cycle actuel
+    </button>
+  `;
+  banner.style.display = 'flex';
+}
+
+function hideHistBanner() {
+  const banner = document.getElementById('hist-banner');
+  if (banner) banner.style.display = 'none';
+  document.getElementById('app').style.marginTop = '';
+}
+
+function openHistModal(cycles) {
+  let modal = document.getElementById('modal-hist');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-hist';
+    modal.className = 'modal-bg';
+    modal.innerHTML = `
+      <div class="modal">
+        <h2><i class="ti ti-history"></i>Historique des cycles</h2>
+        <p style="font-size:10px;color:var(--c-text3);margin-bottom:12px">
+          Sélectionnez un cycle pour voir l'état des territoires à cette époque.
+        </p>
+        <div id="hist-cycles" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px"></div>
+        <div class="modal-foot">
+          <button class="btn" onclick="document.getElementById('modal-hist').classList.remove('open')">Fermer</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target===modal) modal.classList.remove('open'); });
+  }
+
+  const container = document.getElementById('hist-cycles');
+  container.innerHTML = cycles.map(c => `
+    <button onclick="selectHistCycle(${c})" style="
+      padding:8px 14px;border-radius:6px;cursor:pointer;
+      font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;
+      border:1px solid ${c===CYCLE?'var(--c-accent)':'var(--c-border2)'};
+      background:${c===CYCLE?'var(--c-accent2)':'var(--c-bg3)'};
+      color:${c===CYCLE?'white':'var(--c-text2)'};
+      ${c===CYCLE?'cursor:not-allowed;opacity:.6;':''}
+    " ${c===CYCLE?'disabled':''}>
+      CYCLE ${c}
+    </button>
+  `).join('');
+
+  modal.classList.add('open');
+}
+
+function selectHistCycle(cycle) {
+  document.getElementById('modal-hist')?.classList.remove('open');
+  enterHistMode(cycle);
 }
 
 // ---- APPS SCRIPT -------------------------------------------
@@ -709,6 +838,7 @@ function updateSituationLegend() {
 
 // ---- ATTACKS -----------------------------------------------
 function openAtkModal(targetId) {
+  if (histMode) { alert('Mode historique actif — retournez au cycle actuel pour attaquer.'); return; }
   if (!me || myAtks().length>=2) return;
   if (window.VV.attacks.some(a => a.attacker===me.id && a.target===targetId)) {
     alert(`Vous avez déjà attaqué ${getD(targetId).name} ce cycle.`);
@@ -888,6 +1018,13 @@ document.addEventListener('DOMContentLoaded', () => {
   );
 
   // Fandom
+  // Historique
+  $('btn-hist')?.addEventListener('click', async () => {
+    const cycles = await loadHistorique();
+    if (!cycles.length) { alert('Aucun historique disponible. Les cycles doivent être clôturés pour créer un historique.'); return; }
+    openHistModal(cycles);
+  });
+
   $('btn-fandom')?.addEventListener('click', () => window.open(CFG.FANDOM_URL, '_blank'));
 
   // Situations
