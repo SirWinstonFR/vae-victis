@@ -1184,7 +1184,7 @@ html, body {
   border: 1px solid var(--c-border2);
   border-radius: var(--radius);
   box-shadow: 0 8px 24px rgba(0,0,0,.5);
-  z-index: 200;
+  z-index: 500;
   min-width: 200px;
   overflow: hidden;
 }
