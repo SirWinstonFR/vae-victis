@@ -1258,7 +1258,9 @@ document.addEventListener('DOMContentLoaded', () => {
     alert('La Grande Société — fonctionnalité à venir.');
   });
   document.getElementById('btn-experreducti')?.addEventListener('click', () => {
-    alert('Experreducti — fonctionnalité à venir.');
+    if (typeof openExperreducti === 'function') {
+      openExperreducti(me?.id || null);
+    }
   });
   document.getElementById('btn-cercle-asimov')?.addEventListener('click', () => {
     alert("Cercle d'Asimov — fonctionnalité à venir.");
