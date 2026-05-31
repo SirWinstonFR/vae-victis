@@ -1220,3 +1220,22 @@ html, body {
 .faction-org-olympien:not(.locked)  { color: var(--c-olympien); }
 .faction-org-shemning:not(.locked)  { color: var(--c-shemning); }
 .lock-icon { margin-left: auto; font-size: 10px; opacity: .5; }
+
+/* ---- SHATTER OVERLAY ---- */
+.shatter-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.shatter-overlay svg {
+  width: 100%;
+  height: 100%;
+}
+.terr-card.capitulated {
+  border-color: var(--c-danger) !important;
+  box-shadow: 0 0 8px rgba(200,50,50,.3);
+}
+.terr-card.capitulated .terr-img {
+  filter: brightness(.7) saturate(.5);
+}
