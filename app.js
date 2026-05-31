@@ -10,7 +10,7 @@ window.VV = window.VV || {};
 // ---- CONFIG ------------------------------------------------
 const CFG = {
   SHEET_ID:    '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
-  APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbyCaQI2c5ds2uCmoeCw6_fALjh-8ii05fkOVgZmWPhbY64vyYbrNcFvqbFKRb7rUwyxwQ/exec',
+  APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbxzrk3x8qu0LZLT7-MIxkwa9DsoRhUiSl7LlYul-oTYnzD4kG6-vs_OQZVbIbU6or95uw/exec',
   FANDOM_URL:  'https://vae-victis.fandom.com/fr/wiki/Wiki_Vae_Victis',
   REFRESH_MIN: 5,
   GIDS: {
@@ -611,14 +611,14 @@ function renderZonePanel(zoneName) {
 }
 
 function renderAlignTriangle(ax=0.5, ay=0.5) {
-  const W=110, H=95;
+  const W=130, H=112;
   const top=[W/2,7], left=[6,H-6], right=[W-6,H-6];
   const wO=1-ay, wS=ay*(1-ax), wSh=ay*ax;
   const px=Math.max(12,Math.min(W-12, top[0]*wO+left[0]*wS+right[0]*wSh));
   const py=Math.max(12,Math.min(H-12, top[1]*wO+left[1]*wS+right[1]*wSh));
   const pts=`${top[0]},${top[1]} ${left[0]},${left[1]} ${right[0]},${right[1]}`;
 
-  return `<svg class="align-triangle" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+  return `<svg class="align-triangle" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
     <defs>
       <clipPath id="tc"><polygon points="${pts}"/></clipPath>
       <radialGradient id="gO" cx="${top[0]/W}" cy="${top[1]/H}" r="0.85" gradientUnits="objectBoundingBox">
@@ -638,9 +638,9 @@ function renderAlignTriangle(ax=0.5, ay=0.5) {
     <polygon points="${pts}" fill="url(#gO)"  clip-path="url(#tc)"/>
     <polygon points="${pts}" fill="url(#gS)"  clip-path="url(#tc)"/>
     <polygon points="${pts}" fill="url(#gSh)" clip-path="url(#tc)"/>
-    <text x="${top[0]}" y="${top[1]-3}" text-anchor="middle" font-size="6.5" fill="#c8901a" font-family="Rajdhani,sans-serif" font-weight="700">Olympiens</text>
-    <text x="${left[0]+2}" y="${left[1]+8}" text-anchor="start" font-size="6" fill="#3a7acc" font-family="Rajdhani,sans-serif" font-weight="700">Sovereign</text>
-    <text x="${right[0]-2}" y="${right[1]+8}" text-anchor="end" font-size="6" fill="#b02828" font-family="Rajdhani,sans-serif" font-weight="700">Shemning</text>
+    <text x="${top[0]}" y="${top[1]-4}" text-anchor="middle" font-size="9" fill="#c8901a" font-family="Rajdhani,sans-serif" font-weight="700">Olympiens</text>
+    <text x="${left[0]-2}" y="${left[1]+10}" text-anchor="start" font-size="8" fill="#3a7acc" font-family="Rajdhani,sans-serif" font-weight="700">Sovereign</text>
+    <text x="${right[0]+2}" y="${right[1]+10}" text-anchor="end" font-size="8" fill="#b02828" font-family="Rajdhani,sans-serif" font-weight="700">Shemning</text>
     <circle cx="${px}" cy="${py}" r="4.5" fill="white" stroke="#050b14" stroke-width="1.5" opacity=".95" style="filter:drop-shadow(0 0 4px rgba(255,255,255,.8))"/>
   </svg>`;
 }
