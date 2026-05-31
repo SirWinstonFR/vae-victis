@@ -569,18 +569,22 @@ function renderZonePanel(zoneName) {
 
   const nationHTML = `
     <div class="nation-header">
-      ${nation.image?`<div class="nation-banner" style="background-image:url('${nation.image}')">
-        <div class="nation-leader-portrait${nation.leader?' clickable-leader':''}" 
-          ${nation.leader?`onclick="openLeaderModal('${zoneName}')" title="Voir le profil de ${nation.leader}"`:''}
-          style="${nation.leader?'cursor:pointer;':''}"
-        >
-          ${nation.portrait?`<img src="${nation.portrait}" alt="${nation.leader}">`:`<i class="ti ti-user" style="font-size:20px;color:var(--c-text4)"></i>`}
-          ${nation.leader?`<div class="leader-hover-overlay"><i class="ti ti-user-circle"></i></div>`:''}
+      <div class="nation-banner-wrap">
+        ${nation.image?`<div class="nation-banner" style="background-image:url('${nation.image}')"></div>`:''}
+        <div class="nation-identity">
+          ${nation.portrait?`
+            <div class="nation-leader-portrait${nation.leader?' clickable-leader':''}"
+              ${nation.leader?`onclick="openLeaderModal('${zoneName}')" title="Voir le profil de ${nation.leader}"`:''}
+            >
+              <img src="${nation.portrait}" alt="${nation.leader}">
+              ${nation.leader?`<div class="leader-hover-overlay"><i class="ti ti-user-circle"></i></div>`:''}
+            </div>`
+          :''}
+          <div class="nation-meta">
+            <div class="nation-name">${zoneName}</div>
+            ${nation.leader?`<div class="nation-leader-name">${nation.leader}</div>`:''}
+          </div>
         </div>
-      </div>`:''}
-      <div class="nation-meta">
-        <div class="nation-name">${zoneName}</div>
-        ${nation.leader?`<div class="nation-leader-name">${nation.leader}</div>`:''}
         ${nation.desc?`<div class="nation-desc">${nation.desc}</div>`:''}
         <div class="nation-pi-total">${totalPI} PI · ${data.territories.length} territoires</div>
       </div>
