@@ -355,21 +355,26 @@ function highlightZone(name) {
       .classed('active', true).classed('zone-member', true)
   );
 
-  // Rotation vers la zone — désactivée si très zoomé (évite décalage)
+  // Rotation vers la zone — toujours active, amplitude normalisée
   const zd = (window.VV.ZONES || {})[name];
-  if (zd?.cx && curK < 2.5) {
+  if (zd?.cx !== undefined) {
     const r0 = proj.rotate();
-    let dLon = -zd.cx - r0[0];
-    if (dLon > 180) dLon -= 360;
-    if (dLon < -180) dLon += 360;
-    const targetLat = Math.max(-80, Math.min(80, -zd.cy * 0.65));
-    // Réduire l'amplitude si déjà proche
-    const dist = Math.hypot(dLon, targetLat - r0[1]);
-    if (dist < 2) return; // Déjà centré
-    const r1 = [r0[0] + dLon, targetLat, r0[2]];
+    const targetLon = -zd.cx;
+    const targetLat = Math.max(-80, Math.min(80, -zd.cy * 0.6));
+    // Normaliser la différence de longitude (chemin le plus court)
+    let dLon = targetLon - r0[0];
+    while (dLon > 180)  dLon -= 360;
+    while (dLon < -180) dLon += 360;
+    const dLat = targetLat - r0[1];
+    // Si déjà très proche, pas de rotation inutile
+    if (Math.abs(dLon) < 1 && Math.abs(dLat) < 1) return;
+    const r1 = [r0[0] + dLon, r0[1] + dLat, r0[2]];
     const interp = d3.interpolate(r0, r1);
+    // Durée proportionnelle à la distance (rapide si proche)
+    const dist = Math.hypot(dLon, dLat);
+    const duration = Math.min(900, Math.max(300, dist * 6));
     isRotating = true;
-    d3.transition().duration(700).ease(d3.easeCubicInOut)
+    d3.transition().duration(duration).ease(d3.easeCubicInOut)
       .tween('rotate', () => t => { proj.rotate(interp(t)); redrawGlobe(); })
       .on('end', () => { isRotating = false; });
   }
