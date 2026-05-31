@@ -684,7 +684,7 @@ html, body {
   align-items: center;
   flex-shrink: 0;
 }
-.align-triangle { width: 100px; height: 86px; display: block; overflow: visible; }
+.align-triangle { width: 120px; height: 104px; display: block; overflow: visible; }
 .nation-gods-col {
   display: flex;
   flex-direction: column;
@@ -1014,3 +1014,29 @@ html, body {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-thumb { background: var(--c-border2); border-radius: 2px; }
 ::-webkit-scrollbar-track { background: transparent; }
+
+/* ---- LEADER PORTRAIT CLICKABLE ---- */
+.nation-leader-portrait.clickable-leader {
+  transition: transform .15s, box-shadow .15s;
+  position: relative;
+  overflow: hidden;
+}
+.nation-leader-portrait.clickable-leader:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 12px var(--c-accent);
+}
+.leader-hover-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,20,50,.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity .15s;
+  font-size: 18px;
+  color: white;
+}
+.nation-leader-portrait.clickable-leader:hover .leader-hover-overlay {
+  opacity: 1;
+}
