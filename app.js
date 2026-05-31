@@ -998,21 +998,41 @@ function doLogin() {
 }
 
 function showFactionOrgBtn(deityId) {
-  // Tout verrouiller d'abord
-  ['btn-grande-societe','btn-experreducti','btn-cercle-asimov'].forEach(id => {
-    document.getElementById(id)?.classList.add('locked');
-  });
   const faction = getFaction(deityId);
-  if (!faction) return;
-  const map = {
-    'Sovereign': 'btn-grande-societe',
-    'Olympiens': 'btn-experreducti',
-    'Shemning':  'btn-cercle-asimov',
-  };
-  const btnId = map[faction.name];
-  if (btnId) {
-    document.getElementById(btnId)?.classList.remove('locked');
+  const trigger = document.getElementById('faction-dropdown-trigger');
+  const dot = document.getElementById('faction-trigger-dot');
+  const label = document.getElementById('faction-trigger-label');
+
+  if (!faction) {
+    // Verrouiller tout
+    if (trigger) trigger.classList.add('locked');
+    ['btn-grande-societe','btn-experreducti','btn-cercle-asimov'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.classList.add('locked'); el.querySelector('.lock-icon')?.style && (el.querySelector('.lock-icon').style.display=''); }
+    });
+    return;
   }
+
+  // Déverrouiller le trigger
+  if (trigger) trigger.classList.remove('locked');
+  if (dot) dot.style.background = faction.color;
+  if (label) label.textContent = faction.name;
+
+  // Déverrouiller uniquement le bon bouton
+  const map = { 'Sovereign':'btn-grande-societe', 'Olympiens':'btn-experreducti', 'Shemning':'btn-cercle-asimov' };
+  ['btn-grande-societe','btn-experreducti','btn-cercle-asimov'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (id === map[faction.name]) {
+      el.classList.remove('locked');
+      const li = el.querySelector('.lock-icon');
+      if (li) li.style.display = 'none';
+    } else {
+      el.classList.add('locked');
+      const li = el.querySelector('.lock-icon');
+      if (li) li.style.display = '';
+    }
+  });
 }
 
 // ---- ADMIN -------------------------------------------------
@@ -1166,6 +1186,21 @@ document.addEventListener('DOMContentLoaded', () => {
       renderTransPanel(key);
     })
   );
+
+  // Dropdown faction
+  document.getElementById('faction-dropdown-trigger')?.addEventListener('click', function() {
+    if (this.classList.contains('locked')) return;
+    const menu = document.getElementById('faction-dropdown-menu');
+    if (!menu) return;
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  });
+  // Fermer en cliquant ailleurs
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#faction-dropdown-wrap')) {
+      const menu = document.getElementById('faction-dropdown-menu');
+      if (menu) menu.style.display = 'none';
+    }
+  });
 
   // Boutons faction (placeholder — fonctionnalité à définir)
   document.getElementById('btn-grande-societe')?.addEventListener('click', () => {
