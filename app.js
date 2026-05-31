@@ -177,7 +177,7 @@ async function loadData() {
 
     // Fallback mapping complet
     const FB = {
-      'United States of America':'USA','Canada':'Canada',
+      'United States of America':'USA','Canada':'Canada':'Groenland',
       'Mexico':'Amérique Centrale','Guatemala':'Amérique Centrale','Belize':'Amérique Centrale',
       'Honduras':'Amérique Centrale','El Salvador':'Amérique Centrale','Nicaragua':'Amérique Centrale',
       'Costa Rica':'Amérique Centrale','Panama':'Amérique Centrale','Cuba':'Amérique Centrale',
