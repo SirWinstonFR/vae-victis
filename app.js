@@ -669,10 +669,12 @@ function renderAlignTriangle(ax=0.5, ay=0.5) {
 function terrCard(t) {
   const owner   = t.owner && t.owner!==N ? getD(t.owner) : null;
   const isAtked = window.VV.attacks.some(a => a.territory===t.id);
-  // Check capitulation — compare both territory_id and direct match
+  // Chercher la capitulation directement dans toutes les attaques
+  const capAtk = window.VV.attacks.find(a => a.capitulation && a.capitulation === t.id);
   const myCapAtk = me ? window.VV.attacks.find(a => a.attacker===me.id && a.capitulation) : null;
-  const capTerr  = myCapAtk ? myCapAtk.capitulation : capitulation;
-  const isCap    = capTerr === t.id;
+  const capTerr  = myCapAtk ? myCapAtk.capitulation : (capitulation || null);
+  const isCap    = capTerr === t.id || (capAtk && me && capAtk.attacker === me.id);
+  if (t.id === 'cn_entreprises') console.log('[CAP DEBUG]', t.id, 'capTerr:', capTerr, 'isCap:', isCap, 'me:', me?.id, 'myCapAtk:', myCapAtk, 'capitulation var:', capitulation);
   const isMyT   = me && t.owner===me.id;
   const canA    = me && owner && owner.id!==me.id && myAtks().length<2 && atkOn(owner.id)<2;
   const dc      = window.VV.dotColor(t);
@@ -742,12 +744,29 @@ function terrCard(t) {
     </div>`;
   }
 
-  return `<div class="org-chip" style="border-color:${dc}33">
+  // Org chip avec shatter si capitulation
+  const orgShatter = (capTerr === t.id) ? `
+    <div style="position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden;border-radius:6px">
+      <svg viewBox="0 0 200 44" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
+        <line x1="0" y1="0" x2="80" y2="44" stroke="rgba(255,80,80,.7)" stroke-width="1"/>
+        <line x1="80" y1="44" x2="130" y2="10" stroke="rgba(255,80,80,.7)" stroke-width="1"/>
+        <line x1="130" y1="10" x2="200" y2="44" stroke="rgba(255,80,80,.6)" stroke-width="1"/>
+        <line x1="40" y1="0" x2="100" y2="30" stroke="rgba(255,80,80,.5)" stroke-width=".8"/>
+        <line x1="100" y1="30" x2="160" y2="0" stroke="rgba(255,80,80,.5)" stroke-width=".8"/>
+        <polygon points="0,0 80,44 40,44 0,20" fill="rgba(200,40,40,.1)"/>
+        <polygon points="80,44 130,10 160,44" fill="rgba(200,40,40,.08)"/>
+        <text x="100" y="26" text-anchor="middle" font-size="8" fill="rgba(255,120,120,.95)" font-family="Rajdhani,sans-serif" font-weight="700" letter-spacing=".1em">CAPITULATION</text>
+      </svg>
+    </div>` : '';
+
+  return `<div class="org-chip${capTerr===t.id?' capitulated':''}" style="border-color:${capTerr===t.id?'var(--c-danger)':dc+'33'};position:relative;overflow:hidden">
+    ${orgShatter}
     <div class="org-dot" style="background:${dc};box-shadow:0 0 4px ${dc}99"></div>
     <div style="flex:1;min-width:0">
       <div class="org-name">${t.name}${t.pi>1?` <span class="org-pi">×${t.pi}PI</span>`:''}</div>
       <div class="org-owner" style="color:${owner?owner.color:'var(--c-text3)'}">${owner?owner.name:'Neutre'}</div>
-      ${isAtked&&!isCap?`<div class="terr-status" style="color:${isMyT?'var(--c-info)':'var(--c-warn)'};font-size:9px">${isMyT?'Défense auto':'Sous attaque'}</div>`:''}
+      ${isAtked&&!(capTerr===t.id)?`<div class="terr-status" style="color:${isMyT?'var(--c-info)':'var(--c-warn)'};font-size:9px">${isMyT?'Défense auto':'Sous attaque'}</div>`:''}
+      ${capTerr===t.id?`<div class="terr-status" style="color:var(--c-danger);font-size:9px">⚑ Capitulation</div>`:''}
     </div>
     ${canA?`<button class="atk-btn" data-owner="${owner.id}" data-terr="${t.id}"><i class="ti ti-sword"></i> ATK</button>`:''}
   </div>`;
