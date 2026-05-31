@@ -993,6 +993,26 @@ function doLogin() {
   window.VV.globe.buildDots();
   renderPlayerPanel();
   updateWarningTicker();
+  // Afficher le bouton de faction
+  showFactionOrgBtn(d.id);
+}
+
+function showFactionOrgBtn(deityId) {
+  // Tout verrouiller d'abord
+  ['btn-grande-societe','btn-experreducti','btn-cercle-asimov'].forEach(id => {
+    document.getElementById(id)?.classList.add('locked');
+  });
+  const faction = getFaction(deityId);
+  if (!faction) return;
+  const map = {
+    'Sovereign': 'btn-grande-societe',
+    'Olympiens': 'btn-experreducti',
+    'Shemning':  'btn-cercle-asimov',
+  };
+  const btnId = map[faction.name];
+  if (btnId) {
+    document.getElementById(btnId)?.classList.remove('locked');
+  }
 }
 
 // ---- ADMIN -------------------------------------------------
@@ -1146,6 +1166,17 @@ document.addEventListener('DOMContentLoaded', () => {
       renderTransPanel(key);
     })
   );
+
+  // Boutons faction (placeholder — fonctionnalité à définir)
+  document.getElementById('btn-grande-societe')?.addEventListener('click', () => {
+    alert('La Grande Société — fonctionnalité à venir.');
+  });
+  document.getElementById('btn-experreducti')?.addEventListener('click', () => {
+    alert('Experreducti — fonctionnalité à venir.');
+  });
+  document.getElementById('btn-cercle-asimov')?.addEventListener('click', () => {
+    alert("Cercle d'Asimov — fonctionnalité à venir.");
+  });
 
   // Fermer modals
   document.querySelectorAll('[data-close]').forEach(btn =>
