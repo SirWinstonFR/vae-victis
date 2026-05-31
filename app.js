@@ -10,7 +10,7 @@ window.VV = window.VV || {};
 // ---- CONFIG ------------------------------------------------
 const CFG = {
   SHEET_ID:    '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
-  APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbxzrk3x8qu0LZLT7-MIxkwa9DsoRhUiSl7LlYul-oTYnzD4kG6-vs_OQZVbIbU6or95uw/exec',
+  APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbyCaQI2c5ds2uCmoeCw6_fALjh-8ii05fkOVgZmWPhbY64vyYbrNcFvqbFKRb7rUwyxwQ/exec',
   FANDOM_URL:  'https://vae-victis.fandom.com/fr/wiki/Wiki_Vae_Victis',
   REFRESH_MIN: 5,
   GIDS: {
@@ -255,6 +255,7 @@ async function loadData() {
         alignY:   parseFloat(r.alignement_y) || 0.5,
         dieu1:    (r.dieu1 || '').trim(),
         dieu2:    (r.dieu2 || '').trim(),
+        bio:      (r.leader_bio || '').trim(),
       };
     });
 
@@ -569,8 +570,13 @@ function renderZonePanel(zoneName) {
   const nationHTML = `
     <div class="nation-header">
       ${nation.image?`<div class="nation-banner" style="background-image:url('${nation.image}')">
-        ${nation.portrait?`<div class="nation-leader-portrait"><img src="${nation.portrait}" alt="${nation.leader}"></div>`:
-          `<div class="nation-leader-portrait nation-leader-empty"><i class="ti ti-user"></i></div>`}
+        <div class="nation-leader-portrait${nation.leader?' clickable-leader':''}" 
+          ${nation.leader?`onclick="openLeaderModal('${zoneName}')" title="Voir le profil de ${nation.leader}"`:''}
+          style="${nation.leader?'cursor:pointer;':''}"
+        >
+          ${nation.portrait?`<img src="${nation.portrait}" alt="${nation.leader}">`:`<i class="ti ti-user" style="font-size:20px;color:var(--c-text4)"></i>`}
+          ${nation.leader?`<div class="leader-hover-overlay"><i class="ti ti-user-circle"></i></div>`:''}
+        </div>
       </div>`:''}
       <div class="nation-meta">
         <div class="nation-name">${zoneName}</div>
@@ -773,6 +779,54 @@ function renderPlayerPanel() {
   document.querySelectorAll('.cap-choice[data-tid]').forEach(btn =>
     btn.addEventListener('click', () => setCapitulation(btn.dataset.tid))
   );
+}
+
+function openLeaderModal(zoneName) {
+  const nation = nations[zoneName] || {};
+  if (!nation.leader) return;
+
+  let modal = document.getElementById('modal-leader');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-leader';
+    modal.className = 'modal-bg';
+    modal.innerHTML = `<div class="modal" id="modal-leader-inner" style="max-width:420px;width:92vw"></div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+  }
+
+  const d1 = nation.dieu1 ? getD(nation.dieu1) : null;
+  const d2 = nation.dieu2 ? getD(nation.dieu2) : null;
+
+  document.getElementById('modal-leader-inner').innerHTML = `
+    <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:14px">
+      <div style="width:72px;height:72px;border-radius:50%;overflow:hidden;border:2px solid var(--c-border3);flex-shrink:0;background:var(--c-bg3)">
+        ${nation.portrait
+          ? `<img src="${nation.portrait}" alt="${nation.leader}" style="width:100%;height:100%;object-fit:cover">`
+          : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--c-text4)"><i class="ti ti-user"></i></div>`
+        }
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-family:Rajdhani,sans-serif;font-size:18px;font-weight:700;color:var(--c-text1);margin-bottom:2px">${nation.leader}</div>
+        <div style="font-family:Rajdhani,sans-serif;font-size:12px;color:var(--c-text3);margin-bottom:6px">Leader — ${zoneName}</div>
+        ${(d1||d2) ? `<div style="display:flex;gap:6px;align-items:center">
+          <span style="font-size:9px;color:var(--c-text4);font-family:Rajdhani,sans-serif;letter-spacing:.06em">INFLUENCES</span>
+          ${d1?`<span style="font-size:10px;color:${d1.color};font-family:Rajdhani,sans-serif;font-weight:600">${d1.name}</span>`:''}
+          ${d1&&d2?`<span style="color:var(--c-text4)">·</span>`:''}
+          ${d2?`<span style="font-size:10px;color:${d2.color};font-family:Rajdhani,sans-serif;font-weight:600">${d2.name}</span>`:''}
+        </div>` : ''}
+      </div>
+    </div>
+    ${nation.bio
+      ? `<div style="font-size:11px;color:var(--c-text2);line-height:1.7;border-top:1px solid var(--c-border);padding-top:12px">${nation.bio}</div>`
+      : `<div style="font-size:10px;color:var(--c-text4);text-align:center;padding:8px 0;border-top:1px solid var(--c-border)">Aucune biographie disponible</div>`
+    }
+    <div style="margin-top:14px;display:flex;justify-content:flex-end">
+      <button class="btn" onclick="document.getElementById('modal-leader').classList.remove('open')">Fermer</button>
+    </div>
+  `;
+
+  modal.classList.add('open');
 }
 
 function showPrompt() {
@@ -997,7 +1051,12 @@ async function init() {
   window.VV.globe.init(world);
   renderDock();
   renderRankingPanel();
-  showPrompt();
+  // Afficher France par défaut
+  if (window.VV.ZONES['France']) {
+    window.VV.onZoneClick('France');
+  } else {
+    showPrompt();
+  }
   setInterval(fullRefresh, CFG.REFRESH_MIN * 60 * 1000);
 }
 
