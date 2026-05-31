@@ -668,27 +668,47 @@ html, body {
 .nation-pi-total { font-size: 10px; color: var(--c-text3); }
 
 .nation-bottom-row {
-  display: flex;
-  justify-content: center;
-  padding: 6px 0;
+  padding: 8px 0;
   border-top: 1px solid var(--c-border);
   border-bottom: 1px solid var(--c-border);
   margin-bottom: 10px;
 }
-.nation-triangle-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.align-triangle { width: 110px; height: 95px; display: block; overflow: visible; }
-.nation-gods { display: flex; gap: 10px; justify-content: center; }
+.nation-align-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nation-triangle-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+.align-triangle { width: 100px; height: 86px; display: block; overflow: visible; }
+.nation-gods-col {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
 .nation-god-chip {
-  width: 34px; height: 34px;
-  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
   background: var(--c-bg3);
   border: 1px solid var(--c-border2);
-  display: flex; align-items: center; justify-content: center;
+  padding: 4px 6px;
   overflow: hidden;
-  transition: transform .15s;
+  transition: background .12s;
+  width: 100%;
 }
-.nation-god-chip:hover { transform: scale(1.1); }
-.nation-god-chip img { width:100%;height:100%;object-fit:contain;border-radius:50%; }
+.nation-god-chip:hover { background: var(--c-bg4); }
+.nation-god-chip img {
+  width: 22px; height: 22px;
+  object-fit: contain;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
 
 /* ---- TERRITORY CARDS ---- */
 .terr-card {
