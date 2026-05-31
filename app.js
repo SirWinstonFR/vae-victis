@@ -241,7 +241,18 @@ async function loadData() {
     // Attaques
     window.VV.attacks = atk
       .filter(r => Number(r.cycle) === CYCLE && r.statut?.trim() === 'déclarée')
-      .map(r => ({ attacker: r.attaquant.trim(), target: r.cible.trim(), territory: r.territoire_id.trim() }));
+      .map(r => ({
+        attacker:     r.attaquant.trim(),
+        target:       r.cible.trim(),
+        territory:    r.territoire_id.trim(),
+        capitulation: (r.capitulation || '').trim(),
+      }));
+
+    // Restaurer la capitulation du joueur connecté depuis le sheet
+    if (me) {
+      const myCapRow = window.VV.attacks.find(a => a.attacker === me.id && a.capitulation);
+      capitulation = myCapRow ? myCapRow.capitulation : null;
+    }
 
     // Nations
     nations = {};
@@ -758,7 +769,10 @@ function renderPlayerPanel() {
     }).join('')}
 
     ${needCap?`<div class="divider"></div><div class="sec">Territoire à capituler</div>
-      ${atkdT.map(t=>`<button class="cap-choice${capitulation===t.id?' chosen':''}" data-tid="${t.id}">${capitulation===t.id?'⚑ ':''}${t.name}</button>`).join('')}
+      ${atkdT.map(t=>`<button class="cap-choice${capitulation===t.id?' chosen':''}" 
+        data-tid="${t.id}"
+        ${capitulation && capitulation!==t.id ? 'disabled style="opacity:.3;cursor:not-allowed"' : ''}
+      >${capitulation===t.id?'⚑ ':''}${t.name}</button>`).join('')}
     `:''}
 
     ${!needCap&&atkdT.length>0?`<div class="divider"></div><div class="sec">Sous attaque — défense auto</div>
@@ -989,6 +1003,9 @@ function doLogin() {
   const ba = $('btn-admin');
   if (ba) ba.style.display = 'inline-flex';
   selDeity = d.id;
+  // Restaurer la capitulation depuis le sheet
+  const myCapRow = window.VV.attacks.find(a => a.attacker === d.id && a.capitulation);
+  capitulation = myCapRow ? myCapRow.capitulation : null;
   renderDock();
   window.VV.globe.buildDots();
   renderPlayerPanel();
