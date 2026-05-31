@@ -9,7 +9,7 @@
 
 const EXP_CFG = {
   SHEET_ID: '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
-  APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbyCaQI2c5ds2uCmoeCw6_fALjh-8ii05fkOVgZmWPhbY64vyYbrNcFvqbFKRb7rUwyxwQ/exec',
+  APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbxzrk3x8qu0LZLT7-MIxkwa9DsoRhUiSl7LlYul-oTYnzD4kG6-vs_OQZVbIbU6or95uw/exec',
   GIDS: {
     lois: '153355188',
     pnj:  '336206576',
@@ -203,7 +203,7 @@ function renderExperreducti() {
       @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap');
       @keyframes exp-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
       @keyframes exp-glow  { 0%,100%{box-shadow:0 0 6px #c8901a44} 50%{box-shadow:0 0 14px #c8901a88} }
-      @keyframes seat-appear { from{opacity:0;r:0} to{opacity:var(--op,.85);r:4.2} }
+      @keyframes seat-appear { from{opacity:0} to{opacity:var(--final-op,.85)} }
       .exp-pnj-card { cursor:pointer; transition:all .15s; }
       .exp-pnj-card:hover { transform:translateY(-2px); }
       .exp-pnj-card.active { border-color:#c8901a !important; box-shadow:0 0 12px #c8901a44; }
@@ -325,17 +325,16 @@ function renderLoisList(isOlympien, isAdmin) {
 // ---- HEMICYCLE ---------------------------------------------
 function renderHemicycle() {
   const TOTAL_SEATS = 705;
-  const W = 480, H = 270;
-  const cx = W/2, cy = H - 20;
+  const W = 520, H = 290;
+  const cx = W / 2, cy = H - 30;
   const rows = 7;
-  const innerR = 55, outerR = 210;
+  const innerR = 50, outerR = 190;
 
   // Build seat positions
   const seatsData = [];
   for (let row = 0; row < rows; row++) {
     const r = innerR + (outerR - innerR) * (row / (rows - 1));
-    const circumference = Math.PI * r;
-    const n = Math.round(circumference / 13);
+    const n = Math.round(Math.PI * r / 12);
     for (let i = 0; i < n; i++) {
       const angle = Math.PI - (i / (n - 1)) * Math.PI;
       seatsData.push({
@@ -346,12 +345,10 @@ function renderHemicycle() {
   }
   const actualSeats = seatsData.length;
 
-  // Find active law (en_vote) for coloring, or aggregate all
+  // Find active law
   const activeLois = expLois.filter(l => l.statut?.trim() === 'en_vote');
   let pctPour = 0, pctContre = 0, pctAbst = 0;
-
   if (activeLois.length > 0) {
-    // Average percentages of active laws
     activeLois.forEach(l => {
       pctPour   += Number(l.pct_pour || 0);
       pctContre += Number(l.pct_contre || 0);
@@ -362,64 +359,75 @@ function renderHemicycle() {
     pctAbst   = Math.round(pctAbst / activeLois.length);
   }
 
-  const nPour    = Math.round(actualSeats * pctPour / 100);
   const nContre  = Math.round(actualSeats * pctContre / 100);
   const nAbst    = Math.round(actualSeats * pctAbst / 100);
+  const nPour    = Math.round(actualSeats * pctPour / 100);
   const nNonVot  = actualSeats - nPour - nContre - nAbst;
 
-  // Shuffle seats so colors mix realistically (left=contre, right=pour tradition)
-  // Actually sort: contre left, abstention mid-left, non-votants mid-right, pour right
   const seats = seatsData.map((s, idx) => {
-    let color, opacity = '.85';
-    if (idx < nContre)                       { color = '#cc3030'; opacity = '.9'; }
-    else if (idx < nContre + nAbst)          { color = '#3a5a7a'; opacity = '.7'; }
-    else if (idx < nContre + nAbst + nNonVot){ color = '#1a3050'; opacity = '.5'; }
-    else                                      { color = '#2a9a4a'; opacity = '.9'; }
-    const delay = (idx * 0.8).toFixed(0); // ms delay for animation
-    return `<circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="4.2" fill="${color}" opacity="0" style="animation:seat-appear .3s ease forwards ${delay}ms"/>`;
+    let color, op;
+    if (idx < nContre)                        { color = '#cc3030'; op = .9; }
+    else if (idx < nContre + nAbst)           { color = '#3a5a7a'; op = .7; }
+    else if (idx < nContre + nAbst + nNonVot) { color = '#1a2e40'; op = .5; }
+    else                                       { color = '#2a9a4a'; op = .9; }
+    const delay = Math.round(idx * 0.6);
+    return `<circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="3.8" fill="${color}" opacity="0" style="animation:seat-appear .25s ease forwards ${delay}ms;--final-op:${op}"/>`;
   }).join('');
 
-  // Vote counts (based on 705 real seats)
-  const realPour    = Math.round(705 * pctPour / 100);
-  const realContre  = Math.round(705 * pctContre / 100);
-  const realAbst    = Math.round(705 * pctAbst / 100);
-  const realNonVot  = 705 - realPour - realContre - realAbst;
+  // President PNJ
+  const pres = expPNJ.find(p => p.fonction?.trim() === 'UEPresident');
+  const presR = 22;
+  const presEl = pres ? `
+    <defs>
+      <clipPath id="pres-clip">
+        <circle cx="${cx}" cy="${cy - presR - 2}" r="${presR}"/>
+      </clipPath>
+    </defs>
+    ${pres.portrait_url
+      ? `<image href="${pres.portrait_url}" x="${cx - presR}" y="${cy - presR*2 - 2}" width="${presR*2}" height="${presR*2}" clip-path="url(#pres-clip)" style="cursor:pointer" onclick="expSelectPNJ('${pres.id}')"/>`
+      : `<text x="${cx}" y="${cy - presR}" text-anchor="middle" dominant-baseline="central" font-size="14" font-family="Cinzel,serif" fill="#c8901a" font-weight="700">${(pres.nom||'?').slice(0,1)}</text>`
+    }
+    <circle cx="${cx}" cy="${cy - presR - 2}" r="${presR}" fill="none" stroke="#c8901a" stroke-width="2" style="cursor:pointer" onclick="expSelectPNJ('${pres.id}')"/>
+    <circle cx="${cx}" cy="${cy - presR - 2}" r="${presR + 5}" fill="none" stroke="#c8901a33" stroke-width="1" stroke-dasharray="3,3"/>
+  ` : `
+    <circle cx="${cx}" cy="${cy - presR - 2}" r="${presR}" fill="#0a1628" stroke="#c8901a55" stroke-width="1.5"/>
+    <text x="${cx}" y="${cy - presR}" text-anchor="middle" dominant-baseline="central" font-size="7" font-family="Cinzel,serif" fill="#c8901a" font-weight="700">EXP</text>
+  `;
 
-  const loiActive = activeLois[0];
-  const loiLabel = loiActive ? loiActive.titre || loiActive.title || '' : '';
+  const realPour   = Math.round(705 * pctPour / 100);
+  const realContre = Math.round(705 * pctContre / 100);
+  const realAbst   = Math.round(705 * pctAbst / 100);
+  const realNonVot = 705 - realPour - realContre - realAbst;
+  const loiLabel   = activeLois[0] ? (activeLois[0].titre || activeLois[0].title || '') : '';
 
   return `
-    <div style="width:100%;display:flex;flex-direction:column;align-items:center;gap:6px">
-      ${loiLabel ? `<div style="font-size:10px;font-weight:700;color:#c8901a;letter-spacing:.08em;text-transform:uppercase;text-align:center;padding:0 20px">${loiLabel}</div>` : `<div style="font-size:10px;color:#2a4a6a;letter-spacing:.06em">Aucune loi en vote</div>`}
-      <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:480px;max-height:270px" xmlns="http://www.w3.org/2000/svg">
-        <path d="M ${cx-outerR-10},${cy} A ${outerR+10},${outerR+10} 0 0,1 ${cx+outerR+10},${cy}" fill="#04080f" stroke="#1a2e4a" stroke-width="1"/>
-        ${seats}
-        <circle cx="${cx}" cy="${cy}" r="28" fill="#04080f" stroke="#1a2e4a" stroke-width="1"/>
-        <line x1="${cx-outerR-10}" y1="${cy}" x2="${cx+outerR+10}" y2="${cy}" stroke="#1a3050" stroke-width="1.5"/>
-        <!-- Président du Parlement (UEPresident) -->
-        ${expPNJ.find(p=>p.fonction?.trim()==='UEPresident') ? (() => {
-          const pres = expPNJ.find(p=>p.fonction?.trim()==='UEPresident');
-          return `<image href="${pres.portrait_url||''}" x="${cx-14}" y="${cy-28}" width="28" height="28" clip-path="url(#pres-clip)" style="cursor:pointer" onclick="expSelectPNJ('${pres.id}')"/>
-          <defs><clipPath id="pres-clip"><circle cx="${cx}" cy="${cy-14}" r="14"/></clipPath></defs>
-          <circle cx="${cx}" cy="${cy-14}" r="14" fill="${pres.portrait_url?'none':'#0d2040'}" stroke="#c8901a" stroke-width="1.5" style="cursor:pointer" onclick="expSelectPNJ('${pres.id}')"/>
-          ${!pres.portrait_url?`<text x="${cx}" y="${cy-10}" text-anchor="middle" font-size="9" font-family="Cinzel,serif" fill="#c8901a" font-weight="700">${(pres.nom||'?').slice(0,1)}</text>`:''}`;
-        })() : `<circle cx="${cx}" cy="${cy-10}" r="20" fill="#0a1628" stroke="#c8901a55" stroke-width="1.5"/>
-          <text x="${cx}" y="${cy-6}" text-anchor="middle" font-size="7.5" font-family="Cinzel,serif" fill="#c8901a" font-weight="700">EXP</text>`}
-      </svg>
-      <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
+    <div style="width:100%;display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 10px">
+      ${loiLabel
+        ? `<div style="font-size:10px;font-weight:700;color:#c8901a;letter-spacing:.1em;text-transform:uppercase;text-align:center">${loiLabel}</div>`
+        : `<div style="font-size:10px;color:#2a4a6a;letter-spacing:.06em">Aucune loi en vote actuellement</div>`}
+      <div style="width:100%;overflow:hidden">
+        <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" xmlns="http://www.w3.org/2000/svg">
+          <path d="M ${cx - outerR - 8},${cy} A ${outerR + 8},${outerR + 8} 0 0,1 ${cx + outerR + 8},${cy}" fill="#04080f" stroke="#1a2e4a" stroke-width="1"/>
+          ${seats}
+          ${presEl}
+          <line x1="${cx - outerR - 8}" y1="${cy}" x2="${cx + outerR + 8}" y2="${cy}" stroke="#1a3050" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
         ${[
-          {label:'Pour',       val:realPour,   pct:pctPour,   color:'#2a9a4a'},
-          {label:'Contre',     val:realContre, pct:pctContre, color:'#cc3030'},
-          {label:'Abstention', val:realAbst,   pct:pctAbst,   color:'#3a5a7a'},
-          {label:'Non-votants',val:realNonVot, pct:100-pctPour-pctContre-pctAbst, color:'#1a3050'},
-        ].map(s=>`<div style="display:flex;align-items:center;gap:5px">
-          <div style="width:8px;height:8px;border-radius:50%;background:${s.color}"></div>
+          {label:'Pour',        val:realPour,   pct:pctPour,                        color:'#2a9a4a'},
+          {label:'Contre',      val:realContre, pct:pctContre,                      color:'#cc3030'},
+          {label:'Abstention',  val:realAbst,   pct:pctAbst,                        color:'#3a5a7a'},
+          {label:'Non-votants', val:realNonVot, pct:100-pctPour-pctContre-pctAbst,  color:'#1a2e40'},
+        ].map(s => `<div style="display:flex;align-items:center;gap:5px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${s.color};flex-shrink:0"></div>
           <span style="font-size:10px;color:${s.color};font-family:Rajdhani,sans-serif;font-weight:600">${s.label} — ${s.val} (${s.pct}%)</span>
         </div>`).join('')}
       </div>
     </div>
   `;
 }
+
 
 // ---- ACTIONS -----------------------------------------------
 function expSelectPNJ(id) {
