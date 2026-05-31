@@ -10,7 +10,7 @@ window.VV = window.VV || {};
 // ---- CONFIG ------------------------------------------------
 const CFG = {
   SHEET_ID:    '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
-  APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbyCaQI2c5ds2uCmoeCw6_fALjh-8ii05fkOVgZmWPhbY64vyYbrNcFvqbFKRb7rUwyxwQ/exec',
+  APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbxzrk3x8qu0LZLT7-MIxkwa9DsoRhUiSl7LlYul-oTYnzD4kG6-vs_OQZVbIbU6or95uw/exec',
   FANDOM_URL:  'https://vae-victis.fandom.com/fr/wiki/Wiki_Vae_Victis',
   REFRESH_MIN: 5,
   GIDS: {
@@ -674,10 +674,34 @@ function terrCard(t) {
   const canA    = me && owner && owner.id!==me.id && myAtks().length<2 && atkOn(owner.id)<2;
   const dc      = window.VV.dotColor(t);
 
+  const shatterOverlay = isCap ? `<div class="shatter-overlay">
+    <svg viewBox="0 0 100 56" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="0,0 35,0 20,20 0,28" fill="rgba(200,50,50,.15)" stroke="rgba(255,80,80,.6)" stroke-width=".8"/>
+      <polygon points="35,0 100,0 100,15 60,22 45,8" fill="rgba(180,40,40,.1)" stroke="rgba(255,80,80,.5)" stroke-width=".8"/>
+      <polygon points="20,20 45,8 60,22 38,40 15,35" fill="rgba(220,60,60,.12)" stroke="rgba(255,80,80,.55)" stroke-width=".8"/>
+      <polygon points="60,22 100,15 100,45 75,56 55,42" fill="rgba(190,45,45,.1)" stroke="rgba(255,80,80,.5)" stroke-width=".8"/>
+      <polygon points="38,40 55,42 45,56 18,56 15,35" fill="rgba(210,55,55,.12)" stroke="rgba(255,80,80,.55)" stroke-width=".8"/>
+      <polygon points="0,28 15,35 18,56 0,56" fill="rgba(200,50,50,.15)" stroke="rgba(255,80,80,.6)" stroke-width=".8"/>
+      <polygon points="75,56 100,45 100,56" fill="rgba(180,40,40,.1)" stroke="rgba(255,80,80,.5)" stroke-width=".8"/>
+      <!-- Lignes de fracture principales -->
+      <line x1="35" y1="0" x2="20" y2="20" stroke="rgba(255,100,100,.9)" stroke-width="1.2"/>
+      <line x1="20" y1="20" x2="45" y2="8" stroke="rgba(255,100,100,.9)" stroke-width="1.2"/>
+      <line x1="45" y1="8" x2="60" y2="22" stroke="rgba(255,100,100,.8)" stroke-width="1"/>
+      <line x1="20" y1="20" x2="38" y2="40" stroke="rgba(255,100,100,.85)" stroke-width="1.1"/>
+      <line x1="60" y1="22" x2="55" y2="42" stroke="rgba(255,100,100,.8)" stroke-width="1"/>
+      <line x1="38" y1="40" x2="55" y2="42" stroke="rgba(255,100,100,.75)" stroke-width=".9"/>
+      <line x1="15" y1="35" x2="38" y2="40" stroke="rgba(255,100,100,.8)" stroke-width="1"/>
+      <text x="50" y="32" text-anchor="middle" font-size="9" fill="rgba(255,120,120,.9)" font-family="Rajdhani,sans-serif" font-weight="700" letter-spacing=".08em">CAPITULATION</text>
+    </svg>
+  </div>` : '';
+
   if (t.type==='city') {
-    return `<div class="terr-card${isAtked?' under-attack':''}">
+    return `<div class="terr-card${isAtked?' under-attack':''}${isCap?' capitulated':''}">
+      <div style="position:relative">
       ${t.img?`<img class="terr-img" src="${t.img}" alt="${t.name}" loading="lazy">`
         :`<div class="terr-ph" style="background:${dc}14;border-bottom:2px solid ${dc}33"><i class="ti ti-building-skyscraper" style="color:${dc};font-size:22px"></i></div>`}
+      ${shatterOverlay}
+      </div>
       <div class="terr-body">
         <div class="terr-row">
           <div style="display:flex;align-items:center;gap:5px;min-width:0">
