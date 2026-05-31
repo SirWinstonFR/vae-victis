@@ -355,17 +355,21 @@ function highlightZone(name) {
       .classed('active', true).classed('zone-member', true)
   );
 
-  // Rotation vers la zone
+  // Rotation vers la zone — désactivée si très zoomé (évite décalage)
   const zd = (window.VV.ZONES || {})[name];
-  if (zd?.cx) {
+  if (zd?.cx && curK < 2.5) {
     const r0 = proj.rotate();
     let dLon = -zd.cx - r0[0];
     if (dLon > 180) dLon -= 360;
     if (dLon < -180) dLon += 360;
-    const r1 = [r0[0] + dLon, Math.max(-80, Math.min(80, -zd.cy * 0.65)), r0[2]];
+    const targetLat = Math.max(-80, Math.min(80, -zd.cy * 0.65));
+    // Réduire l'amplitude si déjà proche
+    const dist = Math.hypot(dLon, targetLat - r0[1]);
+    if (dist < 2) return; // Déjà centré
+    const r1 = [r0[0] + dLon, targetLat, r0[2]];
     const interp = d3.interpolate(r0, r1);
     isRotating = true;
-    d3.transition().duration(750).ease(d3.easeCubicInOut)
+    d3.transition().duration(700).ease(d3.easeCubicInOut)
       .tween('rotate', () => t => { proj.rotate(interp(t)); redrawGlobe(); })
       .on('end', () => { isRotating = false; });
   }
