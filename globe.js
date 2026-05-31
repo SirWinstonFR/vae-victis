@@ -82,43 +82,77 @@ function initGlobe(world) {
     .attr('class', 'moon-group')
     .style('pointer-events', 'none');
 
-  // Image lune
-  const moonSize = proj.scale() * 0.12;
-  moonG.append('circle')
-    .attr('class', 'moon-glow')
-    .attr('r', moonSize * 1.6)
-    .attr('fill', 'radial-gradient(circle, #8a8a6a, transparent)')
-    .attr('opacity', .15);
+  const moonSize = proj.scale() * 0.10;
 
-  defs.append('pattern')
-    .attr('id', 'moon-tex')
-    .attr('patternUnits', 'userSpaceOnUse')
-    .attr('width', moonSize * 2).attr('height', moonSize * 2)
-    .append('image')
-      .attr('href', 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/120px-FullMoon2010.jpg')
-      .attr('width', moonSize * 2).attr('height', moonSize * 2)
-      .attr('preserveAspectRatio', 'xMidYMid slice');
+  // Lune SVG — sphère avec cratères dessinés
+  const moonDefs = defs;
+
+  // Gradient radial pour effet 3D sphère
+  const moonGrad = moonDefs.append('radialGradient')
+    .attr('id', 'moon-grad')
+    .attr('cx', '38%').attr('cy', '35%').attr('r', '60%');
+  moonGrad.append('stop').attr('offset', '0%').attr('stop-color', '#d8d4c8');
+  moonGrad.append('stop').attr('offset', '40%').attr('stop-color', '#b0aa98');
+  moonGrad.append('stop').attr('offset', '100%').attr('stop-color', '#5a5650');
+
+  // Halo lunaire
+  const moonHaloGrad = moonDefs.append('radialGradient')
+    .attr('id', 'moon-halo')
+    .attr('cx', '50%').attr('cy', '50%').attr('r', '50%');
+  moonHaloGrad.append('stop').attr('offset', '60%').attr('stop-color', '#c8c0a0').attr('stop-opacity', '0');
+  moonHaloGrad.append('stop').attr('offset', '100%').attr('stop-color', '#c8c0a0').attr('stop-opacity', '0.15');
+
+  // clipPath pour la lune
+  moonDefs.append('clipPath').attr('id', 'moon-clip')
+    .append('circle').attr('r', moonSize);
+
+  // Corps principal
+  moonG.append('circle')
+    .attr('r', moonSize * 1.8)
+    .attr('fill', 'url(#moon-halo)')
+    .style('pointer-events', 'none');
 
   moonG.append('circle')
     .attr('class', 'moon-body')
     .attr('r', moonSize)
-    .attr('fill', 'url(#moon-tex)')
-    .attr('stroke', '#8a8a6a33')
-    .attr('stroke-width', .5);
+    .attr('fill', 'url(#moon-grad)')
+    .attr('stroke', '#9a9488').attr('stroke-width', .3);
 
-  // Animation orbite via JS (tourne autour du globe)
+  // Cratères (dessinés à la main en coordonnées relatives)
+  const craters = [
+    { x: -moonSize*0.3, y: -moonSize*0.2, r: moonSize*0.18 },
+    { x:  moonSize*0.25, y:  moonSize*0.3, r: moonSize*0.14 },
+    { x: -moonSize*0.1, y:  moonSize*0.4, r: moonSize*0.10 },
+    { x:  moonSize*0.4, y: -moonSize*0.1, r: moonSize*0.12 },
+    { x: -moonSize*0.4, y:  moonSize*0.3, r: moonSize*0.09 },
+    { x:  moonSize*0.1, y: -moonSize*0.4, r: moonSize*0.08 },
+    { x: -moonSize*0.2, y: -moonSize*0.45, r: moonSize*0.07 },
+  ];
+  craters.forEach(c => {
+    moonG.append('circle')
+      .attr('cx', c.x).attr('cy', c.y).attr('r', c.r)
+      .attr('fill', '#7a756a').attr('opacity', 0.5)
+      .attr('clip-path', 'url(#moon-clip)');
+    // Rebord lumineux
+    moonG.append('circle')
+      .attr('cx', c.x - c.r*0.1).attr('cy', c.y - c.r*0.1).attr('r', c.r)
+      .attr('fill', 'none').attr('stroke', '#c8c0a0').attr('stroke-width', .4)
+      .attr('opacity', 0.3).attr('clip-path', 'url(#moon-clip)');
+  });
+
+  // Animation orbite — lente
   let moonAngle = 0;
   const orbitRx = proj.scale() * 1.55;
-  const orbitRy = proj.scale() * 0.38;
+  const orbitRy = proj.scale() * 0.35;
 
   function animateMoon() {
-    moonAngle += 0.003;
+    moonAngle += 0.0006; // très lent
     const mx = W/2 + orbitRx * Math.cos(moonAngle);
     const my = H/2 + orbitRy * Math.sin(moonAngle);
     moonG.attr('transform', `translate(${mx},${my})`);
-    // Derrière le globe quand en bas
-    const behind = Math.sin(moonAngle) > 0;
-    moonG.style('opacity', behind ? 0.35 : 1);
+    // Passe derrière le globe (semi-transparente)
+    const behind = Math.sin(moonAngle) > 0.1;
+    moonG.style('opacity', behind ? 0.25 : 1);
     requestAnimationFrame(animateMoon);
   }
   animateMoon();
