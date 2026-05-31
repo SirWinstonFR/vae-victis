@@ -116,11 +116,12 @@ html, body {
   margin-right: 4px;
 }
 .logo-img {
-  width: 30px; height: 30px;
+  width: 28px; height: 28px;
   border-radius: 6px;
-  object-fit: cover;
+  object-fit: contain;
   flex-shrink: 0;
   border: 1px solid var(--c-border2);
+  background: transparent;
 }
 .logo-sep {
   width: 1px; height: 20px;
@@ -898,7 +899,7 @@ html, body {
   gap: 3px;
   cursor: pointer;
   flex-shrink: 0;
-  width: 58px;
+  width: 66px;
   padding: 5px 3px;
   border-radius: var(--radius);
   border: 1px solid transparent;
@@ -931,8 +932,8 @@ html, body {
 .dchip:hover .av-avatar { opacity: 0; }
 .dchip:hover .av-initials { opacity: 0; }
 
-.dn { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; color: var(--c-text2); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
-.dp { font-size: 10px; color: var(--c-text4); font-family: 'Rajdhani', sans-serif; letter-spacing: .04em; }
+.dn { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; color: var(--c-text2); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+.dp { font-size: 11px; color: var(--c-text4); font-family: 'Rajdhani', sans-serif; letter-spacing: .04em; }
 
 .abadge {
   position: absolute; top: 1px; right: 1px;
