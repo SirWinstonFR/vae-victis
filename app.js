@@ -1187,14 +1187,23 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   );
 
-  // Dropdown faction
+  // Dropdown faction — position fixe pour passer au-dessus du ticker
   document.getElementById('faction-dropdown-trigger')?.addEventListener('click', function() {
     if (this.classList.contains('locked')) return;
     const menu = document.getElementById('faction-dropdown-menu');
     if (!menu) return;
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    const isOpen = menu.style.display !== 'none';
+    if (isOpen) {
+      menu.style.display = 'none';
+    } else {
+      const rect = this.getBoundingClientRect();
+      menu.style.position = 'fixed';
+      menu.style.top = (rect.bottom + 6) + 'px';
+      menu.style.left = rect.left + 'px';
+      menu.style.zIndex = '9999';
+      menu.style.display = 'block';
+    }
   });
-  // Fermer en cliquant ailleurs
   document.addEventListener('click', e => {
     if (!e.target.closest('#faction-dropdown-wrap')) {
       const menu = document.getElementById('faction-dropdown-menu');
