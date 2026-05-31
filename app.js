@@ -815,14 +815,19 @@ function renderPlayerPanel() {
     }).join('')}
 
     ${needCap?`<div class="divider"></div><div class="sec">Territoire à capituler</div>
-      ${atkdT.map(t=>`<button class="cap-choice${capitulation===t.id?' chosen':''}" 
-        data-tid="${t.id}"
-        ${capitulation && capitulation!==t.id ? 'disabled style="opacity:.3;cursor:not-allowed"' : ''}
-      >${capitulation===t.id?'⚑ ':''}${t.name}</button>`).join('')}
+      ${atkdT.map(t=>{
+        const isChosen = capitulation===t.id;
+        const isLocked = capitulation && !isChosen;
+        return `<button class="cap-choice${isChosen?' chosen':''}" 
+          data-tid="${t.id}"
+          ${isLocked?'disabled style="opacity:.3;cursor:not-allowed"':''}
+        >${isChosen?'⚑ ':''}${t.name}</button>`;
+      }).join('')}
+      ${capitulation ? terrCard(atkdT.find(t=>t.id===capitulation)||{id:capitulation,name:capitulation,type:'org',owner:me?.id,pi:1,lon:0,lat:0,img:''}) : ''}
     `:''}
 
     ${!needCap&&atkdT.length>0?`<div class="divider"></div><div class="sec">Sous attaque — défense auto</div>
-      ${atkdT.map(t=>`<div class="slot def"><div class="slot-text def"><i class="ti ti-shield"></i> ${t.name}</div></div>`).join('')}
+      ${atkdT.map(t=>terrCard(t)).join('')}
     `:''}
 
     <div class="divider"></div>
