@@ -63,18 +63,30 @@
 
     <div class="transbar-sep"></div>
 
-    <button id="btn-grande-societe" class="faction-org-btn faction-org-sovereign locked" title="Accès Sovereign uniquement">
-      <span class="faction-dot" style="background:var(--c-sovereign)"></span>
-      La Grande Société
-    </button>
-    <button class="faction-org-btn faction-org-olympien" id="btn-experreducti" class="faction-org-btn faction-org-olympien locked" title="Accès Olympiens uniquement">
-      <span class="faction-dot" style="background:var(--c-olympien)"></span>
-      Experreducti
-    </button>
-    <button class="faction-org-btn faction-org-shemning" id="btn-cercle-asimov" class="faction-org-btn faction-org-shemning locked" title="Accès Shemning uniquement">
-      <span class="faction-dot" style="background:var(--c-shemning)"></span>
-      Cercle d'Asimov
-    </button>
+    <div class="faction-dropdown-wrap" id="faction-dropdown-wrap">
+      <button class="faction-dropdown-trigger locked" id="faction-dropdown-trigger">
+        <span class="faction-dot" id="faction-trigger-dot" style="background:var(--c-text4)"></span>
+        <span id="faction-trigger-label">Conseil de Faction</span>
+        <i class="ti ti-chevron-down" style="font-size:10px;margin-left:4px"></i>
+      </button>
+      <div class="faction-dropdown-menu" id="faction-dropdown-menu" style="display:none">
+        <button class="faction-dropdown-item faction-org-sovereign locked" id="btn-grande-societe">
+          <span class="faction-dot" style="background:var(--c-sovereign)"></span>
+          La Grande Société
+          <i class="ti ti-lock lock-icon"></i>
+        </button>
+        <button class="faction-dropdown-item faction-org-olympien locked" id="btn-experreducti">
+          <span class="faction-dot" style="background:var(--c-olympien)"></span>
+          Experreducti
+          <i class="ti ti-lock lock-icon"></i>
+        </button>
+        <button class="faction-dropdown-item faction-org-shemning locked" id="btn-cercle-asimov">
+          <span class="faction-dot" style="background:var(--c-shemning)"></span>
+          Cercle d'Asimov
+          <i class="ti ti-lock lock-icon"></i>
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- TICKER -->
