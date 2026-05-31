@@ -257,6 +257,8 @@ html, body {
   padding: 0 16px;
   gap: 8px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 100;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -302,6 +304,8 @@ html, body {
   align-items: center;
   overflow: hidden;
   flex-shrink: 0;
+  position: relative;
+  z-index: 10;
 }
 #warning-ticker.ticker-alert {
   display: flex;
