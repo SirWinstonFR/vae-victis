@@ -323,78 +323,93 @@ function renderLoisList(isOlympien, isAdmin) {
 
 // ---- HEMICYCLE ---------------------------------------------
 function renderHemicycle() {
-  const adoptees = expLois.filter(l => l.statut?.trim()==='adoptée').length;
-  const rejettees = expLois.filter(l => l.statut?.trim()==='rejetée').length;
-  const enVote = expLois.filter(l => l.statut?.trim()==='en_vote').length;
-  const total = expLois.length || 1;
-
-  // Hemicycle SVG - seats colored by vote ratio
-  const W = 480, H = 260;
+  const TOTAL_SEATS = 705;
+  const W = 480, H = 270;
   const cx = W/2, cy = H - 20;
-  const rows = 6;
-  const innerR = 60, outerR = 200;
+  const rows = 7;
+  const innerR = 55, outerR = 210;
 
-  let seats = '';
-  let totalSeats = 0;
+  // Build seat positions
   const seatsData = [];
-
   for (let row = 0; row < rows; row++) {
     const r = innerR + (outerR - innerR) * (row / (rows - 1));
     const circumference = Math.PI * r;
-    const n = Math.round(circumference / 14);
+    const n = Math.round(circumference / 13);
     for (let i = 0; i < n; i++) {
       const angle = Math.PI - (i / (n - 1)) * Math.PI;
-      const x = cx + r * Math.cos(angle);
-      const y = cy - r * Math.sin(angle);
-      seatsData.push({ x, y, row, i, n });
-      totalSeats++;
+      seatsData.push({
+        x: cx + r * Math.cos(angle),
+        y: cy - r * Math.sin(angle),
+      });
     }
   }
+  const actualSeats = seatsData.length;
 
-  const adoptedSeats  = Math.round(totalSeats * (adoptees / (total * 1.5)));
-  const rejectedSeats = Math.round(totalSeats * (rejettees / (total * 1.5)));
-  const voteSeats     = Math.round(totalSeats * (enVote / (total * 1.5)));
+  // Find active law (en_vote) for coloring, or aggregate all
+  const activeLois = expLois.filter(l => l.statut?.trim() === 'en_vote');
+  let pctPour = 0, pctContre = 0, pctAbst = 0;
 
-  seats = seatsData.map((s, idx) => {
-    let color;
-    if (idx < adoptedSeats)              color = '#2a9a4a'; // vert — pour
-    else if (idx < adoptedSeats + voteSeats) color = '#c8901a'; // or — en vote
-    else if (idx < adoptedSeats + voteSeats + rejectedSeats) color = '#cc3030'; // rouge — contre
-    else                                 color = '#1a3050'; // neutre
-    return `<circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="4.5" fill="${color}" opacity=".9"/>`;
+  if (activeLois.length > 0) {
+    // Average percentages of active laws
+    activeLois.forEach(l => {
+      pctPour   += Number(l.pct_pour || 0);
+      pctContre += Number(l.pct_contre || 0);
+      pctAbst   += Number(l.pct_abstention || 0);
+    });
+    pctPour   = Math.round(pctPour / activeLois.length);
+    pctContre = Math.round(pctContre / activeLois.length);
+    pctAbst   = Math.round(pctAbst / activeLois.length);
+  }
+
+  const nPour    = Math.round(actualSeats * pctPour / 100);
+  const nContre  = Math.round(actualSeats * pctContre / 100);
+  const nAbst    = Math.round(actualSeats * pctAbst / 100);
+  const nNonVot  = actualSeats - nPour - nContre - nAbst;
+
+  // Shuffle seats so colors mix realistically (left=contre, right=pour tradition)
+  // Actually sort: contre left, abstention mid-left, non-votants mid-right, pour right
+  const seats = seatsData.map((s, idx) => {
+    let color, opacity = '.85';
+    if (idx < nContre)                       { color = '#cc3030'; opacity = '.9'; }
+    else if (idx < nContre + nAbst)          { color = '#3a5a7a'; opacity = '.7'; }
+    else if (idx < nContre + nAbst + nNonVot){ color = '#1a3050'; opacity = '.5'; }
+    else                                      { color = '#2a9a4a'; opacity = '.9'; }
+    return `<circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="4.2" fill="${color}" opacity="${opacity}"/>`;
   }).join('');
 
-  // Tribune centrale
-  const stats = [
-    { label: 'Adoptées', val: adoptees, color: '#2a9a4a' },
-    { label: 'En vote',  val: enVote,   color: '#c8901a' },
-    { label: 'Rejetées', val: rejettees, color: '#cc3030' },
-  ];
+  // Vote counts (based on 705 real seats)
+  const realPour    = Math.round(705 * pctPour / 100);
+  const realContre  = Math.round(705 * pctContre / 100);
+  const realAbst    = Math.round(705 * pctAbst / 100);
+  const realNonVot  = 705 - realPour - realContre - realAbst;
+
+  const loiActive = activeLois[0];
+  const loiLabel = loiActive ? loiActive.titre || loiActive.title || '' : '';
 
   return `
-    <div style="width:100%;display:flex;flex-direction:column;align-items:center;gap:8px">
-      <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:480px;max-height:260px" xmlns="http://www.w3.org/2000/svg">
-        <!-- Arc de fond -->
-        <path d="M ${cx-outerR-10},${cy} A ${outerR+10},${outerR+10} 0 0,1 ${cx+outerR+10},${cy}" fill="#060d1a" stroke="#1a2e4a" stroke-width="1"/>
-        <!-- Sièges -->
+    <div style="width:100%;display:flex;flex-direction:column;align-items:center;gap:6px">
+      ${loiLabel ? `<div style="font-size:10px;font-weight:700;color:#c8901a;letter-spacing:.08em;text-transform:uppercase;text-align:center;padding:0 20px">${loiLabel}</div>` : `<div style="font-size:10px;color:#2a4a6a;letter-spacing:.06em">Aucune loi en vote</div>`}
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:480px;max-height:270px" xmlns="http://www.w3.org/2000/svg">
+        <path d="M ${cx-outerR-10},${cy} A ${outerR+10},${outerR+10} 0 0,1 ${cx+outerR+10},${cy}" fill="#04080f" stroke="#1a2e4a" stroke-width="1"/>
         ${seats}
-        <!-- Tribune centrale -->
-        <circle cx="${cx}" cy="${cy}" r="24" fill="#0a1628" stroke="#c8901a44" stroke-width="1.5"/>
-        <circle cx="${cx}" cy="${cy}" r="18" fill="#0d1e34" stroke="#c8901a33" stroke-width="1"/>
-        <text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="8" font-family="Cinzel,serif" fill="#c8901a" font-weight="700">EXP</text>
-        <!-- Ligne de sol -->
+        <circle cx="${cx}" cy="${cy}" r="26" fill="#0a1628" stroke="#c8901a55" stroke-width="1.5"/>
+        <circle cx="${cx}" cy="${cy}" r="20" fill="#0d1e34" stroke="#c8901a33" stroke-width="1"/>
+        <text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="7.5" font-family="Cinzel,serif" fill="#c8901a" font-weight="700">EXP</text>
         <line x1="${cx-outerR-10}" y1="${cy}" x2="${cx+outerR+10}" y2="${cy}" stroke="#1a3050" stroke-width="1.5"/>
+        <!-- Pourcentages aux extrémités -->
+        <text x="${cx-outerR+10}" y="${cy-8}" text-anchor="middle" font-size="11" font-family="Rajdhani,sans-serif" fill="#cc3030" font-weight="700">${pctContre}%</text>
+        <text x="${cx+outerR-10}" y="${cy-8}" text-anchor="middle" font-size="11" font-family="Rajdhani,sans-serif" fill="#2a9a4a" font-weight="700">${pctPour}%</text>
       </svg>
-      <!-- Légende -->
-      <div style="display:flex;gap:16px">
-        ${stats.map(s=>`<div style="display:flex;align-items:center;gap:5px">
+      <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
+        ${[
+          {label:'Pour',       val:realPour,   pct:pctPour,   color:'#2a9a4a'},
+          {label:'Contre',     val:realContre, pct:pctContre, color:'#cc3030'},
+          {label:'Abstention', val:realAbst,   pct:pctAbst,   color:'#3a5a7a'},
+          {label:'Non-votants',val:realNonVot, pct:100-pctPour-pctContre-pctAbst, color:'#1a3050'},
+        ].map(s=>`<div style="display:flex;align-items:center;gap:5px">
           <div style="width:8px;height:8px;border-radius:50%;background:${s.color}"></div>
-          <span style="font-size:10px;color:${s.color};font-family:Rajdhani,sans-serif;font-weight:600">${s.label} (${s.val})</span>
+          <span style="font-size:10px;color:${s.color};font-family:Rajdhani,sans-serif;font-weight:600">${s.label} — ${s.val} (${s.pct}%)</span>
         </div>`).join('')}
-        <div style="display:flex;align-items:center;gap:5px">
-          <div style="width:8px;height:8px;border-radius:50%;background:#1a3050"></div>
-          <span style="font-size:10px;color:#3a6a8a;font-family:Rajdhani,sans-serif">Abstention</span>
-        </div>
       </div>
     </div>
   `;
