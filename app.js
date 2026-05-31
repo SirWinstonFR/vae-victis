@@ -579,14 +579,19 @@ function renderZonePanel(zoneName) {
         <div class="nation-pi-total">${totalPI} PI · ${data.territories.length} territoires</div>
       </div>
       <div class="nation-bottom-row">
-        <div class="nation-triangle-wrap">
-          ${renderAlignTriangle(nation.alignX??0.5, nation.alignY??0.5)}
-          <div class="nation-gods">
-            ${d1?`<div class="nation-god-chip" title="${d1.name}" style="border-color:${d1.color}44">
-              ${d1.logo?`<img src="${d1.logo}" alt="${d1.name}">`:`<span style="color:${d1.color};font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700">${d1.name.slice(0,2).toUpperCase()}</span>`}
+        <div class="nation-align-row">
+          <div class="nation-triangle-wrap">
+            ${renderAlignTriangle(nation.alignX??0.5, nation.alignY??0.5)}
+          </div>
+          <div class="nation-gods-col">
+            <div style="font-size:9px;color:var(--c-text3);font-family:Rajdhani,sans-serif;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">Influences</div>
+            ${d1?`<div class="nation-god-chip" title="${d1.name}" style="border-color:${d1.color}55;margin-bottom:5px">
+              ${d1.logo?`<img src="${d1.logo}" alt="${d1.name}">`:`<span style="color:${d1.color};font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700">${d1.name.slice(0,2).toUpperCase()}</span>`}
+              <span style="font-size:10px;color:${d1.color};font-family:Rajdhani,sans-serif;font-weight:600;margin-left:5px">${d1.name}</span>
             </div>`:''}
-            ${d2?`<div class="nation-god-chip" title="${d2.name}" style="border-color:${d2.color}44">
-              ${d2.logo?`<img src="${d2.logo}" alt="${d2.name}">`:`<span style="color:${d2.color};font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700">${d2.name.slice(0,2).toUpperCase()}</span>`}
+            ${d2?`<div class="nation-god-chip" title="${d2.name}" style="border-color:${d2.color}55">
+              ${d2.logo?`<img src="${d2.logo}" alt="${d2.name}">`:`<span style="color:${d2.color};font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700">${d2.name.slice(0,2).toUpperCase()}</span>`}
+              <span style="font-size:10px;color:${d2.color};font-family:Rajdhani,sans-serif;font-weight:600;margin-left:5px">${d2.name}</span>
             </div>`:''}
           </div>
         </div>
