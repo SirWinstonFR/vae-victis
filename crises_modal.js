@@ -385,7 +385,8 @@ function injectNotifButton() {
   btn.innerHTML = '<i class="ti ti-bell"></i>';
   btn.style.position = 'relative';
 
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
     const panel = document.getElementById('notif-panel');
     if (!panel) { renderNotifPanel(); return; }
     const isHidden = panel.classList.contains('hidden') || panel.style.display === 'none';
@@ -406,6 +407,7 @@ function injectNotifButton() {
 // Fermer notif-panel si clic extérieur
 document.addEventListener('click', e => {
   const panel = document.getElementById('notif-panel');
+  if (panel && panel.contains(e.target)) return;
   if (!panel || panel.classList.contains('hidden')) return;
   if (!panel.contains(e.target) && e.target.id !== 'btn-notifs' && !e.target.closest('#btn-notifs')) {
     panel.classList.add('hidden');
