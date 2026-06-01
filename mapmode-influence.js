@@ -222,9 +222,14 @@ window.VV = window.VV || {};
     if (!startTime) startTime = ts;
     const t = ts - startTime;
 
-    // Récupérer proj et pathFn depuis globe.js
-    const pathFn = window.VV.globe?._pathFn?.();
-    const world  = window.VV._world;
+    // Lire proj et path directement depuis window.VV (exposés par globe.js)
+    let pathFn = window.VV._path;
+    const world = window.VV._world;
+
+    // Fallback : reconstruire depuis la projection si _path pas encore sync
+    if (!pathFn && window.VV._proj) {
+      pathFn = d3.geoPath().projection(window.VV._proj);
+    }
 
     if (!pathFn || !world) {
       rafId = requestAnimationFrame(renderLoop);
