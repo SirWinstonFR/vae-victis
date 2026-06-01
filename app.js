@@ -617,7 +617,7 @@ function renderTransPanel(key) {
     .idee-detail-panel { margin:0 12px 10px;background:rgba(255,255,255,.03);border:.5px solid rgba(255,255,255,.07);border-radius:9px;overflow:hidden;display:none; }
     .idee-detail-panel.open { display:block; }
     .idp-card { display:flex;gap:9px;align-items:flex-start;padding:9px 10px 8px; }
-    .idp-thumb { width:52px;height:52px;flex-shrink:0;clip-path:polygon(50% 4%,97% 33%,79% 92%,21% 92%,3% 33%);overflow:hidden;border-radius:0; }
+    .idp-thumb { width:52px;height:52px;flex-shrink:0;overflow:hidden;border-radius:6px; }
     .idp-thumb img { width:100%;height:100%;object-fit:cover;display:block; }
     .idp-right { flex:1;min-width:0; }
     .idp-head { display:flex;align-items:flex-start;justify-content:space-between;gap:4px;margin-bottom:3px; }
@@ -705,8 +705,7 @@ function bindIdeeClicks(zoneKey, idees) {
             ${idea.effet ? `<div class="idp-effet ${idea.type}" style="margin:0;padding:3px 7px">${arr} ${idea.effet}</div>` : ''}
           </div>
         </div>
-        ${idea.long ? `<div class="idp-desc">${idea.long}</div>` : ''}
-        ${idea.effet ? `<div class="idp-effet ${idea.type}">${arr} ${idea.effet}</div>` : ''}`;
+        ${idea.long ? `<div class="idp-desc">${idea.long}</div>` : ''}`;
       detail.classList.add('open');
     });
   });
