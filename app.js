@@ -714,6 +714,58 @@ function bindIdeeClicks(zoneKey, idees) {
   });
 }
 
+function renderCrisesPanel(zoneName) {
+  const sits = (window.VV.situations || []).filter(s => s.zone === zoneName);
+  if (!sits.length) return;
+
+  const canManage = !!me;
+  const items = sits.map(s => {
+    const color = window.VV.getSituationColor(s.type, s.intensity) || '#ff9944';
+    const st    = window.VV.SITUATION_TYPES[s.type] || {};
+    return `
+      <div class="crise-item">
+        <div class="crise-dot" style="background:${color};box-shadow:0 0 5px ${color}"></div>
+        <div class="crise-info">
+          <div class="crise-label" style="color:${color}">${st.label||s.type} — Intensité ${s.intensity}</div>
+          ${s.desc ? `<div class="crise-desc">${s.desc}</div>` : ''}
+        </div>
+        ${canManage ? `<button class="crise-btn" onclick="openCriseModal('${zoneName}','${s.type}',${s.intensity})">Gérer</button>` : ''}
+      </div>`;
+  }).join('');
+
+  const section = document.createElement('div');
+  section.className = 'crise-section';
+  section.innerHTML = `
+    <div class="idees-label" style="color:#ff7744;font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-family:Rajdhani,sans-serif;padding:10px 12px 4px">⚠ Crises actives</div>
+    <div style="padding:0 12px 10px">${items}</div>
+  `;
+
+  // Insérer avant les idées nationales si elles existent, sinon à la fin du panel
+  const ideeSection = document.querySelector('#panel-inner .idees-section');
+  const panelInner  = document.getElementById('panel-inner');
+  if (ideeSection) {
+    ideeSection.parentNode.insertBefore(section, ideeSection);
+  } else if (panelInner) {
+    panelInner.appendChild(section);
+  }
+
+  // Injecter les styles si pas encore présents
+  if (!document.getElementById('vv-crises-style-local')) {
+    const st = document.createElement('style');
+    st.id = 'vv-crises-style-local';
+    st.textContent = `
+      .crise-item { display:flex;align-items:flex-start;gap:8px;padding:7px 9px;border-radius:7px;margin-bottom:5px;background:rgba(255,255,255,.03);border:.5px solid rgba(255,255,255,.07); }
+      .crise-dot  { width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px; }
+      .crise-info { flex:1;min-width:0; }
+      .crise-label{ font-size:11px;font-weight:600;font-family:Rajdhani,sans-serif; }
+      .crise-desc { font-size:10px;color:var(--c-text2);margin-top:2px;line-height:1.4; }
+      .crise-btn  { font-size:10px;font-weight:600;font-family:Rajdhani,sans-serif;padding:3px 8px;border-radius:5px;border:none;cursor:pointer;background:rgba(255,120,60,.15);color:#ff9955;border:.5px solid rgba(255,120,60,.3);transition:background .15s;white-space:nowrap;flex-shrink:0; }
+      .crise-btn:hover { background:rgba(255,120,60,.28); }
+    `;
+    document.head.appendChild(st);
+  }
+}
+
 function renderZonePanel(zoneName) {
   selZone = zoneName;
   const data   = window.VV.ZONES[zoneName];
@@ -782,7 +834,7 @@ function renderZonePanel(zoneName) {
   $('back-btn')?.addEventListener('click', clearZone);
   bindTerrButtons();
   bindIdeeClicks(zoneName, nation.idees);
-  if (window.renderCrisesPanel) window.renderCrisesPanel(zoneName);
+  renderCrisesPanel(zoneName);
   renderRankingPanel(); // Update active state
 }
 
