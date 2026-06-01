@@ -547,14 +547,47 @@ window.repondreNotif = async function repondreNotif(id, rep) {
   updateNotifBadge();
   renderNotifPanel();
 
+  const _me = getMe();
+
   if (notif.payload) {
     await postScript({
       action:   'notif_response',
       notif_id: notif.payload.notif_id,
       reponse:  rep,
-      dieu:     (window.VV.me || me)?.id,
+      dieu:     _me?.id,
       cycle:    window.VV.CYCLE || CYCLE,
     });
+
+    // Si acceptation d'une invitation de crise → bloquer un slot d'attaque
+    if (rep === 'yes' && notif.payload.zone && _me) {
+      const territoire_id = `crise_${notif.payload.zone}`;
+      // Vérifier que le slot n'est pas déjà utilisé
+      const attaquesActuelles = window.VV.attacks.filter(a =>
+        a.attacker === _me.id && String(a.cycle) === String(window.VV.CYCLE || CYCLE)
+      );
+      if (attaquesActuelles.length < 2) {
+        const res = await postScript({
+          action:       'add_attack',
+          cycle:        window.VV.CYCLE || CYCLE,
+          attaquant:    _me.id,
+          cible:        _me.id,
+          territoire_id: territoire_id,
+        });
+        if (res.ok || res.message) {
+          // Mettre à jour les attaques localement
+          window.VV.attacks.push({
+            attacker:   _me.id,
+            target:     _me.id,
+            territory:  territoire_id,
+            cycle:      window.VV.CYCLE || CYCLE,
+            statut:     'déclarée',
+          });
+          // Rafraîchir le dock
+          if (typeof renderDock === 'function') renderDock();
+          if (typeof renderPlayerPanel === 'function') renderPlayerPanel();
+        }
+      }
+    }
   }
 }
 
