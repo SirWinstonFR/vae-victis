@@ -222,7 +222,7 @@ function renderExperreducti() {
 function renderPNJCards() {
   if (!expPNJ.length) return `<div style="grid-column:1/-1;text-align:center;color:#2a4a6a;font-size:11px;padding:20px">Aucune entité — remplissez l'onglet PNJ Experreducti</div>`;
 
-  return expPNJ.slice(0,4).map(p => {
+  return expPNJ.filter(p => p.fonction?.trim() !== 'UEPresident').slice(0,4).map(p => {
     const isActive = selPNJ?.id === p.id;
     const appro = Number(p.approbation || p.approbation_base || 50);
     const approColor = appro >= 70 ? '#2a9a4a' : appro >= 40 ? '#c8901a' : '#cc3030';
@@ -325,8 +325,8 @@ function renderLoisList(isOlympien, isAdmin) {
 // ---- HEMICYCLE ---------------------------------------------
 function renderHemicycle() {
   const TOTAL_SEATS = 705;
-  const W = 520, H = 290;
-  const cx = W / 2, cy = H - 30;
+  const W = 520, H = 310;
+  const cx = W / 2, cy = H - 50;
   const rows = 7;
   const innerR = 50, outerR = 190;
 
@@ -376,22 +376,24 @@ function renderHemicycle() {
 
   // President PNJ
   const pres = expPNJ.find(p => p.fonction?.trim() === 'UEPresident');
-  const presR = 22;
+  const presR = 24;
+  const presCy = cy - presR - 4; // Bien au-dessus de la ligne de sol
   const presEl = pres ? `
     <defs>
       <clipPath id="pres-clip">
-        <circle cx="${cx}" cy="${cy - presR - 2}" r="${presR}"/>
+        <circle cx="${cx}" cy="${presCy}" r="${presR}"/>
       </clipPath>
     </defs>
+    <circle cx="${cx}" cy="${presCy}" r="${presR + 8}" fill="#04080f" stroke="none"/>
     ${pres.portrait_url
-      ? `<image href="${pres.portrait_url}" x="${cx - presR}" y="${cy - presR*2 - 2}" width="${presR*2}" height="${presR*2}" clip-path="url(#pres-clip)" style="cursor:pointer" onclick="expSelectPNJ('${pres.id}')"/>`
-      : `<text x="${cx}" y="${cy - presR}" text-anchor="middle" dominant-baseline="central" font-size="14" font-family="Cinzel,serif" fill="#c8901a" font-weight="700">${(pres.nom||'?').slice(0,1)}</text>`
+      ? `<image href="${pres.portrait_url}" x="${cx - presR}" y="${presCy - presR}" width="${presR*2}" height="${presR*2}" clip-path="url(#pres-clip)" style="cursor:pointer" onclick="expSelectPNJ('${pres.id}')"/>`
+      : `<text x="${cx}" y="${presCy}" text-anchor="middle" dominant-baseline="central" font-size="16" font-family="Cinzel,serif" fill="#c8901a" font-weight="700">${(pres.nom||'?').slice(0,1)}</text>`
     }
-    <circle cx="${cx}" cy="${cy - presR - 2}" r="${presR}" fill="none" stroke="#c8901a" stroke-width="2" style="cursor:pointer" onclick="expSelectPNJ('${pres.id}')"/>
-    <circle cx="${cx}" cy="${cy - presR - 2}" r="${presR + 5}" fill="none" stroke="#c8901a33" stroke-width="1" stroke-dasharray="3,3"/>
+    <circle cx="${cx}" cy="${presCy}" r="${presR}" fill="none" stroke="#c8901a" stroke-width="2" style="cursor:pointer" onclick="expSelectPNJ('${pres.id}')"/>
+    <circle cx="${cx}" cy="${presCy}" r="${presR + 6}" fill="none" stroke="#c8901a55" stroke-width="1" stroke-dasharray="4,3"/>
   ` : `
-    <circle cx="${cx}" cy="${cy - presR - 2}" r="${presR}" fill="#0a1628" stroke="#c8901a55" stroke-width="1.5"/>
-    <text x="${cx}" y="${cy - presR}" text-anchor="middle" dominant-baseline="central" font-size="7" font-family="Cinzel,serif" fill="#c8901a" font-weight="700">EXP</text>
+    <circle cx="${cx}" cy="${presCy}" r="${presR}" fill="#0a1628" stroke="#c8901a55" stroke-width="1.5"/>
+    <text x="${cx}" y="${presCy}" text-anchor="middle" dominant-baseline="central" font-size="8" font-family="Cinzel,serif" fill="#c8901a" font-weight="700">EXP</text>
   `;
 
   const realPour   = Math.round(705 * pctPour / 100);
