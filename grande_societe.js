@@ -11,7 +11,7 @@ const GS_CFG = {
   SHEET_ID: '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
   APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbyCaQI2c5ds2uCmoeCw6_fALjh-8ii05fkOVgZmWPhbY64vyYbrNcFvqbFKRb7rUwyxwQ/exec',
   GIDS: {
-    gouvernement: '', // À renseigner
+    Gouvernement: '', // À renseigner
     nasa:         '',
     cia:          '',
     entreprises:  '',
@@ -223,9 +223,9 @@ function gsOpenModule(moduleId) {
   if (!body) return;
 
   body.innerHTML = `
-    <div style="width:100%;display:flex;flex-direction:column;gap:20px">
+    <div style="width:100%;height:100%;display:flex;flex-direction:column;gap:0;overflow:hidden">
       <!-- Barre de navigation -->
-      <div style="display:flex;align-items:center;gap:12px">
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid #1a2844;flex-shrink:0">
         <button onclick="gsRetourHub()"
           style="background:none;border:1px solid #2a3a54;border-radius:6px;color:#5a7a9a;padding:5px 12px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;letter-spacing:.08em;transition:all .12s"
           onmouseover="this.style.borderColor='#c8a84b';this.style.color='#c8a84b'"
@@ -235,19 +235,26 @@ function gsOpenModule(moduleId) {
         <div style="font-size:14px;font-weight:600;letter-spacing:.12em;color:#c8a84b;text-transform:uppercase">
           ${labels[moduleId] || moduleId}
         </div>
-        <div style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:9px;color:#3a5880">MODULE EN CONSTRUCTION</div>
       </div>
-
-      <!-- Placeholder module -->
-      <div style="border:1px solid #1a2844;border-radius:8px;padding:40px;text-align:center;background:#060a12">
-        <div style="font-size:32px;margin-bottom:14px">🚧</div>
-        <div style="font-size:14px;font-weight:600;color:#5a7a9a;letter-spacing:.1em;margin-bottom:8px">MODULE À VENIR</div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#2a3a54;letter-spacing:.06em">
-          Le contenu de « ${labels[moduleId]} » sera développé prochainement.
-        </div>
-      </div>
+      <!-- Contenu du module -->
+      <div id="gs-module-content" style="flex:1;overflow:hidden;display:flex;flex-direction:column"></div>
     </div>
   `;
+
+  // Charger le bon module
+  const content = document.getElementById('gs-module-content');
+  if (moduleId === 'gouvernement' && typeof gsRenderGouvernement === 'function') {
+    gsRenderGouvernement(content);
+  } else {
+    content.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px">
+        <div style="font-size:32px">🚧</div>
+        <div style="font-size:14px;font-weight:600;color:#5a7a9a;letter-spacing:.1em">MODULE À VENIR</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#2a3a54;letter-spacing:.06em">
+          « ${labels[moduleId]} » sera développé prochainement.
+        </div>
+      </div>`;
+  }
 }
 
 function gsRetourHub() {
