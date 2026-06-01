@@ -38,9 +38,18 @@ async function expFetch(gid) {
   let cols = data.table.cols.map(c => (c.label||'').trim());
   if (!cols.some(c => c)) {
     cols = rows[0].c.map(c => String(c?.v??'').trim());
-    return rows.slice(1).map(r => Object.fromEntries(cols.map((col,i) => [col, String(r?.c?.[i]?.v??'').trim()])));
+    return rows.slice(1).map(r => {
+      const obj = Object.fromEntries(cols.map((col,i) => [col, String(r?.c?.[i]?.v??'').trim()]));
+      // Fix portrait URLs with comma instead of dot
+      if (obj.portrait_url) obj.portrait_url = obj.portrait_url.replace(/,png$/i, '.png').replace(/,jpg$/i, '.jpg');
+      return obj;
+    });
   }
-  return rows.map(r => Object.fromEntries(cols.map((col,i) => [col, String(r?.c?.[i]?.v??'').trim()])));
+  return rows.map(r => {
+    const obj = Object.fromEntries(cols.map((col,i) => [col, String(r?.c?.[i]?.v??'').trim()]));
+    if (obj.portrait_url) obj.portrait_url = obj.portrait_url.replace(/,png$/i, '.png').replace(/,jpg$/i, '.jpg');
+    return obj;
+  });
 }
 
 async function expPostScript(payload) {
@@ -224,7 +233,8 @@ function renderPNJCards() {
 
   return expPNJ.filter(p => p.fonction?.trim() !== 'UEPresident').slice(0,4).map(p => {
     const isActive = selPNJ?.id === p.id;
-    const appro = Number(p.approbation || p.approbation_base || 50);
+    const approKey = expMe ? `appro_${expMe.id}` : 'approbation';
+    const appro = Number(p[approKey] || p.approbation || p.approbation_base || 50);
     const approColor = appro >= 70 ? '#2a9a4a' : appro >= 40 ? '#c8901a' : '#cc3030';
     const isRejected = cycleRejects[p.id];
     const hasScene = cycleScenes[p.id];
@@ -253,7 +263,8 @@ function renderPNJCards() {
 function renderPNJDetail(pnjId) {
   const p = expPNJ.find(x => x.id === pnjId);
   if (!p) return '';
-  const appro = Number(p.approbation || p.approbation_base || 50);
+  const approKey = expMe ? `appro_${expMe.id}` : 'approbation';
+  const appro = Number(p[approKey] || p.approbation || p.approbation_base || 50);
   const approColor = appro >= 70 ? '#2a9a4a' : appro >= 40 ? '#c8901a' : '#cc3030';
   const isRejected = cycleRejects[pnjId];
   const hasScene = cycleScenes[pnjId];
@@ -377,7 +388,7 @@ function renderHemicycle() {
   // President PNJ
   const pres = expPNJ.find(p => p.fonction?.trim() === 'UEPresident');
   const presR = 28;
-  const presCy = cy - presR - 8; // Centre bas de l'hémicycle
+  const presCy = cy - presR - 14; // Au-dessus de la ligne de sol
   const presEl = pres ? `
     <defs>
       <clipPath id="pres-clip">
