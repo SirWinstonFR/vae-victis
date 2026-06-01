@@ -11,7 +11,7 @@ const GOV_CFG = {
   SHEET_ID:    '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
   APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbyCaQI2c5ds2uCmoeCw6_fALjh-8ii05fkOVgZmWPhbY64vyYbrNcFvqbFKRb7rUwyxwQ/exec',
   GIDS: {
-    Gouvernement: '789610864', // À renseigner — onglet "gouvernement" dans le Sheet
+    gouvernement: '', // À renseigner — onglet "gouvernement" dans le Sheet
   },
 };
 
@@ -20,16 +20,16 @@ const GOV_CFG = {
 const ELECTION_DATA = {
   annee: 2028,
   candidat_dem: {
-    nom:     'Ronan "Ron" Carver',
+    nom:     'Candidat Démocrate',
     parti:   'Démocrate',
-    portrait: 'https://imgur.com/NRE7hfy.png', // URL portrait
+    portrait: '', // URL portrait
     grands_electeurs: 286,
     couleur: '#1a6aaa',
   },
   candidat_rep: {
-    nom:     'Donald J. Trump',
+    nom:     'Candidat Républicain',
     parti:   'Républicain',
-    portrait: 'https://imgur.com/bhasTZt.png', // URL portrait
+    portrait: '', // URL portrait
     grands_electeurs: 252,
     couleur: '#cc2222',
   },
@@ -123,7 +123,7 @@ async function govFetch() {
     const data = JSON.parse(m[1]);
     const rows = data.table.rows || [];
     if (!rows.length) return null;
-    let cols = data.table.cols.map(c => (c.label || '').trim());
+    let cols = data.table.cols.map(c => (c.label || '').trim().replace(/^"+|"+$/g, ''));
     const hasLabels = cols.some(c => c.length > 0);
     if (!hasLabels) {
       cols = rows[0].c.map(c => String(c?.v ?? '').trim());
