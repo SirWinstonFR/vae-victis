@@ -225,8 +225,16 @@ window.PANTHEON_CHIEFS = window.PANTHEON_CHIEFS || {
 };
 const PANTHEON_CHIEFS = window.PANTHEON_CHIEFS;
 
-// ---- ÉTAT LOCAL CRISES
-let _criseModal = null;
+// ---- ÉTAT LOCAL CRISES (protégé contre double chargement)
+if (typeof window._VV_CRISES_LOADED === 'undefined') {
+  window._VV_CRISES_LOADED  = true;
+  window._criseModal        = null;
+  window._notifPanel        = null;
+  window._notifications     = [];
+}
+// Références locales vers l'état global
+const getModal  = ()    => window._criseModal;
+const setModal  = (v)   => { window._criseModal = v; };
 
 // Accès à 'me' depuis app.js
 function getMe() { return window.VV.me || null; }
@@ -255,7 +263,7 @@ function piEcart(dieuId) {
 }
 
 function addLocalNotif(notif) {
-  _notifications.unshift({ ...notif, id: Date.now() });
+  window._notifications.unshift({ ...notif, id: Date.now() });
   updateNotifBadge();
 }
 
@@ -270,7 +278,7 @@ function openCriseModal(zoneName, criseType, criseIntensity) {
   const bonusIdees = getBonusIdees(zoneName);
   const allDeities = getAllDeities();
 
-  _criseModal = { zoneName, criseType, criseIntensity, option: null, invites: [], ideeIdx: null };
+  window._criseModal = { zoneName, criseType, criseIntensity, option: null, invites: [], ideeIdx: null };
 
   // Overlay
   let overlay = document.getElementById('crise-overlay');
@@ -364,9 +372,9 @@ function openCriseModal(zoneName, criseType, criseIntensity) {
 }
 
 function selectCriseOption(opt) {
-  _criseModal.option  = opt;
-  _criseModal.invites = [];
-  _criseModal.ideeIdx = null;
+  window._criseModal.option  = opt;
+  window._criseModal.invites = [];
+  window._criseModal.ideeIdx = null;
 
   ['invite','solo','sacrifice'].forEach(o => {
     document.getElementById(`cm-opt-${o}`)?.classList.toggle('selected', o === opt);
@@ -380,15 +388,15 @@ function selectCriseOption(opt) {
 }
 
 function toggleInvite(dieuId) {
-  const idx = _criseModal.invites.indexOf(dieuId);
-  if (idx === -1) _criseModal.invites.push(dieuId);
-  else _criseModal.invites.splice(idx, 1);
+  const idx = window._criseModal.invites.indexOf(dieuId);
+  if (idx === -1) window._criseModal.invites.push(dieuId);
+  else window._criseModal.invites.splice(idx, 1);
   document.getElementById(`cm-d-${dieuId}`)?.classList.toggle('checked', idx === -1);
-  document.getElementById('cm-confirm-btn').disabled = _criseModal.invites.length === 0;
+  document.getElementById('cm-confirm-btn').disabled = window._criseModal.invites.length === 0;
 }
 
 function selectIdee(i) {
-  _criseModal.ideeIdx = i;
+  window._criseModal.ideeIdx = i;
   document.querySelectorAll('.cm-idee-row').forEach((el, j) => el.classList.toggle('selected', j === i));
   document.getElementById('cm-confirm-btn').disabled = false;
 }
@@ -396,13 +404,13 @@ function selectIdee(i) {
 function closeCriseModal() {
   const overlay = document.getElementById('crise-overlay');
   if (overlay) overlay.className = 'hidden';
-  _criseModal = null;
+  window._criseModal = null;
 }
 
 async function confirmCrise() {
   const me = getMe();
-  if (!_criseModal || !me) return;
-  const { zoneName, criseType, criseIntensity, option, invites, ideeIdx } = _criseModal;
+  if (!window._criseModal || !me) return;
+  const { zoneName, criseType, criseIntensity, option, invites, ideeIdx } = window._criseModal;
   const btn = document.getElementById('cm-confirm-btn');
   btn.disabled = true;
   btn.textContent = '…';
@@ -495,11 +503,10 @@ window.closeCriseModal    = closeCriseModal;
 window.confirmCrise       = confirmCrise;
 
 // ---- ÉTAT NOTIFICATIONS
-let _notifPanel    = null;
-let _notifications = [];
+// état géré via window._notifPanel et window._notifications
 
 function updateNotifBadge() {
-  const unread = _notifications.filter(n => !n.read).length;
+  const unread = window.window._notifications.filter(n => !n.read).length;
   let badge = document.querySelector('#btn-notifs .notif-badge');
   const btn = document.getElementById('btn-notifs');
   if (!btn) return;
@@ -522,15 +529,15 @@ function renderNotifPanel() {
     panel = document.createElement('div');
     panel.id = 'notif-panel';
     document.body.appendChild(panel);
-    _notifPanel = panel;
+    window._notifPanel = panel;
   }
 
-  if (_notifications.length === 0) {
+  if (window._notifications.length === 0) {
     panel.innerHTML = `<div class="np-header">Notifications</div><div class="np-empty">Aucune notification</div>`;
     return;
   }
 
-  const items = _notifications.map(n => {
+  const items = window._notifications.map(n => {
     if (n.read) {
       return `<div class="np-item"><div class="np-item-title">${n.title}</div><div class="np-item-read">${n.desc}</div></div>`;
     }
@@ -545,11 +552,11 @@ function renderNotifPanel() {
       </div>`;
   }).join('');
 
-  panel.innerHTML = `<div class="np-header">Notifications (${_notifications.filter(n=>!n.read).length} nouvelles)</div>${items}`;
+  panel.innerHTML = `<div class="np-header">Notifications (${window._notifications.filter(n=>!n.read).length} nouvelles)</div>${items}`;
 }
 
 window.repondreNotif = async function repondreNotif(id, rep) {
-  const notif = _notifications.find(n => n.id === id);
+  const notif = window._notifications.find(n => n.id === id);
   if (!notif) return;
   notif.read = true;
   updateNotifBadge();
@@ -609,7 +616,7 @@ async function loadNotifications() {
     const d = JSON.parse(match[0]);
     if (d.notifs && Array.isArray(d.notifs)) {
       d.notifs.forEach(n => {
-        _notifications.push({
+        window._notifications.push({
           id:      n.id || Date.now() + Math.random(),
           title:   n.title || 'Notification',
           desc:    n.desc  || '',
@@ -646,7 +653,7 @@ function injectNotifButton() {
       panel.classList.remove('hidden');
       panel.style.display = '';
       renderNotifPanel();
-      _notifications.filter(n => !n.read && !n.payload).forEach(n => n.read = true);
+      window.window._notifications.filter(n => !n.read && !n.payload).forEach(n => n.read = true);
       updateNotifBadge();
     } else {
       panel.classList.add('hidden');
