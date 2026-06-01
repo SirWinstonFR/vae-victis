@@ -597,98 +597,85 @@ function computeZoneInfluence() {
 }
 
 // ---- COUCHE INFLUENCE — GLOW RADIAL ANIMÉ ------------------
-// Chaque zone a un radialGradient centré sur son cx/cy projeté,
-// qui pulse du centre vers les frontières via CSS animation.
+// Le gradient est appliqué directement en fill sur le path du pays —
+// pas de clipPath séparé, donc jamais de débordement.
 function updateInfluenceLayer() {
   if (!gMap || !_countries || !_path) return;
 
   const gInf = gMap.select('.g-influence');
   gInf.selectAll('*').remove();
 
-  // Nettoyer les anciens defs d'influence
+  // Nettoyer les anciens gradients
   svgSel.select('defs').selectAll('[id^="vv-rg-"]').remove();
-  svgSel.select('defs').selectAll('[id^="vv-clip-"]').remove();
 
   const influence = computeZoneInfluence();
   const countryMap = window.VV.COUNTRY_MAP || {};
   const zones = window.VV.ZONES || {};
-
-  // Regrouper les features par zone
-  const zoneFeats = {}; // zoneName -> [feat, ...]
-  _countries.features.forEach(feat => {
-    const cn = feat.properties?.name;
-    const zn = countryMap[cn];
-    if (!zn || !influence[zn]) return;
-    if (!zoneFeats[zn]) zoneFeats[zn] = [];
-    zoneFeats[zn].push(feat);
-  });
-
   const defs = svgSel.select('defs');
 
-  Object.entries(zoneFeats).forEach(([zoneName, feats], idx) => {
-    const inf = influence[zoneName];
-    if (!inf) return;
+  // Index gradients par zone (une seule définition par zone)
+  const zoneGradId = {};
+  Object.entries(influence).forEach(([zoneName, inf], idx) => {
     const zd = zones[zoneName];
+    const rid = `vv-rg-${idx}`;
+    zoneGradId[zoneName] = rid;
 
-    // Centre projeté de la zone
+    // Centre projeté : cx/cy de la zone ou centroïde calculé plus tard
+    // On stocke les infos, le cx/cy sera mis à jour à chaque redraw
     let cpx, cpy;
     if (zd?.cx !== undefined && zd?.cy !== undefined) {
       const pt = proj([zd.cx, zd.cy]);
       if (pt) { cpx = pt[0]; cpy = pt[1]; }
     }
-    // Fallback : centroïde géographique de la première feature
     if (cpx === undefined) {
-      const centroids = feats.map(f => _path.centroid(f)).filter(c => c && !isNaN(c[0]));
-      if (!centroids.length) return;
-      cpx = centroids.reduce((s,c) => s + c[0], 0) / centroids.length;
-      cpy = centroids.reduce((s,c) => s + c[1], 0) / centroids.length;
+      // Fallback : centroïde de tous les pays de la zone
+      const feats = _countries.features.filter(f => countryMap[f.properties?.name] === zoneName);
+      const cs = feats.map(f => _path.centroid(f)).filter(c => c && !isNaN(c[0]) && !isNaN(c[1]));
+      if (!cs.length) return;
+      cpx = cs.reduce((s,c) => s+c[0], 0) / cs.length;
+      cpy = cs.reduce((s,c) => s+c[1], 0) / cs.length;
     }
 
-    const W = +svgSel.attr('width'), H = +svgSel.attr('height');
-    const rid = `vv-rg-${idx}`;
-    const clipId = `vv-clip-${idx}`;
+    // Rayon = ~40% de l'échelle du globe, adapté à la taille de la zone
+    const gradR = proj.scale() * 0.45;
 
-    // Clippath = union de toutes les features de la zone
-    const clip = defs.append('clipPath').attr('id', clipId);
-    feats.forEach(f => clip.append('path').datum(f).attr('d', _path));
+    const alpha1 = Math.min(0.95, 0.60 + inf.strength * 0.35);
+    const alpha2 = Math.min(0.50, 0.20 + inf.strength * 0.25);
 
-    // RadialGradient en coordonnées userSpace, centré sur le centre projeté
-    const gradR = proj.scale() * 0.55; // rayon du gradient ~ fraction du globe
     const rg = defs.append('radialGradient')
       .attr('id', rid)
       .attr('gradientUnits', 'userSpaceOnUse')
-      .attr('cx', cpx).attr('cy', cpy)
-      .attr('r', gradR)
-      .attr('fx', cpx).attr('fy', cpy);
+      .attr('cx', cpx.toFixed(1)).attr('cy', cpy.toFixed(1))
+      .attr('r', gradR.toFixed(1))
+      .attr('fx', cpx.toFixed(1)).attr('fy', cpy.toFixed(1));
 
-    const alpha1 = (0.55 + inf.strength * 0.40).toFixed(2);
-    const alpha2 = (0.15 + inf.strength * 0.20).toFixed(2);
     rg.append('stop').attr('offset', '0%')
-      .attr('stop-color', inf.color).attr('stop-opacity', alpha1);
-    rg.append('stop').attr('offset', '55%')
-      .attr('stop-color', inf.color).attr('stop-opacity', alpha2);
+      .attr('stop-color', inf.color).attr('stop-opacity', alpha1.toFixed(2));
+    rg.append('stop').attr('offset', '50%')
+      .attr('stop-color', inf.color).attr('stop-opacity', alpha2.toFixed(2));
     rg.append('stop').attr('offset', '100%')
       .attr('stop-color', inf.color).attr('stop-opacity', '0');
+  });
 
-    // Rect plein clippé = le pays rempli du gradient
-    gInf.append('rect')
-      .attr('x', 0).attr('y', 0).attr('width', W).attr('height', H)
+  // Dessiner un path par pays, rempli directement avec le gradient de sa zone
+  _countries.features.forEach(feat => {
+    const cn = feat.properties?.name;
+    const zn = countryMap[cn];
+    if (!zn || !influence[zn] || !zoneGradId[zn]) return;
+
+    const inf = influence[zn];
+    const rid = zoneGradId[zn];
+
+    // Fond coloré : le path du pays lui-même, fill = gradient radial
+    // → strictement limité aux frontières, jamais de débordement
+    gInf.append('path').datum(feat)
+      .attr('d', _path)
       .attr('fill', `url(#${rid})`)
-      .attr('clip-path', `url(#${clipId})`)
+      .attr('stroke', inf.color)
+      .attr('stroke-width', inf.strength >= 0.65 ? 1.2 : 0.6)
+      .attr('stroke-opacity', (0.35 + inf.strength * 0.45).toFixed(2))
       .attr('class', inf.cls)
       .style('pointer-events', 'none');
-
-    // Contour lumineux sur les bordures
-    feats.forEach(f => {
-      gInf.append('path').datum(f)
-        .attr('d', _path)
-        .attr('fill', 'none')
-        .attr('stroke', inf.color)
-        .attr('stroke-width', inf.strength >= 0.65 ? 1.4 : 0.8)
-        .attr('opacity', (0.3 + inf.strength * 0.5).toFixed(2))
-        .attr('class', inf.cls)
-        .style('pointer-events', 'none');
-    });
   });
 }
 
