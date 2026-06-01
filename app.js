@@ -34,6 +34,9 @@ const FACTIONS = {
 
 const FACTION_ORDER = ['sovereign', 'olympien', 'shemning'];
 
+// Exposé pour globe.js (colorisation Victoria 3 via alignement triangle)
+// NATIONS est mis à jour dans loadData() après chaque sync
+
 window.VV.SITUATION_TYPES = {
   crise:       { label:'Crise',        icon:'!',  levels:[{intensity:1,color:'#ff9944'},{intensity:2,color:'#ff5500'},{intensity:3,color:'#cc1100'}] },
   guerre:      { label:'Guerre',       icon:'X',  levels:[{intensity:1,color:'#ff3030'},{intensity:2,color:'#cc0000'},{intensity:3,color:'#880000'}] },
@@ -269,6 +272,8 @@ async function loadData() {
         bio:      (r.leader_bio || '').trim(),
       };
     });
+
+    window.VV.NATIONS = nations; // pour globe.js (patterns Victoria 3)
 
     // Situations
     window.VV.situations = situ.filter(r => r.zone && r.type).map(r => ({
@@ -1117,6 +1122,7 @@ async function fullRefresh() {
   window.VV.globe.buildDots();
   window.VV.globe.buildBadges();
   window.VV.globe.redraw();
+  window.VV.globe.updateInfluenceLayer?.();
   renderDock();
   renderRankingPanel();
   updateWarningTicker();
@@ -1135,6 +1141,7 @@ async function init() {
   ]);
 
   window.VV.globe.init(world);
+  window.VV.globe.updateInfluenceLayer?.();
   renderDock();
   renderRankingPanel();
   // Afficher France par défaut
