@@ -66,6 +66,25 @@ function initGlobe(world) {
 
 
 
+  // ---- Patterns d'influence style Victoria 3 ----
+  injectInfluencePatterns(defs, W, H);
+
+  // Injection CSS animation pulsation (une seule fois)
+  if (!document.getElementById('vv-influence-css')) {
+    const st = document.createElement('style');
+    st.id = 'vv-influence-css';
+    st.textContent = `
+      @keyframes vv-pulse-ol { 0%,100%{opacity:.55} 50%{opacity:.82} }
+      @keyframes vv-pulse-sv { 0%,100%{opacity:.50} 50%{opacity:.78} }
+      @keyframes vv-pulse-sh { 0%,100%{opacity:.52} 50%{opacity:.80} }
+      .vv-inf-ol { animation: vv-pulse-ol 3.2s ease-in-out infinite; }
+      .vv-inf-sv { animation: vv-pulse-sv 3.8s ease-in-out infinite; }
+      .vv-inf-sh { animation: vv-pulse-sh 4.4s ease-in-out infinite; }
+      .vv-inf-strong { filter: drop-shadow(0 0 3px currentColor); }
+    `;
+    document.head.appendChild(st);
+  }
+
   // Layers
   gMap    = svgSel.append('g').attr('class', 'g-map');
   gDots   = svgSel.append('g').attr('class', 'g-dots');
@@ -79,6 +98,10 @@ function initGlobe(world) {
     .attr('stroke', '#162a3e')
     .attr('stroke-width', .25)
     .attr('opacity', .6);
+
+  // Couche d'influence (sous les pays, au-dessus du graticule)
+  // — remplie après le chargement des données via updateInfluenceLayer()
+  gMap.append('g').attr('class', 'g-influence');
 
   // Pays
   gMap.selectAll('path.country')
@@ -175,6 +198,9 @@ function redrawGlobe() {
 
   gMap.select('path:first-child').attr('d', d3.geoPath().projection(proj)(d3.geoGraticule()()));
   gMap.selectAll('path.country').attr('d', _path);
+
+  // Redraw couche influence
+  gMap.select('.g-influence').selectAll('path').attr('d', _path);
 
   buildDots();
   buildBadges();
@@ -477,6 +503,122 @@ function zoomGlobeReset() {
   curK = 1; redrawGlobe(); applyGlobeZoom();
 }
 
+// ---- PATTERNS VICTORIA 3 -----------------------------------
+function injectInfluencePatterns(defs) {
+  // OLYMPIENS — hexagones dorés
+  const olPat = defs.append('pattern')
+    .attr('id', 'vv-pat-ol').attr('patternUnits', 'userSpaceOnUse')
+    .attr('width', 14).attr('height', 16);
+  olPat.append('rect').attr('width', 14).attr('height', 16)
+    .attr('fill', 'rgba(200,144,26,0.20)');
+  olPat.append('path')
+    .attr('d', 'M7,1.5 L12,4.5 L12,10.5 L7,13.5 L2,10.5 L2,4.5 Z')
+    .attr('fill', 'none').attr('stroke', 'rgba(200,144,26,0.65)').attr('stroke-width', '0.9');
+
+  // SOVEREIGN — hachures horizontales bleues
+  const svPat = defs.append('pattern')
+    .attr('id', 'vv-pat-sv').attr('patternUnits', 'userSpaceOnUse')
+    .attr('width', 12).attr('height', 9);
+  svPat.append('rect').attr('width', 12).attr('height', 9)
+    .attr('fill', 'rgba(58,122,204,0.18)');
+  svPat.append('line')
+    .attr('x1', 0).attr('y1', 3.5).attr('x2', 12).attr('y2', 3.5)
+    .attr('stroke', 'rgba(58,122,204,0.70)').attr('stroke-width', '1.1');
+  svPat.append('line')
+    .attr('x1', 0).attr('y1', 7.5).attr('x2', 12).attr('y2', 7.5)
+    .attr('stroke', 'rgba(58,122,204,0.35)').attr('stroke-width', '0.5');
+
+  // SHEMNING — diagonales croisées rouges
+  const shPat = defs.append('pattern')
+    .attr('id', 'vv-pat-sh').attr('patternUnits', 'userSpaceOnUse')
+    .attr('width', 11).attr('height', 11);
+  shPat.append('rect').attr('width', 11).attr('height', 11)
+    .attr('fill', 'rgba(176,40,40,0.18)');
+  shPat.append('line')
+    .attr('x1', 0).attr('y1', 0).attr('x2', 11).attr('y2', 11)
+    .attr('stroke', 'rgba(176,40,40,0.65)').attr('stroke-width', '0.9');
+  shPat.append('line')
+    .attr('x1', 11).attr('y1', 0).attr('x2', 0).attr('y2', 11)
+    .attr('stroke', 'rgba(176,40,40,0.40)').attr('stroke-width', '0.5');
+}
+
+// ---- CALCUL INFLUENCE PAR ZONE (depuis alignX/alignY du triangle) ----
+// Même géométrie que renderAlignTriangle() dans app.js :
+//   wO  = 1 - ay          -> Olympiens  (sommet haut)
+//   wS  = ay * (1 - ax)   -> Sovereign  (bas gauche)
+//   wSh = ay * ax          -> Shemning   (bas droite)
+function computeZoneInfluence() {
+  const FACS = {
+    sovereign: { color: '#3a7acc', colorRgb: '58,122,204', pat: 'vv-pat-sv', cls: 'vv-inf-sv' },
+    olympien:  { color: '#c8901a', colorRgb: '200,144,26', pat: 'vv-pat-ol', cls: 'vv-inf-ol' },
+    shemning:  { color: '#b02828', colorRgb: '176,40,40',  pat: 'vv-pat-sh', cls: 'vv-inf-sh' },
+  };
+
+  const result = {};
+  const nations = window.VV.NATIONS || {};
+
+  Object.entries(nations).forEach(([zoneName, n]) => {
+    const ax = n.alignX ?? 0.5;
+    const ay = n.alignY ?? 0.5;
+
+    const wO  = 1 - ay;
+    const wS  = ay * (1 - ax);
+    const wSh = ay * ax;
+    const total = wO + wS + wSh;
+    if (total === 0) return;
+
+    const scores = { olympien: wO / total, sovereign: wS / total, shemning: wSh / total };
+    const dom = Object.keys(scores).reduce((a, b) => scores[a] >= scores[b] ? a : b);
+    const strength = scores[dom];
+
+    if (strength < 0.38) return;
+
+    result[zoneName] = { faction: dom, strength, ...FACS[dom], scores };
+  });
+
+  return result;
+}
+
+// ---- COUCHE INFLUENCE VICTORIA 3 ---------------------------
+function updateInfluenceLayer() {
+  if (!gMap || !_countries || !_path) return;
+
+  const gInf = gMap.select('.g-influence');
+  gInf.selectAll('*').remove();
+
+  const influence = computeZoneInfluence();
+  const countryMap = window.VV.COUNTRY_MAP || {};
+
+  _countries.features.forEach(feat => {
+    const countryName = feat.properties?.name;
+    const zoneName = countryMap[countryName];
+    if (!zoneName) return;
+    const inf = influence[zoneName];
+    if (!inf) return;
+
+    const isStrong = inf.strength >= 0.65;
+    const baseAlpha = 0.12 + inf.strength * 0.28;
+
+    // 1. Fond couleur semi-transparent
+    gInf.append('path').datum(feat)
+      .attr('d', _path)
+      .attr('fill', `rgba(${inf.colorRgb},${baseAlpha.toFixed(2)})`)
+      .attr('stroke', 'none')
+      .attr('class', `${inf.cls}${isStrong ? ' vv-inf-strong' : ''}`)
+      .style('color', inf.color)
+      .style('pointer-events', 'none');
+
+    // 2. Pattern texturé par-dessus
+    gInf.append('path').datum(feat)
+      .attr('d', _path)
+      .attr('fill', `url(#${inf.pat})`)
+      .attr('stroke', 'none')
+      .attr('class', inf.cls)
+      .style('opacity', (0.55 + inf.strength * 0.35).toFixed(2))
+      .style('pointer-events', 'none');
+  });
+}
+
 // ---- EXPORTS -----------------------------------------------
 window.VV.globe = {
   init: initGlobe,
@@ -487,6 +629,7 @@ window.VV.globe = {
   highlightTransMembers,
   resetCountryColors,
   drawSituations,
+  updateInfluenceLayer,   // ← nouveau
   zoomIn: zoomGlobeIn,
   zoomOut: zoomGlobeOut,
   zoomReset: zoomGlobeReset,
