@@ -989,7 +989,7 @@ function renderPlayerPanel() {
     ${[0,1].map(i => {
       const a = atks[i];
       return `<div class="slot${a?' atk':''}">
-        ${a?`<div class="slot-text atk"><i class="ti ti-sword"></i> ${getD(a.target).name} — ${getT(a.territory)?.name||a.territory}</div>
+        ${a?`<div class="slot-text atk"><i class="ti ti-sword"></i> ${a.territory?.startsWith('crise_') ? '⚠ Crise — '+a.territory.replace('crise_','') : getD(a.target).name+' — '+(getT(a.territory)?.name||a.territory)}</div>
              <button class="xbtn" data-idx="${i}"><i class="ti ti-x"></i></button>`
           :`<span class="slot-text">${i===0?'Sélectionner une divinité ennemie':'Slot 2 optionnel'}</span>`}
       </div>`;
