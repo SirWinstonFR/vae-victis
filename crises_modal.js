@@ -218,11 +218,12 @@
 // ================================================================
 
 // ---- CONSTANTES CRISES
-const PANTHEON_CHIEFS = {
+window.PANTHEON_CHIEFS = window.PANTHEON_CHIEFS || {
   sovereign: 'liberty',
   olympien:  'zeus',
   shemning:  'entite',
 };
+const PANTHEON_CHIEFS = window.PANTHEON_CHIEFS;
 
 // ---- ÉTAT LOCAL CRISES
 let _criseModal = null;
@@ -538,8 +539,8 @@ function renderNotifPanel() {
         <div class="np-item-title">${n.title}</div>
         <div class="np-item-desc">${n.desc}</div>
         <div class="np-item-btns">
-          <button class="np-btn np-btn-yes" onclick="repondreNotif(${n.id},'yes')">✓ Accepter</button>
-          <button class="np-btn np-btn-no"  onclick="repondreNotif(${n.id},'no')">✕ Refuser</button>
+          <button class="np-btn np-btn-yes" onclick="repondreNotif('${n.id}','yes')">✓ Accepter</button>
+          <button class="np-btn np-btn-no"  onclick="repondreNotif('${n.id}','no')">✕ Refuser</button>
         </div>
       </div>`;
   }).join('');
