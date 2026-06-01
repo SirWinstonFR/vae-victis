@@ -375,7 +375,7 @@ async function loadNotifications() {
 // ---- BOUTON NOTIFS DANS LA TOPBAR ----------------------------
 function injectNotifButton() {
   // Cherche la topbar pour y ajouter le bouton notifs
-  const topbar = document.querySelector('.topbar, #topbar, .top-bar');
+  const topbar = document.querySelector('.header-right, #header, header');
   if (!topbar || document.getElementById('btn-notifs')) return;
 
   const btn = document.createElement('button');
