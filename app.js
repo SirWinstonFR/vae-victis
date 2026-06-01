@@ -1465,9 +1465,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Boutons faction (placeholder — fonctionnalité à définir)
-  document.getElementById('btn-grande-societe')?.addEventListener('click', () => {
-    alert('La Grande Société — fonctionnalité à venir.');
-  });
+document.getElementById('btn-grande-societe')?.addEventListener('click', () => {
+    if (typeof openGrandeSociete === 'function') {
+        openGrandeSociete(me?.id || null);
+    }
+});
   document.getElementById('btn-experreducti')?.addEventListener('click', () => {
     if (typeof openExperreducti === 'function') {
       openExperreducti(me?.id || null);
