@@ -770,8 +770,7 @@ function renderZonePanel(zoneName) {
         </div>
       </div>
     </div>
-    ${renderIdeeNationales(nation.idees||[], zoneName)}
-    ${window.VV.crises ? window.VV.crises.renderInPanel(zoneName) : ""}`;
+    ${renderIdeeNationales(nation.idees||[], zoneName)}`;
 
   setPanel(`
     <button class="back-btn" id="back-btn"><i class="ti ti-arrow-left"></i> Vue globale</button>
@@ -783,6 +782,21 @@ function renderZonePanel(zoneName) {
   $('back-btn')?.addEventListener('click', clearZone);
   bindTerrButtons();
   bindIdeeClicks(zoneName, nation.idees);
+  // Injecter les crises après que le DOM est prêt
+  if (window.VV.crises) {
+    const criseHtml = window.VV.crises.renderInPanel(zoneName);
+    if (criseHtml) {
+      const ideeSection = document.querySelector('.idees-section');
+      if (ideeSection) {
+        const criseDiv = document.createElement('div');
+        criseDiv.innerHTML = criseHtml;
+        ideeSection.parentNode.insertBefore(criseDiv.firstElementChild, ideeSection);
+      } else {
+        const panelInner = document.getElementById('panel-inner');
+        if (panelInner) panelInner.insertAdjacentHTML('beforeend', criseHtml);
+      }
+    }
+  }
   renderRankingPanel(); // Update active state
 }
 
