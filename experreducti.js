@@ -9,7 +9,7 @@
 
 const EXP_CFG = {
   SHEET_ID: '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
-  APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbxzrk3x8qu0LZLT7-MIxkwa9DsoRhUiSl7LlYul-oTYnzD4kG6-vs_OQZVbIbU6or95uw/exec',
+  APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbyCaQI2c5ds2uCmoeCw6_fALjh-8ii05fkOVgZmWPhbY64vyYbrNcFvqbFKRb7rUwyxwQ/exec',
   GIDS: {
     lois: '153355188',
     pnj:  '336206576',
@@ -53,11 +53,17 @@ async function expFetch(gid) {
 }
 
 async function expPostScript(payload) {
-  const params = new URLSearchParams({ data: JSON.stringify(payload) });
-  const r = await fetch(EXP_CFG.APPS_SCRIPT + '?' + params, { method: 'GET' });
-  const text = await r.text();
-  const d = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] || text);
-  return d.success ? { ok: true } : { ok: false, error: d.error };
+  try {
+    const params = new URLSearchParams({ data: JSON.stringify(payload) });
+    const r = await fetch(EXP_CFG.APPS_SCRIPT + '?' + params, { method: 'GET' });
+    const text = await r.text();
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) return { ok: false, error: 'Réponse invalide du serveur' };
+    const d = JSON.parse(match[0]);
+    return d.success ? { ok: true } : { ok: false, error: d.error || 'Erreur inconnue' };
+  } catch(e) {
+    return { ok: false, error: e.message };
+  }
 }
 
 // ---- OPEN / CLOSE ------------------------------------------
