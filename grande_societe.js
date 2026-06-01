@@ -11,7 +11,7 @@ const GS_CFG = {
   SHEET_ID: '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
   APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbyCaQI2c5ds2uCmoeCw6_fALjh-8ii05fkOVgZmWPhbY64vyYbrNcFvqbFKRb7rUwyxwQ/exec',
   GIDS: {
-    Gouvernement: '789610864', // À renseigner
+    gouvernement: '', // À renseigner
     nasa:         '',
     cia:          '',
     entreprises:  '',
@@ -245,6 +245,8 @@ function gsOpenModule(moduleId) {
   const content = document.getElementById('gs-module-content');
   if (moduleId === 'gouvernement' && typeof gsRenderGouvernement === 'function') {
     gsRenderGouvernement(content);
+  } else if (moduleId === 'nasa' && typeof gsRenderNASA === 'function') {
+    gsRenderNASA(content);
   } else {
     content.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px">
