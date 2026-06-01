@@ -10,7 +10,7 @@ window.VV = window.VV || {};
 // ---- CONFIG ------------------------------------------------
 const CFG = {
   SHEET_ID:    '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
-  APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbyCaQI2c5ds2uCmoeCw6_fALjh-8ii05fkOVgZmWPhbY64vyYbrNcFvqbFKRb7rUwyxwQ/exec',
+  APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbxzrk3x8qu0LZLT7-MIxkwa9DsoRhUiSl7LlYul-oTYnzD4kG6-vs_OQZVbIbU6or95uw/exec',
   FANDOM_URL:  'https://vae-victis.fandom.com/fr/wiki/Wiki_Vae_Victis',
   REFRESH_MIN: 5,
   GIDS: {
@@ -269,8 +269,6 @@ async function loadData() {
         bio:      (r.leader_bio || '').trim(),
       };
     });
-
-    window.VV.NATIONS = nations; // pour mapmode-influence.js
 
     // Situations
     window.VV.situations = situ.filter(r => r.zone && r.type).map(r => ({
@@ -784,7 +782,10 @@ function renderPlayerPanel() {
     ${[0,1].map(i => {
       const a = atks[i];
       return `<div class="slot${a?' atk':''}">
-        ${a?`<div class="slot-text atk"><i class="ti ti-sword"></i> ${getD(a.target).name} — ${getT(a.territory)?.name||a.territory}</div>
+        ${a?`<div class="slot-text atk">
+          <i class="ti ti-${a.territory?.startsWith('scene_')?'masks-theater':'sword'}"></i>
+          ${getD(a.target).name}${a.territory?.startsWith('scene_')?' — Scène RP':' — '+(getT(a.territory)?.name||a.territory)}
+        </div>
              <button class="xbtn" data-idx="${i}"><i class="ti ti-x"></i></button>`
           :`<span class="slot-text">${i===0?'Sélectionner une divinité ennemie':'Slot 2 optionnel'}</span>`}
       </div>`;
