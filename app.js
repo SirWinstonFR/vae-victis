@@ -649,18 +649,12 @@ function renderIdeeNationales(idees, zoneKey) {
         </div>
       </div>`;
     }
-    const sk  = idea.type==='bonus' ? '#3d9b3d' : idea.type==='malus' ? '#b03a3a' : '#4a80cc';
-    const sf  = idea.type==='bonus' ? 'rgba(20,45,20,.65)' : idea.type==='malus' ? 'rgba(45,20,20,.65)' : 'rgba(20,30,55,.65)';
     const bl  = idea.type==='bonus' ? 'Bonus' : idea.type==='malus' ? 'Malus' : 'Neutre';
-    const ovl = idea.type==='bonus' ? 'rgba(60,180,60,.15)' : idea.type==='malus' ? 'rgba(200,60,60,.15)' : 'rgba(60,130,220,.15)';
     const arr = idea.type==='bonus' ? '\u25b2' : idea.type==='malus' ? '\u25bc' : '\u25c6';
     return `<div class="idee-slot ${idea.type}" data-idee="${i}" data-zone="${zoneKey}">
       <div class="pw">
         <div class="pimg"><img src="${idea.img}" alt="${idea.nom}" loading="lazy"></div>
-        <svg class="pborder" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <polygon points="${IDEE_PTS}" fill="${sf}" stroke="${sk}" stroke-width="2.5"/>
-        </svg>
-        <div class="povl" style="background:${ovl}"></div>
+        <div class="pborder"></div>
       </div>
       <div class="itt">
         <div class="itt-name">${idea.nom}<span class="itt-badge bd-${idea.type}">${bl}</span></div>
