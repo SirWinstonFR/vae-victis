@@ -74,13 +74,30 @@ function initGlobe(world) {
     const st = document.createElement('style');
     st.id = 'vv-influence-css';
     st.textContent = `
-      @keyframes vv-pulse-ol { 0%,100%{opacity:.55} 50%{opacity:.82} }
-      @keyframes vv-pulse-sv { 0%,100%{opacity:.50} 50%{opacity:.78} }
-      @keyframes vv-pulse-sh { 0%,100%{opacity:.52} 50%{opacity:.80} }
-      .vv-inf-ol { animation: vv-pulse-ol 3.2s ease-in-out infinite; }
-      .vv-inf-sv { animation: vv-pulse-sv 3.8s ease-in-out infinite; }
-      .vv-inf-sh { animation: vv-pulse-sh 4.4s ease-in-out infinite; }
-      .vv-inf-strong { filter: drop-shadow(0 0 3px currentColor); }
+      @keyframes vv-wave-ol {
+        0%   { opacity: .40; }
+        45%  { opacity: .88; }
+        100% { opacity: .40; }
+      }
+      @keyframes vv-wave-sv {
+        0%   { opacity: .35; }
+        50%  { opacity: .82; }
+        100% { opacity: .35; }
+      }
+      @keyframes vv-wave-sh {
+        0%   { opacity: .38; }
+        48%  { opacity: .85; }
+        100% { opacity: .38; }
+      }
+      .vv-inf-ol {
+        animation: vv-wave-ol 3.0s ease-in-out infinite;
+      }
+      .vv-inf-sv {
+        animation: vv-wave-sv 3.6s ease-in-out infinite;
+      }
+      .vv-inf-sh {
+        animation: vv-wave-sh 4.2s ease-in-out infinite;
+      }
     `;
     document.head.appendChild(st);
   }
@@ -199,8 +216,8 @@ function redrawGlobe() {
   gMap.select('path:first-child').attr('d', d3.geoPath().projection(proj)(d3.geoGraticule()()));
   gMap.selectAll('path.country').attr('d', _path);
 
-  // Redraw couche influence
-  gMap.select('.g-influence').selectAll('path').attr('d', _path);
+  // Redraw complet de la couche influence (gradients repositionnés selon proj)
+  updateInfluenceLayer();
 
   buildDots();
   buildBadges();
@@ -579,43 +596,99 @@ function computeZoneInfluence() {
   return result;
 }
 
-// ---- COUCHE INFLUENCE VICTORIA 3 ---------------------------
+// ---- COUCHE INFLUENCE — GLOW RADIAL ANIMÉ ------------------
+// Chaque zone a un radialGradient centré sur son cx/cy projeté,
+// qui pulse du centre vers les frontières via CSS animation.
 function updateInfluenceLayer() {
   if (!gMap || !_countries || !_path) return;
 
   const gInf = gMap.select('.g-influence');
   gInf.selectAll('*').remove();
 
+  // Nettoyer les anciens defs d'influence
+  svgSel.select('defs').selectAll('[id^="vv-rg-"]').remove();
+  svgSel.select('defs').selectAll('[id^="vv-clip-"]').remove();
+
   const influence = computeZoneInfluence();
   const countryMap = window.VV.COUNTRY_MAP || {};
+  const zones = window.VV.ZONES || {};
 
+  // Regrouper les features par zone
+  const zoneFeats = {}; // zoneName -> [feat, ...]
   _countries.features.forEach(feat => {
-    const countryName = feat.properties?.name;
-    const zoneName = countryMap[countryName];
-    if (!zoneName) return;
+    const cn = feat.properties?.name;
+    const zn = countryMap[cn];
+    if (!zn || !influence[zn]) return;
+    if (!zoneFeats[zn]) zoneFeats[zn] = [];
+    zoneFeats[zn].push(feat);
+  });
+
+  const defs = svgSel.select('defs');
+
+  Object.entries(zoneFeats).forEach(([zoneName, feats], idx) => {
     const inf = influence[zoneName];
     if (!inf) return;
+    const zd = zones[zoneName];
 
-    const isStrong = inf.strength >= 0.65;
-    const baseAlpha = 0.12 + inf.strength * 0.28;
+    // Centre projeté de la zone
+    let cpx, cpy;
+    if (zd?.cx !== undefined && zd?.cy !== undefined) {
+      const pt = proj([zd.cx, zd.cy]);
+      if (pt) { cpx = pt[0]; cpy = pt[1]; }
+    }
+    // Fallback : centroïde géographique de la première feature
+    if (cpx === undefined) {
+      const centroids = feats.map(f => _path.centroid(f)).filter(c => c && !isNaN(c[0]));
+      if (!centroids.length) return;
+      cpx = centroids.reduce((s,c) => s + c[0], 0) / centroids.length;
+      cpy = centroids.reduce((s,c) => s + c[1], 0) / centroids.length;
+    }
 
-    // 1. Fond couleur semi-transparent
-    gInf.append('path').datum(feat)
-      .attr('d', _path)
-      .attr('fill', `rgba(${inf.colorRgb},${baseAlpha.toFixed(2)})`)
-      .attr('stroke', 'none')
-      .attr('class', `${inf.cls}${isStrong ? ' vv-inf-strong' : ''}`)
-      .style('color', inf.color)
-      .style('pointer-events', 'none');
+    const W = +svgSel.attr('width'), H = +svgSel.attr('height');
+    const rid = `vv-rg-${idx}`;
+    const clipId = `vv-clip-${idx}`;
 
-    // 2. Pattern texturé par-dessus
-    gInf.append('path').datum(feat)
-      .attr('d', _path)
-      .attr('fill', `url(#${inf.pat})`)
-      .attr('stroke', 'none')
+    // Clippath = union de toutes les features de la zone
+    const clip = defs.append('clipPath').attr('id', clipId);
+    feats.forEach(f => clip.append('path').datum(f).attr('d', _path));
+
+    // RadialGradient en coordonnées userSpace, centré sur le centre projeté
+    const gradR = proj.scale() * 0.55; // rayon du gradient ~ fraction du globe
+    const rg = defs.append('radialGradient')
+      .attr('id', rid)
+      .attr('gradientUnits', 'userSpaceOnUse')
+      .attr('cx', cpx).attr('cy', cpy)
+      .attr('r', gradR)
+      .attr('fx', cpx).attr('fy', cpy);
+
+    const alpha1 = (0.55 + inf.strength * 0.40).toFixed(2);
+    const alpha2 = (0.15 + inf.strength * 0.20).toFixed(2);
+    rg.append('stop').attr('offset', '0%')
+      .attr('stop-color', inf.color).attr('stop-opacity', alpha1);
+    rg.append('stop').attr('offset', '55%')
+      .attr('stop-color', inf.color).attr('stop-opacity', alpha2);
+    rg.append('stop').attr('offset', '100%')
+      .attr('stop-color', inf.color).attr('stop-opacity', '0');
+
+    // Rect plein clippé = le pays rempli du gradient
+    gInf.append('rect')
+      .attr('x', 0).attr('y', 0).attr('width', W).attr('height', H)
+      .attr('fill', `url(#${rid})`)
+      .attr('clip-path', `url(#${clipId})`)
       .attr('class', inf.cls)
-      .style('opacity', (0.55 + inf.strength * 0.35).toFixed(2))
       .style('pointer-events', 'none');
+
+    // Contour lumineux sur les bordures
+    feats.forEach(f => {
+      gInf.append('path').datum(f)
+        .attr('d', _path)
+        .attr('fill', 'none')
+        .attr('stroke', inf.color)
+        .attr('stroke-width', inf.strength >= 0.65 ? 1.4 : 0.8)
+        .attr('opacity', (0.3 + inf.strength * 0.5).toFixed(2))
+        .attr('class', inf.cls)
+        .style('pointer-events', 'none');
+    });
   });
 }
 
