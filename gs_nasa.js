@@ -27,8 +27,8 @@ const NASA_CFG = {
 const ASTRES_BASE = {
   iss: {
     id: 'iss', nom: 'Station Spatiale', nomAlt: null,
-    orbitR: 62,  // rayon orbite px depuis soleil
-    angle: -20,  // angle sur l'orbite (degrés)
+    orbitR: 62,
+    angle: 0,
     rayon: 10,
     couleur: '#2ab8d8',
     glowColor: '#4ad8f8',
@@ -41,11 +41,11 @@ const ASTRES_BASE = {
   lune: {
     id: 'lune', nom: 'Lune', nomAlt: null,
     orbitR: 110,
-    angle: -30,
+    angle: 0,
     rayon: 20,
     couleur: '#c0c8d4',
     glowColor: '#9090a8',
-    texture: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/240px-FullMoon2010.jpg',
+    texture: null, gradient: ['#d0d4dc','#a0a8b4','#8090a0','#606878'], // Lune — gris bleuté
     emoji: '🌕',
     desc: 'Satellite naturel de la Terre. Premier objectif de la course spatiale.',
     statut: 'colonisée',
@@ -54,11 +54,11 @@ const ASTRES_BASE = {
   mars: {
     id: 'mars', nom: 'Mars', nomAlt: null,
     orbitR: 175,
-    angle: -15,
+    angle: 0,
     rayon: 17,
     couleur: '#c0522a',
     glowColor: '#ff6030',
-    texture: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/OSIRIS_Mars_true_color.jpg/240px-OSIRIS_Mars_true_color.jpg',
+    texture: null, gradient: ['#d06030','#a03818','#802010','#c05828'], // Mars — rouge ocre
     emoji: '🔴',
     desc: 'Planète rouge. Objectif prioritaire de l\'exploration interplanétaire.',
     statut: 'exploration',
@@ -67,7 +67,7 @@ const ASTRES_BASE = {
   asteroïdes: {
     id: 'asteroïdes', nom: 'Ceinture', nomAlt: null,
     orbitR: 230,
-    angle: -10,
+    angle: 0,
     rayon: 7,
     couleur: '#8a8a7a',
     glowColor: '#aaaaaa',
@@ -80,11 +80,11 @@ const ASTRES_BASE = {
   jupiter: {
     id: 'jupiter', nom: 'Jupiter', nomAlt: null,
     orbitR: 295,
-    angle: -8,
+    angle: 0,
     rayon: 30,
     couleur: '#c8a878',
     glowColor: '#e8c898',
-    texture: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Jupiter_and_its_shrunken_Great_Red_Spot.jpg/240px-Jupiter_and_its_shrunken_Great_Red_Spot.jpg',
+    texture: null, gradient: ['#e8c890','#c8a060','#d0805a','#e0b878'], // Jupiter — beige rougeâtre
     emoji: '🟠',
     desc: 'Géante gazeuse. Ses lunes sont des cibles d\'exploration prometteuses.',
     statut: 'observation',
@@ -273,7 +273,7 @@ function nasaRenderInterface(container) {
 function nasaRenderMap() {
   const W = 700, H = 360;
   // Soleil centré verticalement, légèrement à gauche
-  const SX = 42, SY = H / 2;
+  const SX = 38, SY = H / 2;
 
   // Étoiles
   let stars = '';
@@ -286,34 +286,53 @@ function nasaRenderMap() {
     stars += `<circle cx="${x}" cy="${y}" r="${r}" fill="white" opacity="${op.toFixed(2)}"/>`;
   });
 
-  // Defs : clipPaths circulaires pour textures + filtres glow
-  let defs = '<defs>';
-  Object.values(ASTRES_BASE).forEach(a => {
-    if (a.texture) {
-      const ang = a.angle * Math.PI / 180;
-      const px  = (SX + a.orbitR * Math.cos(ang)).toFixed(1);
-      const py  = (SY + a.orbitR * Math.sin(ang) * 0.32).toFixed(1);
-      defs += `<clipPath id="clip-${a.id}">
-        <circle cx="${px}" cy="${py}" r="${a.rayon}"/>
-      </clipPath>`;
-    }
-    defs += `<filter id="glow-${a.id}" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
+  // Defs : dégradés SVG réalistes pour chaque planète
+  let defs = `<defs>
+    <!-- Filtres glow -->
+    <filter id="glow-sun" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
       <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>`;
-  });
-  // Glow soleil
-  defs += `<filter id="glow-sun" x="-60%" y="-60%" width="220%" height="220%">
-    <feGaussianBlur stdDeviation="8" result="blur"/>
-    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-  </filter>`;
-  // Ceinture texture
-  defs += `<filter id="noise-belt">
-    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" result="noise"/>
-    <feColorMatrix type="saturate" values="0" in="noise" result="gray"/>
-    <feBlend in="SourceGraphic" in2="gray" mode="overlay"/>
-  </filter>`;
-  defs += '</defs>';
+    </filter>
+    <filter id="glow-planet" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <!-- Lune : gris cratéré -->
+    <radialGradient id="grad-lune" cx="35%" cy="30%" r="65%">
+      <stop offset="0%"   stop-color="#dde2e8"/>
+      <stop offset="40%"  stop-color="#a8b0bc"/>
+      <stop offset="75%"  stop-color="#7880a0"/>
+      <stop offset="100%" stop-color="#404860"/>
+    </radialGradient>
+    <!-- Mars : rouge-ocre -->
+    <radialGradient id="grad-mars" cx="35%" cy="30%" r="65%">
+      <stop offset="0%"   stop-color="#e87040"/>
+      <stop offset="35%"  stop-color="#c04820"/>
+      <stop offset="70%"  stop-color="#902010"/>
+      <stop offset="100%" stop-color="#601008"/>
+    </radialGradient>
+    <!-- Jupiter : bandes beige-roux -->
+    <linearGradient id="grad-jupiter" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#e8d090"/>
+      <stop offset="15%"  stop-color="#c89060"/>
+      <stop offset="28%"  stop-color="#e0c080"/>
+      <stop offset="42%"  stop-color="#b86848"/>
+      <stop offset="55%"  stop-color="#d8a870"/>
+      <stop offset="68%"  stop-color="#c07050"/>
+      <stop offset="80%"  stop-color="#e0c080"/>
+      <stop offset="100%" stop-color="#c89060"/>
+    </linearGradient>
+    <!-- Ceinture : gris pierreux -->
+    <radialGradient id="grad-ceinture" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#9a9a8a"/>
+      <stop offset="100%" stop-color="#505048"/>
+    </radialGradient>
+    <!-- ISS : bleu métallique -->
+    <linearGradient id="grad-iss" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#4ad8f8"/>
+      <stop offset="100%" stop-color="#1a8aaa"/>
+    </linearGradient>
+  </defs>`;
 
   // Orbites elliptiques
   const orbitesSVG = Object.values(ASTRES_BASE).map(a =>
@@ -350,40 +369,60 @@ function nasaRenderMap() {
       ? `<circle cx="${(parseFloat(px) + a.rayon * 0.75).toFixed(1)}" cy="${(parseFloat(py) - a.rayon * 0.75).toFixed(1)}" r="3.5" fill="#2a8a3a" stroke="#04080f" stroke-width="1"/>`
       : '';
 
-    // Corps de l'astre
+    // Corps de l'astre — SVG pur, pas d'images externes
     let corps = '';
+    const fpx = parseFloat(px), fpy = parseFloat(py);
     if (a.id === 'asteroïdes') {
-      // Ceinture : petits points épars
-      corps = `
-        <g class="nasa-astre-circle">
-          ${[-8,-4,0,4,8].map((dx,i) =>
-            `<circle cx="${(parseFloat(px)+dx).toFixed(1)}" cy="${(parseFloat(py)+(i%2?-2:2)).toFixed(1)}"
-              r="${1.5 + (i%2)}" fill="#8a8a7a" opacity="${0.5+i*0.1}"/>`
-          ).join('')}
-          <circle cx="${px}" cy="${py}" r="${a.rayon}" fill="none" stroke="#5a5a4a" stroke-width="0.5" stroke-dasharray="2 3" opacity="0.4"/>
-        </g>`;
+      const dotsFixed = [[-9,2],[-5,-3],[0,4],[5,-2],[9,1],[-7,5],[3,-5],[7,3]];
+      corps = `<g class="nasa-astre-circle">
+        ${dotsFixed.map((d,i) =>
+          `<circle cx="${(fpx+d[0]).toFixed(1)}" cy="${(fpy+d[1]).toFixed(1)}"
+            r="${1.2+(i%3)*0.6}" fill="#9a9a8a" opacity="${0.4+i*0.07}"/>`
+        ).join('')}
+        <ellipse cx="${px}" cy="${py}" rx="${a.rayon+2}" ry="4"
+          fill="none" stroke="#6a6a5a" stroke-width="0.6" stroke-dasharray="3 4" opacity="0.4"/>
+      </g>`;
     } else if (a.id === 'iss') {
-      // ISS : forme en croix
-      corps = `
-        <g class="nasa-astre-circle">
-          <rect x="${(parseFloat(px)-10).toFixed(1)}" y="${(parseFloat(py)-2).toFixed(1)}" width="20" height="4" rx="1" fill="#2ab8d8" opacity="0.9"/>
-          <rect x="${(parseFloat(px)-2).toFixed(1)}"  y="${(parseFloat(py)-8).toFixed(1)}" width="4" height="16" rx="1" fill="#1a8aaa" opacity="0.9"/>
-          <circle cx="${px}" cy="${py}" r="3" fill="#4ad8f8"/>
-        </g>`;
-    } else if (a.texture) {
-      // Planète avec texture image
-      corps = `
-        <g class="nasa-astre-circle" filter="url(#glow-${a.id})">
-          <circle cx="${px}" cy="${py}" r="${a.rayon}" fill="${a.couleur}" opacity="0.3"/>
-          <image href="${a.texture}" x="${(parseFloat(px)-a.rayon).toFixed(1)}" y="${(parseFloat(py)-a.rayon).toFixed(1)}"
-            width="${a.rayon*2}" height="${a.rayon*2}"
-            clip-path="url(#clip-${a.id})" preserveAspectRatio="xMidYMid slice" opacity="0.92"/>
-          <circle cx="${px}" cy="${py}" r="${a.rayon}" fill="none" stroke="${a.glowColor}" stroke-width="1.5" opacity="0.6"/>
-        </g>`;
-    } else {
-      corps = `<circle cx="${px}" cy="${py}" r="${a.rayon}" fill="${a.couleur}"
-        stroke="${a.glowColor}" stroke-width="1.5" class="nasa-astre-circle"
-        filter="url(#glow-${a.id})" opacity="0.9"/>`;
+      corps = `<g class="nasa-astre-circle" filter="url(#glow-planet)">
+        <rect x="${(fpx-12).toFixed(1)}" y="${(fpy-2.5).toFixed(1)}" width="24" height="5" rx="1.5" fill="url(#grad-iss)" opacity="0.95"/>
+        <rect x="${(fpx-2.5).toFixed(1)}" y="${(fpy-10).toFixed(1)}" width="5" height="20" rx="1.5" fill="#1a8aaa" opacity="0.9"/>
+        <rect x="${(fpx-14).toFixed(1)}" y="${(fpy-1).toFixed(1)}" width="5" height="2" rx="1" fill="#c8e8f8" opacity="0.6"/>
+        <rect x="${(fpx+9).toFixed(1)}"  y="${(fpy-1).toFixed(1)}" width="5" height="2" rx="1" fill="#c8e8f8" opacity="0.6"/>
+        <circle cx="${px}" cy="${py}" r="3.5" fill="#4ad8f8" opacity="0.95"/>
+      </g>`;
+    } else if (a.id === 'lune') {
+      corps = `<g class="nasa-astre-circle" filter="url(#glow-planet)">
+        <circle cx="${px}" cy="${py}" r="${a.rayon}" fill="url(#grad-lune)"/>
+        <!-- Cratères -->
+        <circle cx="${(fpx-5).toFixed(1)}" cy="${(fpy-4).toFixed(1)}" r="3" fill="none" stroke="#606878" stroke-width="0.8" opacity="0.5"/>
+        <circle cx="${(fpx+4).toFixed(1)}" cy="${(fpy+5).toFixed(1)}" r="2" fill="none" stroke="#606878" stroke-width="0.6" opacity="0.4"/>
+        <circle cx="${(fpx+7).toFixed(1)}" cy="${(fpy-7).toFixed(1)}" r="1.5" fill="none" stroke="#707888" stroke-width="0.5" opacity="0.4"/>
+        <circle cx="${px}" cy="${py}" r="${a.rayon}" fill="none" stroke="#9090a8" stroke-width="1" opacity="0.4"/>
+      </g>`;
+    } else if (a.id === 'mars') {
+      corps = `<g class="nasa-astre-circle" filter="url(#glow-planet)">
+        <circle cx="${px}" cy="${py}" r="${a.rayon}" fill="url(#grad-mars)"/>
+        <!-- Calotte polaire -->
+        <ellipse cx="${(fpx+2).toFixed(1)}" cy="${(fpy-a.rayon+4).toFixed(1)}" rx="5" ry="2.5" fill="white" opacity="0.25"/>
+        <!-- Vallée Marineris -->
+        <path d="M ${(fpx-8).toFixed(1)},${(fpy+1).toFixed(1)} Q ${fpx},${(fpy+4).toFixed(1)} ${(fpx+8).toFixed(1)},${(fpy+2).toFixed(1)}"
+          fill="none" stroke="#601008" stroke-width="1.2" opacity="0.4"/>
+        <circle cx="${px}" cy="${py}" r="${a.rayon}" fill="none" stroke="#ff6030" stroke-width="1" opacity="0.3"/>
+      </g>`;
+    } else if (a.id === 'jupiter') {
+      corps = `<g class="nasa-astre-circle" filter="url(#glow-planet)">
+        <clipPath id="clip-jup-inline"><circle cx="${px}" cy="${py}" r="${a.rayon}"/></clipPath>
+        <circle cx="${px}" cy="${py}" r="${a.rayon}" fill="url(#grad-jupiter)"/>
+        <!-- Bandes atmosphériques -->
+        <g clip-path="url(#clip-jup-inline)">
+          <rect x="${(fpx-a.rayon).toFixed(1)}" y="${(fpy-8).toFixed(1)}" width="${a.rayon*2}" height="4" fill="#b86848" opacity="0.35"/>
+          <rect x="${(fpx-a.rayon).toFixed(1)}" y="${(fpy+2).toFixed(1)}"  width="${a.rayon*2}" height="3" fill="#c07050" opacity="0.3"/>
+          <rect x="${(fpx-a.rayon).toFixed(1)}" y="${(fpy+10).toFixed(1)}" width="${a.rayon*2}" height="3" fill="#b86848" opacity="0.25"/>
+          <!-- Grande Tache Rouge -->
+          <ellipse cx="${(fpx+6).toFixed(1)}" cy="${(fpy+3).toFixed(1)}" rx="7" ry="4" fill="#c04030" opacity="0.5"/>
+        </g>
+        <circle cx="${px}" cy="${py}" r="${a.rayon}" fill="none" stroke="#e8c898" stroke-width="1.2" opacity="0.4"/>
+      </g>`;
     }
 
     return `
@@ -603,7 +642,7 @@ async function nasaDoAction(action, astreId) {
   if (res.ok || true) { // Optimiste — mettre à jour localement
     nasaMyPoints -= cout;
     nasaApplyActionLocally(action, astreId, payload);
-    nasaShowNotif(`Action effectuée ! (−${cout} pt${cout>1?'s':''})`, 'ok');
+    nasaShowNotif(`Action effectuée ! (-${cout} pt${cout>1?'s':''})`, 'ok');
     // Re-render panel
     document.getElementById('nasa-panel').innerHTML = nasaRenderAstrePanel(astreId);
     nasaBindPanelActions(astreId);
