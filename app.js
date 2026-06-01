@@ -1229,6 +1229,7 @@ function doLogin() {
   const d  = getD(id);
   if (!d?.pass || d.pass !== pw) { $('login-err').textContent = 'Identifiants incorrects'; return; }
   me = d;
+  window.VV.me = d;
   closeModal('modal-login');
   const bl = $('btn-login');
   if (bl) bl.innerHTML = `<i class="ti ti-user-check"></i> ${d.name}`;
