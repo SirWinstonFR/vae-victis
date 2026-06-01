@@ -267,6 +267,20 @@ async function loadData() {
         dieu1:    (r.dieu1 || '').trim(),
         dieu2:    (r.dieu2 || '').trim(),
         bio:      (r.leader_bio || '').trim(),
+        idees:    [1,2,3,4].map(i => {
+          const img  = (r[`idee${i}_img`]  || '').trim();
+          const nom  = (r[`idee${i}_nom`]  || '').trim();
+          const type = (r[`idee${i}_type`] || '').trim().toLowerCase();
+          if (!img && !nom) return null;
+          return {
+            img,
+            nom,
+            type:  ['bonus','malus','neutre'].includes(type) ? type : 'neutre',
+            court: (r[`idee${i}_court`] || '').trim(),
+            long:  (r[`idee${i}_long`]  || '').trim(),
+            effet: (r[`idee${i}_effet`] || '').trim(),
+          };
+        }),
       };
     });
 
@@ -564,6 +578,131 @@ function renderTransPanel(key) {
   bindTerrButtons();
 }
 
+// ---- IDÉES NATIONALES --------------------------------------
+(function injectIdeeStyles() {
+  if (document.getElementById('vv-idees-style')) return;
+  const s = document.createElement('style');
+  s.id = 'vv-idees-style';
+  s.textContent = `
+    .idees-section { padding: 0 12px 10px; }
+    .idees-label { font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--c-text3);font-family:Rajdhani,sans-serif;margin-bottom:6px; }
+    .idees-row { display:flex;gap:8px;align-items:flex-start; }
+    .idee-slot { position:relative;width:58px;height:58px;flex-shrink:0;cursor:pointer; }
+    .idee-slot .pw { width:58px;height:58px;position:relative;transition:transform .28s cubic-bezier(.34,1.56,.64,1);filter:drop-shadow(0 2px 6px rgba(0,0,0,.6)); }
+    .idee-slot:hover .pw { transform:scale(1.18) translateY(-4px); }
+    .idee-slot .pimg { position:absolute;top:0;left:0;width:58px;height:58px;clip-path:polygon(50% 4%,97% 33%,79% 92%,21% 92%,3% 33%);overflow:hidden; }
+    .idee-slot .pimg img { width:100%;height:100%;object-fit:cover;transition:transform .28s ease; }
+    .idee-slot:hover .pimg img { transform:scale(1.1); }
+    .idee-slot .pborder { position:absolute;top:0;left:0;width:58px;height:58px;pointer-events:none; }
+    .idee-slot .povl { position:absolute;top:0;left:0;width:58px;height:58px;clip-path:polygon(50% 4%,97% 33%,79% 92%,21% 92%,3% 33%);opacity:0;transition:opacity .2s; }
+    .idee-slot:hover .povl { opacity:1; }
+    .idee-slot.bonus .pw { animation:pvBonus 3s ease-in-out infinite; }
+    .idee-slot.malus .pw { animation:pvMalus 2.6s ease-in-out infinite; }
+    .idee-slot.neutre .pw { animation:pvNeutre 3.4s ease-in-out infinite; }
+    @keyframes pvBonus { 0%,100%{filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))} 50%{filter:drop-shadow(0 2px 12px rgba(60,180,60,.5))} }
+    @keyframes pvMalus { 0%,100%{filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))} 50%{filter:drop-shadow(0 2px 12px rgba(200,60,60,.5))} }
+    @keyframes pvNeutre { 0%,100%{filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))} 50%{filter:drop-shadow(0 2px 12px rgba(60,130,220,.4))} }
+    .idee-slot .itt { position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%) translateY(6px);width:180px;background:#111820;border:.5px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;pointer-events:none;opacity:0;transition:opacity .18s,transform .18s;z-index:300;box-shadow:0 8px 24px rgba(0,0,0,.65); }
+    .idee-slot:hover .itt { opacity:1;transform:translateX(-50%) translateY(0); }
+    .itt::after { content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:rgba(255,255,255,.12); }
+    .itt-name { font-size:11px;font-weight:600;color:#fff;margin-bottom:3px;display:flex;align-items:center;gap:5px; }
+    .itt-badge { font-size:8px;font-weight:700;letter-spacing:.06em;padding:1px 5px;border-radius:3px;text-transform:uppercase; }
+    .bd-bonus{background:#1f3a1f;color:#5ec95e;border:.5px solid #3d7a3d;}
+    .bd-malus{background:#3a1a1a;color:#e06060;border:.5px solid #7a3a3a;}
+    .bd-neutre{background:#1a2540;color:#6aabdd;border:.5px solid #3a5f80;}
+    .itt-desc { font-size:10px;color:#8a9ab0;line-height:1.45;margin-bottom:4px; }
+    .itt-effet { font-size:10px;font-weight:500; }
+    .itt-effet.bonus{color:#5ec95e;} .itt-effet.malus{color:#e06060;} .itt-effet.neutre{color:#6aabdd;}
+    .idee-empty .pw { animation:none!important; }
+    .idee-detail-panel { margin:0 12px 10px;background:rgba(255,255,255,.03);border:.5px solid rgba(255,255,255,.07);border-radius:9px;overflow:hidden;display:none; }
+    .idee-detail-panel.open { display:block; }
+    .idp-img { width:100%;height:90px;overflow:hidden;position:relative; }
+    .idp-img img { width:100%;height:100%;object-fit:cover;display:block; }
+    .idp-img::after { content:'';position:absolute;bottom:0;left:0;right:0;height:40px;background:linear-gradient(transparent,rgba(0,0,0,.8)); }
+    .idp-body { padding:8px 10px 10px; }
+    .idp-title { font-size:13px;font-weight:700;font-family:Rajdhani,sans-serif;color:var(--c-text1);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between; }
+    .idp-close { background:none;border:none;color:var(--c-text3);cursor:pointer;font-size:13px;padding:0;line-height:1; }
+    .idp-close:hover { color:var(--c-text1); }
+    .idp-desc { font-size:11px;color:var(--c-text2);line-height:1.55;margin-bottom:7px; }
+    .idp-effet { font-size:11px;font-weight:500;padding:4px 8px;border-radius:5px;display:inline-flex;align-items:center;gap:4px; }
+    .idp-effet.bonus{background:#1a2e1a;color:#5ec95e;} .idp-effet.malus{background:#2e1a1a;color:#e06060;} .idp-effet.neutre{background:#1a2333;color:#6aabdd;}
+  `;
+  document.head.appendChild(s);
+})();
+
+const IDEE_PTS = '50,4 97,33 79,92 21,92 3,33';
+
+function renderIdeeNationales(idees, zoneKey) {
+  const filled = (idees||[]).filter(Boolean);
+  const slots  = [...filled, ...Array(4 - filled.length).fill(null)];
+
+  const slotsHTML = slots.map((idea, i) => {
+    if (!idea) {
+      return `<div class="idee-slot idee-empty">
+        <div class="pw">
+          <svg class="pborder" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="${IDEE_PTS}" fill="#1e2a38" stroke="#2e3e50" stroke-width="1.5" stroke-dasharray="4 2"/>
+            <text x="50" y="57" text-anchor="middle" fill="#2e3e50" font-size="22">+</text>
+          </svg>
+        </div>
+      </div>`;
+    }
+    const sk  = idea.type==='bonus' ? '#3d9b3d' : idea.type==='malus' ? '#b03a3a' : '#4a80cc';
+    const sf  = idea.type==='bonus' ? 'rgba(20,45,20,.65)' : idea.type==='malus' ? 'rgba(45,20,20,.65)' : 'rgba(20,30,55,.65)';
+    const bl  = idea.type==='bonus' ? 'Bonus' : idea.type==='malus' ? 'Malus' : 'Neutre';
+    const ovl = idea.type==='bonus' ? 'rgba(60,180,60,.15)' : idea.type==='malus' ? 'rgba(200,60,60,.15)' : 'rgba(60,130,220,.15)';
+    const arr = idea.type==='bonus' ? '\u25b2' : idea.type==='malus' ? '\u25bc' : '\u25c6';
+    return `<div class="idee-slot ${idea.type}" data-idee="${i}" data-zone="${zoneKey}">
+      <div class="pw">
+        <div class="pimg"><img src="${idea.img}" alt="${idea.nom}" loading="lazy"></div>
+        <svg class="pborder" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="${IDEE_PTS}" fill="${sf}" stroke="${sk}" stroke-width="2.5"/>
+        </svg>
+        <div class="povl" style="background:${ovl}"></div>
+      </div>
+      <div class="itt">
+        <div class="itt-name">${idea.nom}<span class="itt-badge bd-${idea.type}">${bl}</span></div>
+        ${idea.court ? `<div class="itt-desc">${idea.court}</div>` : ''}
+        ${idea.effet ? `<div class="itt-effet ${idea.type}">${arr} ${idea.effet}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="idees-section">
+      <div class="idees-label">Id\u00e9es nationales</div>
+      <div class="idees-row" id="idees-row-${zoneKey}">${slotsHTML}</div>
+    </div>
+    <div class="idee-detail-panel" id="idee-detail-${zoneKey}"></div>
+  `;
+}
+
+function bindIdeeClicks(zoneKey, idees) {
+  const row    = document.getElementById(`idees-row-${zoneKey}`);
+  const detail = document.getElementById(`idee-detail-${zoneKey}`);
+  if (!row || !detail) return;
+  let openIdx = null;
+  const filled = (idees||[]).filter(Boolean);
+  row.querySelectorAll('.idee-slot[data-idee]').forEach(el => {
+    const i    = parseInt(el.dataset.idee);
+    const idea = filled[i];
+    if (!idea) return;
+    el.addEventListener('click', () => {
+      if (openIdx === i) { detail.classList.remove('open'); openIdx = null; return; }
+      openIdx = i;
+      const arr = idea.type==='bonus' ? '\u25b2' : idea.type==='malus' ? '\u25bc' : '\u25c6';
+      detail.innerHTML = `
+        <div class="idp-img"><img src="${idea.img}" alt="${idea.nom}" loading="lazy"></div>
+        <div class="idp-body">
+          <div class="idp-title">${idea.nom}<button class="idp-close" onclick="this.closest('.idee-detail-panel').classList.remove('open')">✕</button></div>
+          ${idea.long  ? `<div class="idp-desc">${idea.long}</div>`  : (idea.court ? `<div class="idp-desc">${idea.court}</div>` : '')}
+          ${idea.effet ? `<div class="idp-effet ${idea.type}">${arr} ${idea.effet}</div>` : ''}
+        </div>`;
+      detail.classList.add('open');
+    });
+  });
+}
+
 function renderZonePanel(zoneName) {
   selZone = zoneName;
   const data   = window.VV.ZONES[zoneName];
@@ -619,7 +758,8 @@ function renderZonePanel(zoneName) {
           </div>
         </div>
       </div>
-    </div>`;
+    </div>
+    ${renderIdeeNationales(nation.idees||[], zoneName)}`;
 
   setPanel(`
     <button class="back-btn" id="back-btn"><i class="ti ti-arrow-left"></i> Vue globale</button>
@@ -630,6 +770,7 @@ function renderZonePanel(zoneName) {
 
   $('back-btn')?.addEventListener('click', clearZone);
   bindTerrButtons();
+  bindIdeeClicks(zoneName, nation.idees);
   renderRankingPanel(); // Update active state
 }
 
