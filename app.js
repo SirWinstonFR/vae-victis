@@ -602,9 +602,8 @@ function renderTransPanel(key) {
     @keyframes pvBonus { 0%,100%{filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))} 50%{filter:drop-shadow(0 2px 12px rgba(60,180,60,.5))} }
     @keyframes pvMalus { 0%,100%{filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))} 50%{filter:drop-shadow(0 2px 12px rgba(200,60,60,.5))} }
     @keyframes pvNeutre { 0%,100%{filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))} 50%{filter:drop-shadow(0 2px 12px rgba(60,130,220,.4))} }
-    .idee-slot .itt { position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%) translateY(6px);width:180px;background:#111820;border:.5px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;pointer-events:none;opacity:0;transition:opacity .18s,transform .18s;z-index:300;box-shadow:0 8px 24px rgba(0,0,0,.65); }
-    .idee-slot:hover .itt { opacity:1;transform:translateX(-50%) translateY(0); }
-    .itt::after { content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:rgba(255,255,255,.12); }
+    .idee-slot .itt { position:fixed;width:180px;background:#111820;border:.5px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;pointer-events:none;opacity:0;transition:opacity .18s;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.85); }
+    .idee-slot:hover .itt { opacity:1; }
     .itt-name { font-size:11px;font-weight:600;color:#fff;margin-bottom:3px;display:flex;align-items:center;gap:5px; }
     .itt-badge { font-size:8px;font-weight:700;letter-spacing:.06em;padding:1px 5px;border-radius:3px;text-transform:uppercase; }
     .bd-bonus{background:#1f3a1f;color:#5ec95e;border:.5px solid #3d7a3d;}
@@ -683,6 +682,16 @@ function bindIdeeClicks(zoneKey, idees) {
     const i    = parseInt(el.dataset.idee);
     const idea = filled[i];
     if (!idea) return;
+    el.addEventListener('mouseenter', () => {
+      const tt  = el.querySelector('.itt');
+      if (!tt) return;
+      const r   = el.getBoundingClientRect();
+      const ttW = 180;
+      let left  = r.left + r.width/2 - ttW/2;
+      left = Math.max(8, Math.min(left, window.innerWidth - ttW - 8));
+      tt.style.left = left + 'px';
+      tt.style.top  = (r.top - tt.offsetHeight - 10) + 'px';
+    });
     el.addEventListener('click', () => {
       if (openIdx === i) { detail.classList.remove('open'); openIdx = null; return; }
       openIdx = i;
