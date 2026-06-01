@@ -171,9 +171,10 @@ async function nasaLoadData() {
 }
 
 // ---- RENDER PRINCIPAL --------------------------------------
-async function renderNASA(container) {
+async function renderNASA(container, deityOverride) {
   if (!container) return;
-  nasaMe      = window.VV?.me || null;
+  // Priorité : paramètre explicite > window.VV.me > variable globale me
+  nasaMe      = deityOverride || window.VV?.me || (typeof me !== 'undefined' ? me : null);
   nasaFaction = nasaGetFaction(nasaMe?.id);
 
   container.innerHTML = `
@@ -190,7 +191,9 @@ async function renderNASA(container) {
 
 function nasaGetFaction(deityId) {
   if (!deityId) return null;
-  const f = Object.entries(window.VV?.FACTIONS || {}).find(([, f]) => f.members.includes(deityId));
+  // Chercher dans VV ou dans la variable globale FACTIONS
+  const factions = window.VV?.FACTIONS || (typeof FACTIONS !== 'undefined' ? FACTIONS : {});
+  const f = Object.entries(factions).find(([, f]) => f.members.includes(deityId));
   if (!f) return null;
   return f[0]; // 'sovereign' | 'olympien' | 'shemning'
 }
@@ -211,7 +214,7 @@ function nasaRenderInterface(container) {
           </div>
           <div>
             <div class="nasa-title">PROGRAMME SPATIAL INTERDIVIN</div>
-            <div class="nasa-subtitle">SYSTÈME SOLAIRE · CYCLE ${window.VV?.CYCLE || 1} · ACCÈS ${nasaFaction?.toUpperCase() || 'RESTREINT'}</div>
+            <div class="nasa-subtitle">SYSTÈME SOLAIRE · CYCLE ${window.VV?.CYCLE || (typeof CYCLE !== 'undefined' ? CYCLE : 1)} · ACCÈS ${nasaFaction?.toUpperCase() || 'RESTREINT'}</div>
           </div>
         </div>
         <div class="nasa-header-right">
@@ -475,7 +478,7 @@ function nasaRenderAstrePanel(astreId) {
   const totalInf   = infEntries.reduce((s, [, v]) => s + v, 0);
   const infHTML    = infEntries.length
     ? infEntries.map(([did, pts]) => {
-        const d  = window.VV?.DEITIES?.find(x => x.id === did);
+        const d  = (window.VV?.DEITIES || (typeof window.VV !== 'undefined' ? [] : (typeof DEITIES !== 'undefined' ? DEITIES : [])))?.find(x => x.id === did);
         const pct = totalInf > 0 ? Math.round(pts / totalInf * 100) : 0;
         return `<div class="nasa-inf-row">
           <span style="color:${d?.color||'#5a7a9a'};font-size:10px;font-weight:600">${d?.name||did}</span>
