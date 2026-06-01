@@ -27,7 +27,7 @@ const NASA_CFG = {
 const ASTRES_BASE = {
   iss: {
     id: 'iss', nom: 'Station Spatiale', nomAlt: null,
-    orbitR: 62,
+    orbitR: 120,
     angle: 0,
     rayon: 10,
     couleur: '#2ab8d8',
@@ -40,7 +40,7 @@ const ASTRES_BASE = {
   },
   lune: {
     id: 'lune', nom: 'Lune', nomAlt: null,
-    orbitR: 110,
+    orbitR: 210,
     angle: 0,
     rayon: 20,
     couleur: '#c0c8d4',
@@ -53,7 +53,7 @@ const ASTRES_BASE = {
   },
   mars: {
     id: 'mars', nom: 'Mars', nomAlt: null,
-    orbitR: 175,
+    orbitR: 335,
     angle: 0,
     rayon: 17,
     couleur: '#c0522a',
@@ -66,7 +66,7 @@ const ASTRES_BASE = {
   },
   asteroïdes: {
     id: 'asteroïdes', nom: 'Ceinture', nomAlt: null,
-    orbitR: 230,
+    orbitR: 460,
     angle: 0,
     rayon: 7,
     couleur: '#8a8a7a',
@@ -79,7 +79,7 @@ const ASTRES_BASE = {
   },
   jupiter: {
     id: 'jupiter', nom: 'Jupiter', nomAlt: null,
-    orbitR: 295,
+    orbitR: 620,
     angle: 0,
     rayon: 30,
     couleur: '#c8a878',
@@ -273,7 +273,7 @@ function nasaRenderInterface(container) {
 function nasaRenderMap() {
   const W = 700, H = 360;
   // Soleil centré verticalement, légèrement à gauche
-  const SX = 38, SY = H / 2;
+  const SX = -30, SY = H / 2;
 
   // Étoiles
   let stars = '';
