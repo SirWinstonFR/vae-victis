@@ -6,6 +6,9 @@
 // ---- ÉTAT LOCAL CRISES
 let _criseModal = null;
 
+// Accès à 'me' depuis app.js
+function getMe() { return window.VV.me || null; }
+
 function getChefPantheon(dieuId) {
   const faction = getFaction(dieuId);
   if (!faction) return null;
@@ -19,11 +22,11 @@ function getBonusIdees(zoneName) {
 }
 
 function getAllDeities() {
-  return window.VV.DEITIES.filter(d => d.id !== me?.id && d.pi > 0);
+  return window.VV.DEITIES.filter(d => d.id !== getMe()?.id && d.pi > 0);
 }
 
 function piEcart(dieuId) {
-  if (!me) return 999;
+  const me = getMe(); if (!me) return 999;
   const chef = getChefPantheon(dieuId);
   if (!chef) return 0;
   return Math.abs(me.pi - chef.pi);
@@ -35,6 +38,7 @@ function addLocalNotif(notif) {
 }
 
 function openCriseModal(zoneName, criseType, criseIntensity) {
+  const me = getMe();
   if (!me) return;
 
   const st      = window.VV.SITUATION_TYPES[criseType] || {};
@@ -174,6 +178,7 @@ function closeCriseModal() {
 }
 
 async function confirmCrise() {
+  const me = getMe();
   if (!_criseModal || !me) return;
   const { zoneName, criseType, criseIntensity, option, invites, ideeIdx } = _criseModal;
   const btn = document.getElementById('cm-confirm-btn');
@@ -333,7 +338,7 @@ async function repondreNotif(id, rep) {
       action:   'notif_response',
       notif_id: notif.payload.notif_id,
       reponse:  rep,
-      dieu:     me?.id,
+      dieu:     (window.VV.me || me)?.id,
       cycle:    window.VV.CYCLE || CYCLE,
     });
   }
@@ -341,9 +346,10 @@ async function repondreNotif(id, rep) {
 
 // ---- CHARGEMENT DES NOTIFS DEPUIS LE SHEET -------------------
 async function loadNotifications() {
-  if (!me) return;
+  const _me = getMe();
+  if (!_me) return;
   try {
-    const params = new URLSearchParams({ data: JSON.stringify({ action: 'get_notifs', dieu: me.id }) });
+    const params = new URLSearchParams({ data: JSON.stringify({ action: 'get_notifs', dieu: _me.id }) });
     const r    = await fetch(CFG.APPS_SCRIPT + '?' + params, { method: 'GET' });
     const text = await r.text();
     const match = text.match(/\{[\s\S]*\}/);
