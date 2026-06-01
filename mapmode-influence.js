@@ -135,80 +135,84 @@ window.VV = window.VV || {};
   }
 
   /* ── DESSINER UN PAYS SUR LE CANVAS ────────────────────── */
-  // Technique : canvas offscreen → glow + pattern → masque destination-in
-  // → copié sur le canvas principal. Jamais de débordement.
-  function drawCountry(feat, inf, t) {
-    const proj   = window.VV.globe?._proj?.();
-    const pathFn = window.VV.globe?._pathFn?.();
-    if (!proj || !pathFn) return;
-
+  // Technique : canvas offscreen → clip par le path du pays → glow + pattern
+  // Le clip canvas 2D est strictement limité aux pixels du pays.
+  function drawCountry(feat, inf, t, pathFn) {
     const W = canvas.width, H = canvas.height;
-    const f   = FACS[inf.faction];
+    const f    = FACS[inf.faction];
     const anim = ANIM[inf.faction];
 
-    /* Centroïde projeté du pays */
-    const centroid2d = pathFn.centroid(feat);
-    if (!centroid2d || isNaN(centroid2d[0])) return;
-    const [cx, cy] = centroid2d;
-    if (cx < -10 || cx > W + 10 || cy < -10 || cy > H + 10) return;
+    // Générer le path SVG string via D3, puis le convertir en Path2D canvas
+    let svgPathStr;
+    try { svgPathStr = pathFn(feat); } catch(e) { return; }
+    if (!svgPathStr) return;
 
-    /* Canvas offscreen = même taille que le principal */
+    let path2d;
+    try { path2d = new Path2D(svgPathStr); } catch(e) { return; }
+
+    // Centroïde via D3 pour le gradient
+    let cx, cy;
+    try {
+      const c = pathFn.centroid(feat);
+      if (!c || isNaN(c[0]) || isNaN(c[1])) return;
+      [cx, cy] = c;
+    } catch(e) { return; }
+
+    // Vérifier que le pays est visible (côté avant du globe)
+    if (cx < -50 || cx > W + 50 || cy < -50 || cy > H + 50) return;
+
+    // Canvas offscreen
     const off = document.createElement('canvas');
     off.width = W; off.height = H;
     const ox = off.getContext('2d');
 
-    /* ── 1. RESPIRATION (opacity globale) ── */
-    const breath = (Math.sin(t / anim.breath * Math.PI * 2 - Math.PI / 2) + 1) / 2;
-    // breath ∈ [0..1], pic au milieu du cycle
-    const baseAlpha = 0.30 + inf.strength * 0.25;
-    const peakAlpha = 0.65 + inf.strength * 0.30;
-    const globalAlpha = baseAlpha + breath * (peakAlpha - baseAlpha);
+    /* ── 1. Clip strict = forme du pays ── */
+    ox.save();
+    ox.beginPath();
+    // Redessiner le path via Path2D pour le clip
+    ox.clip(path2d);
 
-    /* ── 2. FOND COLORÉ DÉGRADÉ centre→bords ── */
-    const gradR = Math.max(W, H) * 0.35; // rayon large, clippé par le pays
+    /* ── 2. Respiration ── */
+    const breath = (Math.sin(t / anim.breath * Math.PI * 2 - Math.PI / 2) + 1) / 2;
+    const globalAlpha = (0.30 + inf.strength * 0.25) + breath * (0.35 + inf.strength * 0.30);
+
+    /* ── 3. Fond dégradé centre→bords ── */
+    const gradR = Math.max(W, H) * 0.40;
     const grd = ox.createRadialGradient(cx, cy, 0, cx, cy, gradR);
-    grd.addColorStop(0.00, `rgba(${f.rgb},${(globalAlpha * 1.0).toFixed(2)})`);
-    grd.addColorStop(0.45, `rgba(${f.rgb},${(globalAlpha * 0.55).toFixed(2)})`);
-    grd.addColorStop(1.00, `rgba(${f.rgb},0)`);
+    grd.addColorStop(0.00, `rgba(${f.rgb[0]},${f.rgb[1]},${f.rgb[2]},${Math.min(0.95, globalAlpha).toFixed(2)})`);
+    grd.addColorStop(0.50, `rgba(${f.rgb[0]},${f.rgb[1]},${f.rgb[2]},${Math.min(0.55, globalAlpha * 0.55).toFixed(2)})`);
+    grd.addColorStop(1.00, `rgba(${f.rgb[0]},${f.rgb[1]},${f.rgb[2]},0)`);
     ox.fillStyle = grd;
     ox.fillRect(0, 0, W, H);
 
-    /* ── 3. PATTERN TEXTURÉ PAR-DESSUS ── */
+    /* ── 4. Pattern texturé ── */
     if (patterns[inf.faction]) {
-      ox.globalAlpha = (0.40 + inf.strength * 0.35) * globalAlpha;
-      ox.fillStyle   = patterns[inf.faction];
+      ox.globalAlpha = Math.min(0.85, (0.38 + inf.strength * 0.35) * (0.5 + breath * 0.5));
+      ox.fillStyle = patterns[inf.faction];
       ox.fillRect(0, 0, W, H);
       ox.globalAlpha = 1;
     }
 
-    /* ── 4. ONDE CONCENTRIQUE qui s'étend ── */
-    const wavePeriod = anim.wave;
-    const wavePhase  = (t % wavePeriod) / wavePeriod; // 0→1 en boucle
-    // Rayon qui grandit de 0 jusqu'au bord du pays (~gradR)
-    const waveR = wavePhase * gradR * 0.9;
-    const waveAlpha = (1 - wavePhase) * (0.45 + inf.strength * 0.30);
-
+    /* ── 5. Onde concentrique ── */
+    const wavePhase = (t % anim.wave) / anim.wave;
+    const waveR     = wavePhase * gradR * 0.85;
+    const waveAlpha = (1 - wavePhase) * (0.50 + inf.strength * 0.35);
     if (waveR > 2 && waveAlpha > 0.01) {
       ox.beginPath();
       ox.arc(cx, cy, waveR, 0, Math.PI * 2);
-      ox.strokeStyle = `rgba(${f.rgb},${waveAlpha.toFixed(2)})`;
-      ox.lineWidth   = 2.5 - wavePhase * 1.5; // s'affine en s'éloignant
+      ox.strokeStyle = `rgba(${f.rgb[0]},${f.rgb[1]},${f.rgb[2]},${waveAlpha.toFixed(2)})`;
+      ox.lineWidth   = Math.max(0.5, 2.8 * (1 - wavePhase));
       ox.stroke();
     }
 
-    /* ── 5. MASQUE : forme exacte du pays (destination-in) ── */
-    ox.globalCompositeOperation = 'destination-in';
-    const p2d = new Path2D(pathFn({ type: 'Feature', geometry: feat.geometry }));
-    ox.fillStyle = '#fff';
-    ox.fill(p2d);
-    ox.globalCompositeOperation = 'source-over';
+    ox.restore();
 
-    /* ── 6. CONTOUR LUMINEUX ── */
-    ox.strokeStyle = `rgba(${f.rgb},${(0.40 + inf.strength * 0.45).toFixed(2)})`;
-    ox.lineWidth   = inf.strength >= 0.65 ? 1.4 : 0.8;
-    ox.stroke(p2d);
+    /* ── 6. Contour lumineux (hors clip) ── */
+    ox.strokeStyle = `rgba(${f.rgb[0]},${f.rgb[1]},${f.rgb[2]},${(0.45 + inf.strength * 0.45).toFixed(2)})`;
+    ox.lineWidth   = inf.strength >= 0.65 ? 1.5 : 0.9;
+    ox.stroke(path2d);
 
-    /* ── 7. Copier l'offscreen sur le canvas principal ── */
+    /* ── 7. Copier sur le canvas principal ── */
     ctx.drawImage(off, 0, 0);
   }
 
@@ -218,10 +222,11 @@ window.VV = window.VV || {};
     if (!startTime) startTime = ts;
     const t = ts - startTime;
 
-    const proj   = window.VV.globe?._proj?.();
+    // Récupérer proj et pathFn depuis globe.js
     const pathFn = window.VV.globe?._pathFn?.();
     const world  = window.VV._world;
-    if (!proj || !pathFn || !world) {
+
+    if (!pathFn || !world) {
       rafId = requestAnimationFrame(renderLoop);
       return;
     }
@@ -232,10 +237,10 @@ window.VV = window.VV || {};
     const countryMap = window.VV.COUNTRY_MAP || {};
 
     world.features.forEach(feat => {
-      const cn  = feat.properties?.name;
-      const zn  = countryMap[cn];
+      const cn = feat.properties?.name;
+      const zn = countryMap[cn];
       if (!zn || !influence[zn]) return;
-      drawCountry(feat, influence[zn], t);
+      drawCountry(feat, influence[zn], t, pathFn);
     });
 
     rafId = requestAnimationFrame(renderLoop);
