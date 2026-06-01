@@ -242,7 +242,7 @@ function renderPNJCards() {
     return `<div class="exp-pnj-card${isActive?' active':''}" onclick="expSelectPNJ('${p.id}')"
       style="background:#0a1628;border:1px solid ${isActive?'#c8901a':'#1a2e4a'};border-radius:8px;padding:12px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;${isRejected?'opacity:.5;filter:grayscale(.6)':''}">
       ${isRejected?`<div style="position:absolute;top:4px;right:4px;font-size:9px;color:#cc3030;font-weight:700;letter-spacing:.06em">REJETÉ</div>`:''}
-      ${hasScene?`<div style="position:absolute;top:4px;left:4px;font-size:9px;color:#c8901a;font-weight:700">⚔</div>`:''}
+      ${hasScene?`<div style="position:absolute;top:4px;left:4px;font-size:9px;background:#c8901a;color:#04080f;font-weight:700;border-radius:3px;padding:1px 4px;letter-spacing:.04em">SCÈNE</div>`:''}
       <div style="width:52px;height:52px;border-radius:50%;overflow:hidden;border:2px solid ${approColor}55;background:#0d2040;flex-shrink:0;position:relative">
         ${p.portrait_url?`<img src="${p.portrait_url}" style="width:100%;height:100%;object-fit:cover">`
           :`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:16px;font-weight:700;color:#c8901a">${(p.nom||'?').slice(0,1)}</div>`}
@@ -478,7 +478,13 @@ function expSelectLoi(id) {
 async function expLancerScene(pnjId) {
   if (!expMe || cycleScenes[pnjId]) return;
   const p = expPNJ.find(x => x.id === pnjId);
-  if (!confirm(`Lancer une scène avec ${p?.nom||pnjId} ? Cela compte comme une action ce cycle.`)) return;
+  const myAtks = window.VV.attacks.filter(a => a.attacker === expMe.id);
+  if (myAtks.length >= 2) {
+    alert('Vous avez déjà 2 actions déclarées ce cycle.');
+    return;
+  }
+  if (!confirm(`Lancer une scène avec ${p?.nom||pnjId} ?\nCela compte comme l'un de vos 2 slots d'attaque.`)) return;
+
   const res = await expPostScript({
     action: 'add_attack',
     cycle: window.VV?.CYCLE || 1,
@@ -486,8 +492,20 @@ async function expLancerScene(pnjId) {
     cible: pnjId,
     territoire_id: `scene_${pnjId}`,
   });
-  if (res.ok || true) { // Allow even if error (RP action)
+
+  if (res.ok) {
     cycleScenes[pnjId] = true;
+    // Ajouter dans VV.attacks pour que le slot s'affiche sur la carte
+    window.VV.attacks.push({
+      attacker:  expMe.id,
+      target:    pnjId,
+      territory: `scene_${pnjId}`,
+      capitulation: '',
+    });
+    // Mettre à jour le dock et le panel de la carte principale
+    if (typeof renderDock === 'function')        renderDock();
+    if (typeof renderPlayerPanel === 'function') renderPlayerPanel();
+    if (typeof updateWarningTicker === 'function') updateWarningTicker();
     selPNJ = pnjId;
     renderExperreducti();
   } else {
