@@ -336,10 +336,10 @@ function renderLoisList(isOlympien, isAdmin) {
 // ---- HEMICYCLE ---------------------------------------------
 function renderHemicycle() {
   const TOTAL_SEATS = 705;
-  const W = 520, H = 310;
-  const cx = W / 2, cy = H - 50;
-  const rows = 7;
-  const innerR = 50, outerR = 190;
+  const W = 480, H = 260;
+  const cx = W / 2, cy = H - 40;
+  const rows = 6;
+  const innerR = 42, outerR = 155;
 
   // Build seat positions
   const seatsData = [];
@@ -387,8 +387,8 @@ function renderHemicycle() {
 
   // President PNJ
   const pres = expPNJ.find(p => p.fonction?.trim() === 'UEPresident');
-  const presR = 28;
-  const presCy = cy - presR - 14; // Au-dessus de la ligne de sol
+  const presR = 22;
+  const presCy = cy - presR - 10;
   const presEl = pres ? `
     <defs>
       <clipPath id="pres-clip">
