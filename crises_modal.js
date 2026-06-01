@@ -570,9 +570,7 @@ window.repondreNotif = async function repondreNotif(id, rep) {
     if (rep === 'yes' && notif.payload.zone && _me) {
       const territoire_id = `crise_${notif.payload.zone}`;
       // Vérifier que le slot n'est pas déjà utilisé
-      const attaquesActuelles = window.VV.attacks.filter(a =>
-        a.attacker === _me.id && String(a.cycle) === String(window.VV.CYCLE || CYCLE)
-      );
+      const attaquesActuelles = window.VV.attacks.filter(a => a.attacker === _me.id);
       if (attaquesActuelles.length < 2) {
         const res = await postScript({
           action:       'add_attack',
@@ -584,11 +582,10 @@ window.repondreNotif = async function repondreNotif(id, rep) {
         if (res.ok || res.message) {
           // Mettre à jour les attaques localement
           window.VV.attacks.push({
-            attacker:   _me.id,
-            target:     _me.id,
-            territory:  territoire_id,
-            cycle:      window.VV.CYCLE || CYCLE,
-            statut:     'déclarée',
+            attacker:     _me.id,
+            target:       _me.id,
+            territory:    territoire_id,
+            capitulation: '',
           });
           // Rafraîchir le dock
           if (typeof renderDock === 'function') renderDock();
