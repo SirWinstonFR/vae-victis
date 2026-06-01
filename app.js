@@ -770,7 +770,8 @@ function renderZonePanel(zoneName) {
         </div>
       </div>
     </div>
-    ${renderIdeeNationales(nation.idees||[], zoneName)}`;
+    ${renderIdeeNationales(nation.idees||[], zoneName)}
+    ${window.VV.crises ? window.VV.crises.renderInPanel(zoneName) : ""}`;
 
   setPanel(`
     <button class="back-btn" id="back-btn"><i class="ti ti-arrow-left"></i> Vue globale</button>
@@ -1189,6 +1190,9 @@ function doLogin() {
   window.VV.globe.buildDots();
   renderPlayerPanel();
   updateWarningTicker();
+  // Charger les notifications de crise
+  window.VV.crises?.loadNotifs();
+  window.VV.crises?.injectNotifBtn();
   // Afficher le bouton de faction
   showFactionOrgBtn(d.id);
 }
