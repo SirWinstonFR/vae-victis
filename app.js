@@ -1122,7 +1122,6 @@ async function fullRefresh() {
   window.VV.globe.buildDots();
   window.VV.globe.buildBadges();
   window.VV.globe.redraw();
-  window.VV.globe.updateInfluenceLayer?.();
   renderDock();
   renderRankingPanel();
   updateWarningTicker();
@@ -1141,7 +1140,6 @@ async function init() {
   ]);
 
   window.VV.globe.init(world);
-  window.VV.globe.updateInfluenceLayer?.();
   renderDock();
   renderRankingPanel();
   // Afficher France par défaut
