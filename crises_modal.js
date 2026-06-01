@@ -217,6 +217,13 @@
 // Charger APRÈS app.js
 // ================================================================
 
+// ---- CONSTANTES CRISES
+const PANTHEON_CHIEFS = {
+  sovereign: 'liberty',
+  olympien:  'zeus',
+  shemning:  'entite',
+};
+
 // ---- ÉTAT LOCAL CRISES
 let _criseModal = null;
 
