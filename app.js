@@ -616,15 +616,17 @@ function renderTransPanel(key) {
     .idee-empty .pw { animation:none!important; }
     .idee-detail-panel { margin:0 12px 10px;background:rgba(255,255,255,.03);border:.5px solid rgba(255,255,255,.07);border-radius:9px;overflow:hidden;display:none; }
     .idee-detail-panel.open { display:block; }
-    .idp-img { width:100%;height:90px;overflow:hidden;position:relative; }
-    .idp-img img { width:100%;height:100%;object-fit:cover;display:block; }
-    .idp-img::after { content:'';position:absolute;bottom:0;left:0;right:0;height:40px;background:linear-gradient(transparent,rgba(0,0,0,.8)); }
-    .idp-body { padding:8px 10px 10px; }
-    .idp-title { font-size:13px;font-weight:700;font-family:Rajdhani,sans-serif;color:var(--c-text1);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between; }
-    .idp-close { background:none;border:none;color:var(--c-text3);cursor:pointer;font-size:13px;padding:0;line-height:1; }
+    .idp-card { display:flex;gap:9px;align-items:flex-start;padding:9px 10px 8px; }
+    .idp-thumb { width:52px;height:52px;flex-shrink:0;clip-path:polygon(50% 4%,97% 33%,79% 92%,21% 92%,3% 33%);overflow:hidden;border-radius:0; }
+    .idp-thumb img { width:100%;height:100%;object-fit:cover;display:block; }
+    .idp-right { flex:1;min-width:0; }
+    .idp-head { display:flex;align-items:flex-start;justify-content:space-between;gap:4px;margin-bottom:3px; }
+    .idp-title { font-size:12px;font-weight:700;font-family:Rajdhani,sans-serif;color:var(--c-text1);line-height:1.3; }
+    .idp-court { font-size:10px;color:var(--c-text3);margin-bottom:5px;line-height:1.4; }
+    .idp-close { background:none;border:none;color:var(--c-text3);cursor:pointer;font-size:12px;padding:0;line-height:1;flex-shrink:0; }
     .idp-close:hover { color:var(--c-text1); }
-    .idp-desc { font-size:11px;color:var(--c-text2);line-height:1.55;margin-bottom:7px; }
-    .idp-effet { font-size:11px;font-weight:500;padding:4px 8px;border-radius:5px;display:inline-flex;align-items:center;gap:4px; }
+    .idp-desc { font-size:10px;color:var(--c-text2);line-height:1.55;margin:6px 10px 7px;padding-top:6px;border-top:.5px solid rgba(255,255,255,.06); }
+    .idp-effet { font-size:10px;font-weight:500;padding:4px 8px;border-radius:5px;display:inline-flex;align-items:center;gap:4px;margin:0 10px 9px; }
     .idp-effet.bonus{background:#1a2e1a;color:#5ec95e;} .idp-effet.malus{background:#2e1a1a;color:#e06060;} .idp-effet.neutre{background:#1a2333;color:#6aabdd;}
   `;
   document.head.appendChild(s);
@@ -692,12 +694,19 @@ function bindIdeeClicks(zoneKey, idees) {
       openIdx = i;
       const arr = idea.type==='bonus' ? '\u25b2' : idea.type==='malus' ? '\u25bc' : '\u25c6';
       detail.innerHTML = `
-        <div class="idp-img"><img src="${idea.img}" alt="${idea.nom}" loading="lazy"></div>
-        <div class="idp-body">
-          <div class="idp-title">${idea.nom}<button class="idp-close" onclick="this.closest('.idee-detail-panel').classList.remove('open')">✕</button></div>
-          ${idea.long  ? `<div class="idp-desc">${idea.long}</div>`  : (idea.court ? `<div class="idp-desc">${idea.court}</div>` : '')}
-          ${idea.effet ? `<div class="idp-effet ${idea.type}">${arr} ${idea.effet}</div>` : ''}
-        </div>`;
+        <div class="idp-card">
+          <div class="idp-thumb"><img src="${idea.img}" alt="${idea.nom}" loading="lazy"></div>
+          <div class="idp-right">
+            <div class="idp-head">
+              <div class="idp-title">${idea.nom}</div>
+              <button class="idp-close" onclick="this.closest('.idee-detail-panel').classList.remove('open')">✕</button>
+            </div>
+            ${idea.court ? `<div class="idp-court">${idea.court}</div>` : ''}
+            ${idea.effet ? `<div class="idp-effet ${idea.type}" style="margin:0;padding:3px 7px">${arr} ${idea.effet}</div>` : ''}
+          </div>
+        </div>
+        ${idea.long ? `<div class="idp-desc">${idea.long}</div>` : ''}
+        ${idea.effet ? `<div class="idp-effet ${idea.type}">${arr} ${idea.effet}</div>` : ''}`;
       detail.classList.add('open');
     });
   });
