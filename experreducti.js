@@ -1,5 +1,5 @@
 /* ============================================================
-   EXPERREDUCTI — Parlement Olympien
+   EXPERREDUCTI — Parlement Olympien v2.1
    Interface du Conseil des Experreducti
    S'ouvre par-dessus le globe quand un Olympien clique
    sur "Experreducti" dans le Conseil de Faction
@@ -376,15 +376,15 @@ function renderHemicycle() {
 
   // President PNJ
   const pres = expPNJ.find(p => p.fonction?.trim() === 'UEPresident');
-  const presR = 24;
-  const presCy = cy - presR - 4; // Bien au-dessus de la ligne de sol
+  const presR = 28;
+  const presCy = cy - presR - 8; // Centre bas de l'hémicycle
   const presEl = pres ? `
     <defs>
       <clipPath id="pres-clip">
         <circle cx="${cx}" cy="${presCy}" r="${presR}"/>
       </clipPath>
     </defs>
-    <circle cx="${cx}" cy="${presCy}" r="${presR + 8}" fill="#04080f" stroke="none"/>
+    <circle cx="${cx}" cy="${presCy}" r="${presR + 12}" fill="#04080f" stroke="none"/>
     ${pres.portrait_url
       ? `<image href="${pres.portrait_url}" x="${cx - presR}" y="${presCy - presR}" width="${presR*2}" height="${presR*2}" clip-path="url(#pres-clip)" style="cursor:pointer" onclick="expSelectPNJ('${pres.id}')"/>`
       : `<text x="${cx}" y="${presCy}" text-anchor="middle" dominant-baseline="central" font-size="16" font-family="Cinzel,serif" fill="#c8901a" font-weight="700">${(pres.nom||'?').slice(0,1)}</text>`
