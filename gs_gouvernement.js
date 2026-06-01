@@ -20,16 +20,16 @@ const GOV_CFG = {
 const ELECTION_DATA = {
   annee: 2028,
   candidat_dem: {
-    nom:     'Candidat Démocrate',
+    nom:     'Ronan "Ron" Carver',
     parti:   'Démocrate',
-    portrait: '', // URL portrait
+    portrait: 'https://imgur.com/NRE7hfy.png', // URL portrait
     grands_electeurs: 286,
     couleur: '#1a6aaa',
   },
   candidat_rep: {
-    nom:     'Candidat Républicain',
+    nom:     'Donald J. Trump',
     parti:   'Républicain',
-    portrait: '', // URL portrait
+    portrait: 'https://imgur.com/bhasTZt.png', // URL portrait
     grands_electeurs: 252,
     couleur: '#cc2222',
   },
