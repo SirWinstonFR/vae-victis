@@ -25,59 +25,69 @@ const NASA_CFG = {
 
 // ---- ASTRES (statiques + enrichis par Sheet) ---------------
 const ASTRES_BASE = {
+  iss: {
+    id: 'iss', nom: 'Station Spatiale', nomAlt: null,
+    orbitR: 62,  // rayon orbite px depuis soleil
+    angle: -20,  // angle sur l'orbite (degrés)
+    rayon: 10,
+    couleur: '#2ab8d8',
+    glowColor: '#4ad8f8',
+    texture: null, // pas d'image — dessin SVG custom
+    emoji: '🛸',
+    desc: 'Station orbitale internationale. Hub de coopération et de contrôle.',
+    statut: 'active',
+    projets: [], agences: [], influences: {},
+  },
   lune: {
     id: 'lune', nom: 'Lune', nomAlt: null,
-    x: 52, y: 48, // position % sur la carte
-    rayon: 18,
+    orbitR: 110,
+    angle: -30,
+    rayon: 20,
     couleur: '#c0c8d4',
-    glowColor: '#8090a8',
+    glowColor: '#9090a8',
+    texture: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/240px-FullMoon2010.jpg',
     emoji: '🌕',
     desc: 'Satellite naturel de la Terre. Premier objectif de la course spatiale.',
-    statut: 'colonisée', // depuis Sheet
+    statut: 'colonisée',
     projets: [], agences: [], influences: {},
   },
   mars: {
     id: 'mars', nom: 'Mars', nomAlt: null,
-    x: 68, y: 45,
-    rayon: 14,
+    orbitR: 175,
+    angle: -15,
+    rayon: 17,
     couleur: '#c0522a',
     glowColor: '#ff6030',
+    texture: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/OSIRIS_Mars_true_color.jpg/240px-OSIRIS_Mars_true_color.jpg',
     emoji: '🔴',
     desc: 'Planète rouge. Objectif prioritaire de l\'exploration interplanétaire.',
     statut: 'exploration',
     projets: [], agences: [], influences: {},
   },
-  jupiter: {
-    id: 'jupiter', nom: 'Jupiter', nomAlt: null,
-    x: 82, y: 44,
-    rayon: 22,
-    couleur: '#c8a878',
-    glowColor: '#e8c898',
-    emoji: '🟠',
-    desc: 'Géante gazeuse. Ses lunes sont des cibles d\'exploration prometteuses.',
-    statut: 'observation',
-    projets: [], agences: [], influences: {},
-  },
   asteroïdes: {
-    id: 'asteroïdes', nom: 'Ceinture d\'Astéroïdes', nomAlt: null,
-    x: 75, y: 42,
-    rayon: 8,
+    id: 'asteroïdes', nom: 'Ceinture', nomAlt: null,
+    orbitR: 230,
+    angle: -10,
+    rayon: 7,
     couleur: '#8a8a7a',
     glowColor: '#aaaaaa',
+    texture: null,
     emoji: '☄️',
     desc: 'Zone de débris entre Mars et Jupiter. Richesse minérale inestimable.',
     statut: 'inexploré',
     projets: [], agences: [], influences: {},
   },
-  iss: {
-    id: 'iss', nom: 'Station Spatiale', nomAlt: null,
-    x: 46, y: 38,
-    rayon: 9,
-    couleur: '#2ab8d8',
-    glowColor: '#4ad8f8',
-    emoji: '🛸',
-    desc: 'Station orbitale internationale. Hub de coopération et de contrôle.',
-    statut: 'active',
+  jupiter: {
+    id: 'jupiter', nom: 'Jupiter', nomAlt: null,
+    orbitR: 295,
+    angle: -8,
+    rayon: 30,
+    couleur: '#c8a878',
+    glowColor: '#e8c898',
+    texture: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Jupiter_and_its_shrunken_Great_Red_Spot.jpg/240px-Jupiter_and_its_shrunken_Great_Red_Spot.jpg',
+    emoji: '🟠',
+    desc: 'Géante gazeuse. Ses lunes sont des cibles d\'exploration prometteuses.',
+    statut: 'observation',
     projets: [], agences: [], influences: {},
   },
 };
@@ -261,78 +271,138 @@ function nasaRenderInterface(container) {
 
 // ---- CARTE SVG ---------------------------------------------
 function nasaRenderMap() {
-  const W = 700, H = 340;
+  const W = 700, H = 360;
+  // Soleil centré verticalement, légèrement à gauche
+  const SX = 42, SY = H / 2;
 
-  // Orbites (cercles concentriques)
-  const ORBITES = [
-    { r: 60,  label: 'OEO',    labelX: 50+60, labelY: 170 },   // Orbite basse
-    { r: 100, label: 'Lune',   labelX: 50+100, labelY: 170 },
-    { r: 148, label: 'Mars',   labelX: 50+148, labelY: 170 },
-    { r: 195, label: 'Ceinture',labelX: 50+195, labelY: 170 },
-    { r: 240, label: 'Jupiter',labelX: 50+240, labelY: 170 },
-  ];
-
-  const cx = 50, cy = 170; // Soleil (hors écran à gauche)
-
-  const orbitesSVG = ORBITES.map(o =>
-    `<ellipse cx="${cx}" cy="${cy}" rx="${o.r}" ry="${o.r * 0.28}" fill="none" stroke="#0e1e34" stroke-width="0.8" stroke-dasharray="3 5"/>`
-  ).join('');
-
-  // Étoiles de fond
+  // Étoiles
   let stars = '';
-  const seed = [17,31,47,59,73,89,101,113,127,139,151,163,179,191,197,211];
+  const seed = [17,31,47,59,73,89,101,113,127,139,151,163,179,191,197,211,223,233,239,251,257,263,269,277,281,283];
   seed.forEach((s, i) => {
     const x = (s * 37 + i * 53) % W;
     const y = (s * 19 + i * 41) % H;
-    const r = (i % 3 === 0) ? 1.2 : 0.7;
-    stars += `<circle cx="${x}" cy="${y}" r="${r}" fill="white" opacity="${0.2 + (i%4)*0.1}"/>`;
+    const r = (i % 4 === 0) ? 1.4 : (i % 3 === 0) ? 1.0 : 0.6;
+    const op = 0.15 + (i % 5) * 0.08;
+    stars += `<circle cx="${x}" cy="${y}" r="${r}" fill="white" opacity="${op.toFixed(2)}"/>`;
   });
+
+  // Defs : clipPaths circulaires pour textures + filtres glow
+  let defs = '<defs>';
+  Object.values(ASTRES_BASE).forEach(a => {
+    if (a.texture) {
+      const ang = a.angle * Math.PI / 180;
+      const px  = (SX + a.orbitR * Math.cos(ang)).toFixed(1);
+      const py  = (SY + a.orbitR * Math.sin(ang) * 0.32).toFixed(1);
+      defs += `<clipPath id="clip-${a.id}">
+        <circle cx="${px}" cy="${py}" r="${a.rayon}"/>
+      </clipPath>`;
+    }
+    defs += `<filter id="glow-${a.id}" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>`;
+  });
+  // Glow soleil
+  defs += `<filter id="glow-sun" x="-60%" y="-60%" width="220%" height="220%">
+    <feGaussianBlur stdDeviation="8" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>`;
+  // Ceinture texture
+  defs += `<filter id="noise-belt">
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" result="noise"/>
+    <feColorMatrix type="saturate" values="0" in="noise" result="gray"/>
+    <feBlend in="SourceGraphic" in2="gray" mode="overlay"/>
+  </filter>`;
+  defs += '</defs>';
+
+  // Orbites elliptiques
+  const orbitesSVG = Object.values(ASTRES_BASE).map(a =>
+    `<ellipse cx="${SX}" cy="${SY}" rx="${a.orbitR}" ry="${(a.orbitR * 0.32).toFixed(1)}"
+      fill="none" stroke="#0d1e30" stroke-width="0.7" stroke-dasharray="4 6" opacity="0.6"/>`
+  ).join('');
 
   // Soleil
   const soleil = `
-    <circle cx="${cx}" cy="${cy}" r="28" fill="#f0a020" opacity="0.15"/>
-    <circle cx="${cx}" cy="${cy}" r="18" fill="#f0c040" opacity="0.3"/>
-    <circle cx="${cx}" cy="${cy}" r="10" fill="#ffe060" opacity="0.8"/>
-    <text x="${cx}" y="${cy + 26}" text-anchor="middle" font-size="8" fill="#f0c040" opacity="0.5" font-family="Share Tech Mono,monospace">SOLEIL</text>
+    <circle cx="${SX}" cy="${SY}" r="36" fill="#f0a020" opacity="0.08" filter="url(#glow-sun)"/>
+    <circle cx="${SX}" cy="${SY}" r="22" fill="#f0b030" opacity="0.18" filter="url(#glow-sun)"/>
+    <circle cx="${SX}" cy="${SY}" r="14" fill="#ffe060" opacity="0.7"/>
+    <circle cx="${SX}" cy="${SY}" r="10" fill="#fff4a0" opacity="0.9"/>
   `;
 
-  // Astres
+  // Astres avec textures
   const astresSVG = Object.values(ASTRES_BASE).map(a => {
-    const px = cx + (a.x - 50) / 50 * 240;
-    const py = cy + (a.y - 48) / 52 * (H * 0.28);
+    const ang  = a.angle * Math.PI / 180;
+    const px   = (SX + a.orbitR * Math.cos(ang)).toFixed(1);
+    const py   = (SY + a.orbitR * Math.sin(ang) * 0.32).toFixed(1);
     const live = nasaData[a.id];
     const hasInfluence = Object.keys(live?.influences || {}).length > 0;
     const hasProjects  = (live?.projets || []).length > 0;
+    const nomAffiche   = live?.nomAlt || a.nom;
 
-    // Anneau d'influence
+    // Anneau influence
     const ring = hasInfluence
-      ? `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${a.rayon + 5}" fill="none" stroke="${a.glowColor}" stroke-width="1" opacity="0.4" stroke-dasharray="4 3" class="nasa-orbit-ring"/>`
+      ? `<circle cx="${px}" cy="${py}" r="${a.rayon + 6}" fill="none" stroke="${a.glowColor}"
+           stroke-width="1.2" opacity="0.5" stroke-dasharray="4 3" class="nasa-orbit-ring"/>`
       : '';
 
     // Point projet
     const projetDot = hasProjects
-      ? `<circle cx="${(px + a.rayon * 0.7).toFixed(1)}" cy="${(py - a.rayon * 0.7).toFixed(1)}" r="3" fill="#2a8a3a"/>`
+      ? `<circle cx="${(parseFloat(px) + a.rayon * 0.75).toFixed(1)}" cy="${(parseFloat(py) - a.rayon * 0.75).toFixed(1)}" r="3.5" fill="#2a8a3a" stroke="#04080f" stroke-width="1"/>`
       : '';
 
-    const nomAffiche = live?.nomAlt || a.nom;
+    // Corps de l'astre
+    let corps = '';
+    if (a.id === 'asteroïdes') {
+      // Ceinture : petits points épars
+      corps = `
+        <g class="nasa-astre-circle">
+          ${[-8,-4,0,4,8].map((dx,i) =>
+            `<circle cx="${(parseFloat(px)+dx).toFixed(1)}" cy="${(parseFloat(py)+(i%2?-2:2)).toFixed(1)}"
+              r="${1.5 + (i%2)}" fill="#8a8a7a" opacity="${0.5+i*0.1}"/>`
+          ).join('')}
+          <circle cx="${px}" cy="${py}" r="${a.rayon}" fill="none" stroke="#5a5a4a" stroke-width="0.5" stroke-dasharray="2 3" opacity="0.4"/>
+        </g>`;
+    } else if (a.id === 'iss') {
+      // ISS : forme en croix
+      corps = `
+        <g class="nasa-astre-circle">
+          <rect x="${(parseFloat(px)-10).toFixed(1)}" y="${(parseFloat(py)-2).toFixed(1)}" width="20" height="4" rx="1" fill="#2ab8d8" opacity="0.9"/>
+          <rect x="${(parseFloat(px)-2).toFixed(1)}"  y="${(parseFloat(py)-8).toFixed(1)}" width="4" height="16" rx="1" fill="#1a8aaa" opacity="0.9"/>
+          <circle cx="${px}" cy="${py}" r="3" fill="#4ad8f8"/>
+        </g>`;
+    } else if (a.texture) {
+      // Planète avec texture image
+      corps = `
+        <g class="nasa-astre-circle" filter="url(#glow-${a.id})">
+          <circle cx="${px}" cy="${py}" r="${a.rayon}" fill="${a.couleur}" opacity="0.3"/>
+          <image href="${a.texture}" x="${(parseFloat(px)-a.rayon).toFixed(1)}" y="${(parseFloat(py)-a.rayon).toFixed(1)}"
+            width="${a.rayon*2}" height="${a.rayon*2}"
+            clip-path="url(#clip-${a.id})" preserveAspectRatio="xMidYMid slice" opacity="0.92"/>
+          <circle cx="${px}" cy="${py}" r="${a.rayon}" fill="none" stroke="${a.glowColor}" stroke-width="1.5" opacity="0.6"/>
+        </g>`;
+    } else {
+      corps = `<circle cx="${px}" cy="${py}" r="${a.rayon}" fill="${a.couleur}"
+        stroke="${a.glowColor}" stroke-width="1.5" class="nasa-astre-circle"
+        filter="url(#glow-${a.id})" opacity="0.9"/>`;
+    }
 
     return `
-      <g class="nasa-astre" data-id="${a.id}" style="cursor:pointer">
+      <g class="nasa-astre" data-id="${a.id}" style="cursor:pointer" data-px="${px}" data-py="${py}">
         ${ring}
-        <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${a.rayon}"
-          fill="${a.couleur}" opacity="0.9"
-          stroke="${a.glowColor}" stroke-width="1.5"
-          class="nasa-astre-circle"/>
+        ${corps}
         ${projetDot}
-        <text x="${px.toFixed(1)}" y="${(py + a.rayon + 11).toFixed(1)}"
-          text-anchor="middle" font-size="8" fill="${a.glowColor}"
-          font-family="Share Tech Mono,monospace" class="nasa-astre-label">${nomAffiche}</text>
+        <text x="${px}" y="${(parseFloat(py) + a.rayon + 13).toFixed(1)}"
+          text-anchor="middle" font-size="8.5" fill="${a.glowColor}"
+          font-family="Share Tech Mono,monospace" class="nasa-astre-label"
+          letter-spacing="0.06em">${nomAffiche}</text>
       </g>`;
   }).join('');
 
   return `
-    <svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="display:block">
+    <svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink" style="display:block">
       <rect width="${W}" height="${H}" fill="#04080f"/>
+      ${defs}
       ${stars}
       ${orbitesSVG}
       ${soleil}
