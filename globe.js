@@ -24,6 +24,7 @@ function initGlobe(world) {
   const W = wrap.clientWidth, H = wrap.clientHeight;
 
   _countries = topojson.feature(world, world.objects.countries);
+  window.VV._world = _countries; // pour mapmode-influence.js
 
   proj = d3.geoOrthographic()
     .scale(Math.min(W, H) / 2.05)
@@ -689,10 +690,13 @@ window.VV.globe = {
   highlightTransMembers,
   resetCountryColors,
   drawSituations,
-  updateInfluenceLayer,   // ← nouveau
+  updateInfluenceLayer,
   zoomIn: zoomGlobeIn,
   zoomOut: zoomGlobeOut,
   zoomReset: zoomGlobeReset,
   isVisible,
   isDragging: () => dragging,
+  // Accesseurs pour mapmode-influence.js
+  _proj:   () => proj,
+  _pathFn: () => _path,
 };
