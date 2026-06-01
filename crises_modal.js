@@ -266,3 +266,157 @@ window.toggleInvite       = toggleInvite;
 window.selectIdee         = selectIdee;
 window.closeCriseModal    = closeCriseModal;
 window.confirmCrise       = confirmCrise;
+
+// ---- ÉTAT NOTIFICATIONS
+let _notifPanel    = null;
+let _notifications = [];
+
+function updateNotifBadge() {
+  const unread = _notifications.filter(n => !n.read).length;
+  let badge = document.querySelector('#btn-notifs .notif-badge');
+  const btn = document.getElementById('btn-notifs');
+  if (!btn) return;
+  if (unread > 0) {
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.className = 'notif-badge';
+      btn.style.position = 'relative';
+      btn.appendChild(badge);
+    }
+    badge.textContent = unread > 9 ? '9+' : unread;
+  } else if (badge) {
+    badge.remove();
+  }
+}
+
+function renderNotifPanel() {
+  let panel = document.getElementById('notif-panel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'notif-panel';
+    document.body.appendChild(panel);
+    _notifPanel = panel;
+  }
+
+  if (_notifications.length === 0) {
+    panel.innerHTML = `<div class="np-header">Notifications</div><div class="np-empty">Aucune notification</div>`;
+    return;
+  }
+
+  const items = _notifications.map(n => {
+    if (n.read) {
+      return `<div class="np-item"><div class="np-item-title">${n.title}</div><div class="np-item-read">${n.desc}</div></div>`;
+    }
+    return `
+      <div class="np-item" id="np-${n.id}">
+        <div class="np-item-title">${n.title}</div>
+        <div class="np-item-desc">${n.desc}</div>
+        <div class="np-item-btns">
+          <button class="np-btn np-btn-yes" onclick="repondreNotif(${n.id},'yes')">✓ Accepter</button>
+          <button class="np-btn np-btn-no"  onclick="repondreNotif(${n.id},'no')">✕ Refuser</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  panel.innerHTML = `<div class="np-header">Notifications (${_notifications.filter(n=>!n.read).length} nouvelles)</div>${items}`;
+}
+
+async function repondreNotif(id, rep) {
+  const notif = _notifications.find(n => n.id === id);
+  if (!notif) return;
+  notif.read = true;
+  updateNotifBadge();
+  renderNotifPanel();
+
+  if (notif.payload) {
+    await postScript({
+      action:   'notif_response',
+      notif_id: notif.payload.notif_id,
+      reponse:  rep,
+      dieu:     me?.id,
+      cycle:    window.VV.CYCLE || CYCLE,
+    });
+  }
+}
+
+// ---- CHARGEMENT DES NOTIFS DEPUIS LE SHEET -------------------
+async function loadNotifications() {
+  if (!me) return;
+  try {
+    const params = new URLSearchParams({ data: JSON.stringify({ action: 'get_notifs', dieu: me.id }) });
+    const r    = await fetch(CFG.APPS_SCRIPT + '?' + params, { method: 'GET' });
+    const text = await r.text();
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) return;
+    const d = JSON.parse(match[0]);
+    if (d.notifs && Array.isArray(d.notifs)) {
+      d.notifs.forEach(n => {
+        _notifications.push({
+          id:      n.id || Date.now() + Math.random(),
+          title:   n.title || 'Notification',
+          desc:    n.desc  || '',
+          read:    false,
+          payload: n,
+        });
+      });
+      updateNotifBadge();
+    }
+  } catch(e) {
+    console.warn('[VV Notifs]', e);
+  }
+}
+
+// ---- BOUTON NOTIFS DANS LA TOPBAR ----------------------------
+function injectNotifButton() {
+  // Cherche la topbar pour y ajouter le bouton notifs
+  const topbar = document.querySelector('.topbar, #topbar, .top-bar');
+  if (!topbar || document.getElementById('btn-notifs')) return;
+
+  const btn = document.createElement('button');
+  btn.id        = 'btn-notifs';
+  btn.className = 'tb-btn';
+  btn.title     = 'Notifications';
+  btn.innerHTML = '<i class="ti ti-bell"></i>';
+  btn.style.position = 'relative';
+
+  btn.addEventListener('click', () => {
+    const panel = document.getElementById('notif-panel');
+    if (!panel) { renderNotifPanel(); return; }
+    const isHidden = panel.classList.contains('hidden') || panel.style.display === 'none';
+    if (isHidden) {
+      panel.classList.remove('hidden');
+      panel.style.display = '';
+      renderNotifPanel();
+      _notifications.filter(n => !n.read && !n.payload).forEach(n => n.read = true);
+      updateNotifBadge();
+    } else {
+      panel.classList.add('hidden');
+    }
+  });
+
+  topbar.appendChild(btn);
+}
+
+// Fermer notif-panel si clic extérieur
+document.addEventListener('click', e => {
+  const panel = document.getElementById('notif-panel');
+  if (!panel || panel.classList.contains('hidden')) return;
+  if (!panel.contains(e.target) && e.target.id !== 'btn-notifs' && !e.target.closest('#btn-notifs')) {
+    panel.classList.add('hidden');
+  }
+});
+
+// ---- EXPOSITION GLOBALE
+window.repondreNotif     = repondreNotif;
+window.openCriseModal    = openCriseModal;
+window.selectCriseOption = selectCriseOption;
+window.toggleInvite      = toggleInvite;
+window.selectIdee        = selectIdee;
+window.closeCriseModal   = closeCriseModal;
+window.confirmCrise      = confirmCrise;
+
+// Appeler au login via app.js
+window.VV.crises = {
+  loadNotifs:    loadNotifications,
+  injectNotifBtn: injectNotifButton,
+};
