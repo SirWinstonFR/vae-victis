@@ -1,427 +1,498 @@
 /* ============================================================
-   VAE VICTIS — mapmode-influence.js
-   Mapmode "Influence Divine" — canvas 2D overlay
-   
-   Technique : canvas offscreen par pays, masqué avec la forme
-   exacte du pays (destination-in) → jamais de débordement.
-   
-   Patterns style Victoria 3 :
-     Olympiens  → hexagones dorés
-     Sovereign  → hachures horizontales bleues
-     Shemning   → diagonales croisées rouges
-   
-   Animations :
-     - Respiration (opacité qui monte/descend)
-     - Onde concentrique qui s'étend du centre vers les bords
+   VAE VICTIS — globe.js
+   Tout ce qui concerne le globe D3 : rendu, rotation, zoom,
+   points, badges, situations.
    ============================================================ */
 
 'use strict';
 
+// Globe state — partagé avec app.js via window
 window.VV = window.VV || {};
 
-(function () {
+// Variables globe
+let proj, svgSel, gMap, gDots, gBadges;
+let curK = 1;
+let dragging = false;
+let isRotating = false;
+let _countries, _path;
 
-  /* ── CONSTANTES ─────────────────────────────────────────── */
+const BADGE_FADE = 1.5, BADGE_HIDE = 2.5, DOTS_SHOW = 1.4;
 
-  const FACS = {
-    olympien:  { color: '#c8901a', rgb: [200, 144, 26],  label: 'Olympiens' },
-    sovereign: { color: '#3a7acc', rgb: [58,  122, 204], label: 'Sovereign' },
-    shemning:  { color: '#b02828', rgb: [176, 40,  40],  label: 'Shemning'  },
-  };
+// ---- INIT GLOBE --------------------------------------------
+function initGlobe(world) {
+  const wrap = document.getElementById('map-wrap');
+  const W = wrap.clientWidth, H = wrap.clientHeight;
 
-  /* Vitesses d'animation par faction (ms) */
-  const ANIM = {
-    olympien:  { breath: 3000, wave: 2200 },
-    sovereign: { breath: 3600, wave: 2600 },
-    shemning:  { breath: 4200, wave: 3000 },
-  };
+  _countries = topojson.feature(world, world.objects.countries);
+  window.VV._world = _countries;
 
-  /* ── STATE ──────────────────────────────────────────────── */
-  let active    = false;
-  let canvas    = null;   // canvas overlay sur le globe
-  let ctx       = null;
-  let rafId     = null;
-  let startTime = null;
-  let patterns  = {};     // faction -> CanvasPattern
+  proj = d3.geoOrthographic()
+    .scale(Math.min(W, H) / 2.05)
+    .translate([W / 2, H / 2])
+    .clipAngle(90)
+    .rotate([-15, -46]);
 
-  /* ── CALCUL INFLUENCE (depuis alignX/alignY nations) ────── */
-  function computeInfluence() {
-    const nations = window.VV.NATIONS || {};
-    const result  = {};
+  _path = d3.geoPath().projection(proj);
 
-    Object.entries(nations).forEach(([zone, n]) => {
-      const ax = n.alignX ?? 0.5;
-      const ay = n.alignY ?? 0.5;
-      const wO  = 1 - ay;
-      const wS  = ay * (1 - ax);
-      const wSh = ay * ax;
-      const scores = { olympien: wO, sovereign: wS, shemning: wSh };
-      const dom  = Object.keys(scores).reduce((a, b) => scores[a] >= scores[b] ? a : b);
-      const str  = scores[dom]; // 0..1
-      if (str < 0.36) return;   // trop neutre
-      result[zone] = { faction: dom, strength: str, scores };
+  svgSel = d3.select('#world-svg')
+    .attr('width', W).attr('height', H)
+    .style('display', 'block');
+
+  // Fond
+  svgSel.append('rect').attr('width', W).attr('height', H).attr('fill', '#050b14');
+
+  // Halo atmosphérique
+  const defs = svgSel.append('defs');
+  const atmoGrad = defs.append('radialGradient')
+    .attr('id', 'atmo-grad')
+    .attr('cx', '50%').attr('cy', '50%').attr('r', '50%');
+  atmoGrad.append('stop').attr('offset', '85%').attr('stop-color', '#0a2040').attr('stop-opacity', 0);
+  atmoGrad.append('stop').attr('offset', '100%').attr('stop-color', '#1a5090').attr('stop-opacity', .35);
+
+  // Océan
+  svgSel.append('circle')
+    .attr('class', 'globe-ocean')
+    .attr('cx', W / 2).attr('cy', H / 2)
+    .attr('r', proj.scale())
+    .attr('fill', '#081422')
+    .attr('stroke', '#1a3060').attr('stroke-width', .8);
+
+  // Atmosphère
+  svgSel.append('circle')
+    .attr('class', 'globe-atmo')
+    .attr('cx', W / 2).attr('cy', H / 2)
+    .attr('r', proj.scale() + 6)
+    .attr('fill', 'url(#atmo-grad)')
+    .style('pointer-events', 'none');
+
+
+
+  // Layers
+  gMap    = svgSel.append('g').attr('class', 'g-map');
+  gDots   = svgSel.append('g').attr('class', 'g-dots');
+  gBadges = svgSel.append('g').attr('class', 'g-badges');
+
+  // Graticule
+  gMap.append('path')
+    .datum(d3.geoGraticule()())
+    .attr('d', _path)
+    .attr('fill', 'none')
+    .attr('stroke', '#162a3e')
+    .attr('stroke-width', .25)
+    .attr('opacity', .6);
+
+  // Pays
+  gMap.selectAll('path.country')
+    .data(_countries.features)
+    .join('path')
+    .attr('class', d => `country${window.VV.COUNTRY_MAP?.[d.properties?.name] ? ' has-zone' : ''}`)
+    .attr('d', _path)
+    .on('mouseenter', (e, d) => {
+      const z = window.VV.COUNTRY_MAP?.[d.properties?.name];
+      if (z) showGlobeTT(e, z);
+    })
+    .on('mouseleave', hideGlobeTT)
+    .on('click', (e, d) => {
+      if (dragging) return;
+      const z = window.VV.COUNTRY_MAP?.[d.properties?.name];
+      if (z) window.VV.onZoneClick?.(z);
     });
 
-    return result;
-  }
+  // Drag events natifs
+  const svgNode = svgSel.node();
+  let pointerDown = false, lastX = 0, lastY = 0, clickStartX = 0, clickStartY = 0;
 
-  /* ── CRÉER LES PATTERNS CANVAS ──────────────────────────── */
-  function buildPatterns() {
-    patterns = {};
+  svgNode.addEventListener('mousedown', e => {
+    pointerDown = true; dragging = false;
+    lastX = e.clientX; lastY = e.clientY;
+    clickStartX = e.clientX; clickStartY = e.clientY;
+    e.preventDefault();
+  });
 
-    /* OLYMPIENS — hexagones dorés */
-    const olC = document.createElement('canvas');
-    olC.width = 20; olC.height = 23;
-    const olX = olC.getContext('2d');
-    olX.strokeStyle = 'rgba(200,144,26,0.70)';
-    olX.lineWidth = 1.1;
-    // Hexagone centré
-    olX.beginPath();
-    for (let i = 0; i < 6; i++) {
-      const a = Math.PI / 180 * (60 * i - 30);
-      const x = 10 + 7 * Math.cos(a);
-      const y = 11.5 + 7 * Math.sin(a);
-      i === 0 ? olX.moveTo(x, y) : olX.lineTo(x, y);
+  window.addEventListener('mousemove', e => {
+    if (!pointerDown || isRotating) return;
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    if (!dragging && (Math.abs(e.clientX - clickStartX) > 3 || Math.abs(e.clientY - clickStartY) > 3)) {
+      dragging = true; hideGlobeTT();
     }
-    olX.closePath();
-    olX.stroke();
-    patterns.olympien = ctx.createPattern(olC, 'repeat');
+    if (!dragging) return;
+    const s = 75 / proj.scale();
+    const r = proj.rotate();
+    proj.rotate([r[0] + dx * s, Math.max(-89, Math.min(89, r[1] - dy * s)), r[2]]);
+    lastX = e.clientX; lastY = e.clientY;
+    redrawGlobe();
+  });
 
-    /* SOVEREIGN — hachures horizontales bleues */
-    const svC = document.createElement('canvas');
-    svC.width = 14; svC.height = 10;
-    const svX = svC.getContext('2d');
-    svX.strokeStyle = 'rgba(58,122,204,0.75)';
-    svX.lineWidth = 1.2;
-    svX.beginPath(); svX.moveTo(0, 3.5); svX.lineTo(14, 3.5); svX.stroke();
-    svX.strokeStyle = 'rgba(58,122,204,0.35)';
-    svX.lineWidth = 0.6;
-    svX.beginPath(); svX.moveTo(0, 8);   svX.lineTo(14, 8);   svX.stroke();
-    patterns.sovereign = ctx.createPattern(svC, 'repeat');
+  window.addEventListener('mouseup', () => {
+    pointerDown = false;
+    setTimeout(() => { dragging = false; }, 60);
+  });
 
-    /* SHEMNING — diagonales croisées rouges */
-    const shC = document.createElement('canvas');
-    shC.width = 12; shC.height = 12;
-    const shX = shC.getContext('2d');
-    shX.strokeStyle = 'rgba(176,40,40,0.72)';
-    shX.lineWidth = 1.1;
-    shX.beginPath(); shX.moveTo(0,0); shX.lineTo(12,12); shX.stroke();
-    shX.strokeStyle = 'rgba(176,40,40,0.40)';
-    shX.lineWidth = 0.6;
-    shX.beginPath(); shX.moveTo(12,0); shX.lineTo(0,12); shX.stroke();
-    patterns.shemning = ctx.createPattern(shC, 'repeat');
-  }
+  // Touch
+  let lastTouch = null;
+  svgNode.addEventListener('touchstart', e => {
+    lastTouch = e.touches[0]; dragging = false;
+    e.preventDefault();
+  }, { passive: false });
 
-  /* ── INIT CANVAS ────────────────────────────────────────── */
-  function initCanvas() {
-    const wrap = document.getElementById('map-wrap');
-    if (!wrap) return false;
+  svgNode.addEventListener('touchmove', e => {
+    if (!lastTouch) return;
+    const t = e.touches[0];
+    const dx = t.clientX - lastTouch.clientX, dy = t.clientY - lastTouch.clientY;
+    dragging = true;
+    const s = 80 / proj.scale();
+    const r = proj.rotate();
+    proj.rotate([r[0] + dx * s, Math.max(-89, Math.min(89, r[1] - dy * s)), r[2]]);
+    lastTouch = t;
+    redrawGlobe();
+    e.preventDefault();
+  }, { passive: false });
 
-    canvas = document.createElement('canvas');
-    canvas.id = 'vv-influence-canvas';
-    canvas.style.cssText = `
-      position:absolute; top:0; left:0;
-      width:100%; height:100%;
-      pointer-events:none;
-      z-index:5;
-    `;
-    canvas.width  = wrap.clientWidth;
-    canvas.height = wrap.clientHeight;
-    wrap.appendChild(canvas);
+  svgNode.addEventListener('touchend', () => {
+    setTimeout(() => { dragging = false; }, 60);
+  });
 
-    ctx = canvas.getContext('2d');
-    buildPatterns();
-    return true;
-  }
+  // Zoom scroll
+  svgNode.addEventListener('wheel', e => {
+    e.preventDefault();
+    const base = Math.min(W, H) / 2.05;
+    const factor = e.deltaY > 0 ? 0.88 : 1.14;
+    const ns = Math.max(base * 0.5, Math.min(proj.scale() * factor, base * 9));
+    proj.scale(ns);
+    svgSel.select('.globe-ocean').attr('r', ns);
+    svgSel.select('.globe-atmo').attr('r', ns + 6);
+    curK = ns / base;
+    redrawGlobe();
+    applyGlobeZoom();
+  }, { passive: false });
 
-  /* ── DESSINER UN PAYS SUR LE CANVAS ────────────────────── */
-  // Technique : canvas offscreen → clip par le path du pays → glow + pattern
-  // Le clip canvas 2D est strictement limité aux pixels du pays.
-  function drawCountry(feat, inf, t, pathFn) {
-    const W = canvas.width, H = canvas.height;
-    const f    = FACS[inf.faction];
-    const anim = ANIM[inf.faction];
+  document.getElementById('map-loading').style.display = 'none';
+}
 
-    // Générer le path SVG string via D3, puis le convertir en Path2D canvas
-    let svgPathStr;
-    try { svgPathStr = pathFn(feat); } catch(e) { return; }
-    if (!svgPathStr) return;
+// ---- REDRAW ------------------------------------------------
+function redrawGlobe() {
+  if (!_path || !gMap) return;
+  _path = d3.geoPath().projection(proj);
 
-    let path2d;
-    try { path2d = new Path2D(svgPathStr); } catch(e) { return; }
+  gMap.select('path:first-child').attr('d', d3.geoPath().projection(proj)(d3.geoGraticule()()));
+  gMap.selectAll('path.country').attr('d', _path);
 
-    // Centroïde via D3 pour le gradient
-    let cx, cy;
-    try {
-      const c = pathFn.centroid(feat);
-      if (!c || isNaN(c[0]) || isNaN(c[1])) return;
-      [cx, cy] = c;
-    } catch(e) { return; }
+  buildDots();
+  buildBadges();
+  applyGlobeZoom();
 
-    // Vérifier que le pays est visible (côté avant du globe)
-    if (cx < -50 || cx > W + 50 || cy < -50 || cy > H + 50) return;
+  if (window.VV.showSituations) drawSituations();
+}
 
-    // Canvas offscreen
-    const off = document.createElement('canvas');
-    off.width = W; off.height = H;
-    const ox = off.getContext('2d');
+// ---- VISIBILITY --------------------------------------------
+function isVisible(lon, lat) {
+  if (!proj) return false;
+  return proj([lon, lat]) !== null;
+}
 
-    /* ── 1. Clip strict = forme du pays ── */
-    ox.save();
-    ox.beginPath();
-    // Redessiner le path via Path2D pour le clip
-    ox.clip(path2d);
+// ---- DOTS --------------------------------------------------
+function buildDots() {
+  if (!gDots || !proj) return;
+  gDots.selectAll('*').remove();
 
-    /* ── 2. Respiration ── */
-    const breath = (Math.sin(t / anim.breath * Math.PI * 2 - Math.PI / 2) + 1) / 2;
-    const globalAlpha = (0.30 + inf.strength * 0.25) + breath * (0.35 + inf.strength * 0.30);
+  const W = +svgSel.attr('width'), H = +svgSel.attr('height');
+  const cx = W / 2, cy = H / 2, r = proj.scale();
+  const tm = window.VV.tzMap ? window.VV.tzMap() : {};
 
-    /* ── 3. Fond dégradé centre→bords ── */
-    const gradR = Math.max(W, H) * 0.40;
-    const grd = ox.createRadialGradient(cx, cy, 0, cx, cy, gradR);
-    grd.addColorStop(0.00, `rgba(${f.rgb[0]},${f.rgb[1]},${f.rgb[2]},${Math.min(0.95, globalAlpha).toFixed(2)})`);
-    grd.addColorStop(0.50, `rgba(${f.rgb[0]},${f.rgb[1]},${f.rgb[2]},${Math.min(0.55, globalAlpha * 0.55).toFixed(2)})`);
-    grd.addColorStop(1.00, `rgba(${f.rgb[0]},${f.rgb[1]},${f.rgb[2]},0)`);
-    ox.fillStyle = grd;
-    ox.fillRect(0, 0, W, H);
+  Object.values(window.VV.ZONES || {}).flatMap(z => z.territories).forEach(t => {
+    const p = proj([t.lon, t.lat]);
+    if (!p) return;
+    const [px, py] = p;
+    if (Math.hypot(px - cx, py - cy) > r * 1.01) return;
 
-    /* ── 4. Pattern texturé ── */
-    if (patterns[inf.faction]) {
-      ox.globalAlpha = Math.min(0.85, (0.38 + inf.strength * 0.35) * (0.5 + breath * 0.5));
-      ox.fillStyle = patterns[inf.faction];
-      ox.fillRect(0, 0, W, H);
-      ox.globalAlpha = 1;
-    }
+    const fill  = window.VV.dotColor(t);
+    const baseR = t.pi >= 3 ? 3.2 : t.pi >= 2 ? 2.6 : 2.0;
 
-    /* ── 5. Onde concentrique ── */
-    const wavePhase = (t % anim.wave) / anim.wave;
-    const waveR     = wavePhase * gradR * 0.85;
-    const waveAlpha = (1 - wavePhase) * (0.50 + inf.strength * 0.35);
-    if (waveR > 2 && waveAlpha > 0.01) {
-      ox.beginPath();
-      ox.arc(cx, cy, waveR, 0, Math.PI * 2);
-      ox.strokeStyle = `rgba(${f.rgb[0]},${f.rgb[1]},${f.rgb[2]},${waveAlpha.toFixed(2)})`;
-      ox.lineWidth   = Math.max(0.5, 2.8 * (1 - wavePhase));
-      ox.stroke();
-    }
+    // Halo
+    gDots.append('circle').datum(t)
+      .attr('class', 'thl')
+      .attr('cx', px).attr('cy', py)
+      .attr('r', baseR * 2.5)
+      .attr('fill', fill).attr('opacity', .12)
+      .style('pointer-events', 'none');
 
-    ox.restore();
-
-    /* ── 6. Contour lumineux (hors clip) ── */
-    ox.strokeStyle = `rgba(${f.rgb[0]},${f.rgb[1]},${f.rgb[2]},${(0.45 + inf.strength * 0.45).toFixed(2)})`;
-    ox.lineWidth   = inf.strength >= 0.65 ? 1.5 : 0.9;
-    ox.stroke(path2d);
-
-    /* ── 7. Copier sur le canvas principal ── */
-    ctx.drawImage(off, 0, 0);
-  }
-
-  /* ── BOUCLE D'ANIMATION ─────────────────────────────────── */
-  function renderLoop(ts) {
-    if (!active || !ctx) return;
-    if (!startTime) startTime = ts;
-    const t = ts - startTime;
-
-    // Récupérer proj et pathFn depuis globe.js
-    const pathFn = window.VV.globe?._pathFn?.();
-    const world  = window.VV._world;
-
-    if (!pathFn || !world) {
-      rafId = requestAnimationFrame(renderLoop);
-      return;
-    }
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const influence  = computeInfluence();
-    const countryMap = window.VV.COUNTRY_MAP || {};
-
-    world.features.forEach(feat => {
-      const cn = feat.properties?.name;
-      const zn = countryMap[cn];
-      if (!zn || !influence[zn]) return;
-      drawCountry(feat, influence[zn], t, pathFn);
-    });
-
-    rafId = requestAnimationFrame(renderLoop);
-  }
-
-  /* ── ACTIVER / DÉSACTIVER ───────────────────────────────── */
-  function enable() {
-    if (active) return;
-    active = true;
-    if (!canvas) {
-      if (!initCanvas()) return;
+    if (t.type === 'org') {
+      const s = baseR * 1.5;
+      gDots.append('path').datum(t)
+        .attr('class', 'tpt')
+        .attr('d', `M${px},${py-s} L${px+s},${py} L${px},${py+s} L${px-s},${py} Z`)
+        .attr('fill', fill)
+        .attr('stroke', 'rgba(255,255,255,.2)').attr('stroke-width', .4)
+        .style('cursor', 'pointer')
+        .style('filter', `drop-shadow(0 0 2px ${fill})`)
+        .on('mouseenter', function(e) {
+          const owner = t.owner && t.owner !== 'neutral' ? window.VV.getD(t.owner) : null;
+          showGlobeTT(e, `${t.name} · ${owner ? owner.name : 'Neutre'}${t.pi > 1 ? ` · ×${t.pi}PI` : ''}`);
+        })
+        .on('mouseleave', hideGlobeTT)
+        .on('click', e => { e.stopPropagation(); if (!dragging) window.VV.onZoneClick?.(tm[t.id]); });
     } else {
-      canvas.style.display = 'block';
+      gDots.append('circle').datum(t)
+        .attr('class', 'tpt')
+        .attr('cx', px).attr('cy', py).attr('r', baseR)
+        .attr('fill', fill)
+        .attr('stroke', 'rgba(255,255,255,.15)').attr('stroke-width', .3)
+        .style('cursor', 'pointer')
+        .style('filter', `drop-shadow(0 0 2px ${fill})`)
+        .on('mouseenter', function(e) {
+          const owner = t.owner && t.owner !== 'neutral' ? window.VV.getD(t.owner) : null;
+          showGlobeTT(e, `${t.name} · ${owner ? owner.name : 'Neutre'}${t.pi > 1 ? ` · ×${t.pi}PI` : ''}`);
+          d3.select(this).attr('r', baseR * 1.7);
+        })
+        .on('mouseleave', function() { hideGlobeTT(); d3.select(this).attr('r', baseR); })
+        .on('click', e => { e.stopPropagation(); if (!dragging) window.VV.onZoneClick?.(tm[t.id]); });
     }
-    startTime = null;
-    rafId = requestAnimationFrame(renderLoop);
-    updateBtn(true);
-  }
 
-  function disable() {
-    if (!active) return;
-    active = false;
-    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-    if (canvas) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      canvas.style.display = 'none';
+    // ⚔ si on attaque ce territoire
+    const me = window.VV.me;
+    const attacks = window.VV.attacks || [];
+    if (me && attacks.some(a => a.attacker === me.id && a.territory === t.id)) {
+      gDots.append('text').datum(t)
+        .attr('class', 'tpt-icon')
+        .attr('x', px).attr('y', py - baseR - 3)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', Math.max(9, baseR * 3))
+        .attr('pointer-events', 'none')
+        .style('filter', 'drop-shadow(0 0 2px #fff)')
+        .text('⚔');
     }
-    updateBtn(false);
-  }
+  });
+}
 
-  function toggle() { active ? disable() : enable(); }
+// ---- BADGES ------------------------------------------------
+function buildBadges() {
+  if (!gBadges || !proj) return;
+  gBadges.selectAll('*').remove();
 
-  /* ── BOUTON TOGGLE ──────────────────────────────────────── */
-  function updateBtn(on) {
-    const btn = document.getElementById('vv-mapmode-btn');
-    if (!btn) return;
-    btn.classList.toggle('active', on);
-    btn.title = on ? 'Désactiver Influence Divine' : 'Activer Influence Divine';
-  }
+  const W = +svgSel.attr('width'), H = +svgSel.attr('height');
+  const cx = W / 2, cy = H / 2, r = proj.scale();
 
-  function injectBtn() {
-    if (document.getElementById('vv-mapmode-btn')) return;
+  Object.entries(window.VV.ZONES || {}).forEach(([zoneName, zd]) => {
+    if (!zd.cx && !zd.cy) return;
+    const p = proj([zd.cx, zd.cy]);
+    if (!p) return;
+    const [px, py] = p;
+    if (Math.hypot(px - cx, py - cy) > r * 1.01) return;
 
-    /* Injecter le CSS du bouton */
-    const style = document.createElement('style');
-    style.textContent = `
-      #vv-mapmode-btn {
-        position: absolute;
-        bottom: 48px;
-        right: 12px;
-        z-index: 20;
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        padding: 7px 13px;
-        background: rgba(5,12,25,0.88);
-        border: 1px solid rgba(80,120,200,0.30);
-        border-radius: 8px;
-        color: rgba(180,200,230,0.70);
-        font-family: Rajdhani, sans-serif;
-        font-size: 12px;
-        font-weight: 600;
-        letter-spacing: 0.6px;
-        cursor: pointer;
-        transition: border-color .2s, color .2s, background .2s;
-        user-select: none;
-      }
-      #vv-mapmode-btn:hover {
-        border-color: rgba(120,160,240,0.55);
-        color: rgba(200,220,255,0.90);
-        background: rgba(8,18,38,0.95);
-      }
-      #vv-mapmode-btn.active {
-        border-color: rgba(160,120,50,0.70);
-        color: #d4a84c;
-        background: rgba(30,18,5,0.92);
-        box-shadow: 0 0 10px rgba(200,144,26,0.18);
-      }
-      #vv-mapmode-btn .vv-mm-icon {
-        font-size: 14px;
-        line-height: 1;
-      }
-      /* Légende mapmode */
-      #vv-mapmode-legend {
-        position: absolute;
-        bottom: 92px;
-        right: 12px;
-        z-index: 20;
-        background: rgba(5,12,25,0.88);
-        border: 1px solid rgba(80,120,200,0.20);
-        border-radius: 8px;
-        padding: 8px 12px;
-        font-family: Rajdhani, sans-serif;
-        font-size: 11px;
-        display: none;
-        flex-direction: column;
-        gap: 5px;
-      }
-      #vv-mapmode-legend.visible { display: flex; }
-      .vv-mm-leg-item {
-        display: flex; align-items: center; gap: 7px;
-        color: rgba(180,200,230,0.75);
-        font-weight: 500;
-      }
-      .vv-mm-leg-swatch {
-        width: 28px; height: 10px;
-        border-radius: 2px;
-        flex-shrink: 0;
-      }
-    `;
-    document.head.appendChild(style);
+    const n = zd.territories.length;
+    const g = gBadges.append('g')
+      .attr('class', 'zone-badge')
+      .attr('transform', `translate(${px},${py})`)
+      .style('cursor', 'pointer')
+      .on('click', e => { e.stopPropagation(); if (!dragging) window.VV.onZoneClick?.(zoneName); })
+      .on('mouseenter', e => showGlobeTT(e, zoneName))
+      .on('mouseleave', hideGlobeTT);
 
-    /* Légende */
-    const legend = document.createElement('div');
-    legend.id = 'vv-mapmode-legend';
-    legend.innerHTML = `
-      <div class="vv-mm-leg-item">
-        <div class="vv-mm-leg-swatch" style="background:rgba(200,144,26,0.75);outline:1px solid rgba(200,144,26,0.5)"></div>
-        Olympiens
-      </div>
-      <div class="vv-mm-leg-item">
-        <div class="vv-mm-leg-swatch" style="background:rgba(58,122,204,0.75);outline:1px solid rgba(58,122,204,0.5)"></div>
-        Sovereign
-      </div>
-      <div class="vv-mm-leg-item">
-        <div class="vv-mm-leg-swatch" style="background:rgba(176,40,40,0.75);outline:1px solid rgba(176,40,40,0.5)"></div>
-        Shemning
-      </div>
-    `;
+    g.append('circle').attr('r', 11).attr('fill', '#06101e').attr('stroke', '#2a5a8a').attr('stroke-width', .8).attr('opacity', .95);
+    g.append('circle').attr('r', 8).attr('fill', '#0c1e36').attr('opacity', .9);
+    g.append('text')
+      .attr('text-anchor', 'middle').attr('dominant-baseline', 'central')
+      .attr('font-size', n >= 10 ? 7 : 8.5).attr('font-weight', '700')
+      .attr('fill', '#7ab8f5').attr('font-family', 'Rajdhani, sans-serif')
+      .text(n);
+  });
+}
 
-    /* Bouton */
-    const btn = document.createElement('button');
-    btn.id = 'vv-mapmode-btn';
-    btn.innerHTML = '<span class="vv-mm-icon">✦</span> INFLUENCE DIVINE';
-    btn.title = 'Activer Influence Divine';
-    btn.addEventListener('click', () => {
-      toggle();
-      legend.classList.toggle('visible', active);
+// ---- SITUATIONS --------------------------------------------
+function drawSituations() {
+  svgSel.selectAll('.situation-layer').remove();
+  const situations = window.VV.situations || [];
+  if (!situations.length || !proj) return;
+
+  const situLayer = svgSel.insert('g', '.g-dots')
+    .attr('class', 'situation-layer')
+    .style('pointer-events', 'none');
+
+  situations.forEach(s => {
+    const color = window.VV.getSituationColor?.(s.type, s.intensity);
+    if (!color) return;
+
+    const countries = Object.entries(window.VV.COUNTRY_MAP || {})
+      .filter(([, z]) => z === s.zone).map(([c]) => c);
+
+    gMap.selectAll('path.country').each(function(d) {
+      if (countries.includes(d.properties?.name)) {
+        d3.select(this).style('fill', color).style('opacity', .7).style('stroke', color).style('stroke-width', .6);
+      }
     });
 
-    const wrap = document.getElementById('map-wrap');
-    if (wrap) {
-      wrap.appendChild(legend);
-      wrap.appendChild(btn);
+    const zd = (window.VV.ZONES || {})[s.zone];
+    if (zd && zd.cx && zd.cy) {
+      const p = proj([zd.cx, zd.cy]);
+      if (p) {
+        const st = window.VV.SITUATION_TYPES?.[s.type];
+        situLayer.append('text')
+          .attr('x', p[0]).attr('y', p[1])
+          .attr('text-anchor', 'middle').attr('dominant-baseline', 'central')
+          .attr('font-size', 14 + s.intensity * 2)
+          .attr('fill', color).attr('stroke', '#050b14').attr('stroke-width', 2)
+          .attr('paint-order', 'stroke')
+          .style('filter', `drop-shadow(0 0 5px ${color})`)
+          .text(st?.icon || '!');
+      }
     }
+  });
+}
+
+// ---- HIGHLIGHT ZONE ----------------------------------------
+function highlightZone(name) {
+  if (!gMap) return;
+  gMap.selectAll('.country')
+    .classed('active', false)
+    .classed('zone-member', false)
+    .classed('trans-member', false);
+
+  document.querySelectorAll('.tchip').forEach(c => c.classList.remove('active'));
+
+  if (!name) return;
+
+  const targets = Object.entries(window.VV.COUNTRY_MAP || {})
+    .filter(([, z]) => z === name).map(([c]) => c);
+  (targets.length ? targets : [name]).forEach(cn =>
+    gMap.selectAll('.country').filter(d => d.properties?.name === cn)
+      .classed('active', true).classed('zone-member', true)
+  );
+
+  // Rotation + dezoom animé vers la zone
+  const zd = (window.VV.ZONES || {})[name];
+  if (zd?.cx !== undefined) {
+    const svgNode = svgSel.node();
+    const W = +svgSel.attr('width'), H = +svgSel.attr('height');
+    const base = Math.min(W, H) / 2.05;
+
+    const r0 = proj.rotate();
+    const s0 = proj.scale();
+    const targetLon = -zd.cx;
+    const targetLat = Math.max(-80, Math.min(80, -zd.cy * 0.6));
+    let dLon = targetLon - r0[0];
+    while (dLon > 180)  dLon -= 360;
+    while (dLon < -180) dLon += 360;
+    const r1 = [r0[0] + dLon, r0[1] + (targetLat - r0[1]), r0[2]];
+
+    // Cible de zoom : revenir à 1x si trop zoomé
+    const targetScale = curK > 2.5 ? base * 2.0 : s0;
+    const interpR = d3.interpolate(r0, r1);
+    const interpS = d3.interpolate(s0, targetScale);
+
+    const dist = Math.hypot(dLon, targetLat - r0[1]);
+    const duration = Math.min(900, Math.max(400, dist * 5));
+
+    isRotating = true;
+    d3.transition().duration(duration).ease(d3.easeCubicInOut)
+      .tween('navigate', () => t => {
+        proj.rotate(interpR(t));
+        const ns = interpS(t);
+        proj.scale(ns);
+        svgSel.select('.globe-ocean').attr('r', ns);
+        svgSel.select('.globe-atmo').attr('r', ns + 6);
+        curK = ns / base;
+        redrawGlobe();
+      })
+      .on('end', () => {
+        isRotating = false;
+        applyGlobeZoom();
+      });
   }
+}
 
-  /* ── RESIZE ─────────────────────────────────────────────── */
-  function onResize() {
-    if (!canvas) return;
-    const wrap = document.getElementById('map-wrap');
-    if (!wrap) return;
-    canvas.width  = wrap.clientWidth;
-    canvas.height = wrap.clientHeight;
-    if (active) buildPatterns(); // recréer les patterns (ctx changé)
-  }
+function highlightTransMembers(members) {
+  if (!gMap) return;
+  gMap.selectAll('.country').classed('active', false).classed('zone-member', false).classed('trans-member', false);
+  members.forEach(cn =>
+    gMap.selectAll('.country').filter(d => d.properties?.name === cn).classed('trans-member', true)
+  );
+}
 
-  window.addEventListener('resize', onResize);
+function resetCountryColors() {
+  if (!gMap) return;
+  // Supprimer le layer situation
+  if (svgSel) svgSel.selectAll('.situation-layer').remove();
+  // Redraw complet d'abord
+  redrawGlobe();
+  // Puis forcer reset des styles inline APRÈS le redraw
+  setTimeout(() => {
+    if (gMap) gMap.selectAll('path.country')
+      .style('fill', null)
+      .style('opacity', null)
+      .style('stroke', null)
+      .style('stroke-width', null);
+  }, 20);
+}
 
-  /* ── EXPORT PUBLIC ──────────────────────────────────────── */
-  window.VV.mapmode = {
-    enable,
-    disable,
-    toggle,
-    isActive: () => active,
-  };
+// ---- ZOOM --------------------------------------------------
+function applyGlobeZoom() {
+  const bOp = curK < BADGE_FADE ? 1 : curK > BADGE_HIDE ? 0 : 1 - (curK - BADGE_FADE) / (BADGE_HIDE - BADGE_FADE);
+  const dOp = curK < DOTS_SHOW ? 0 : curK > BADGE_HIDE ? 1 : (curK - DOTS_SHOW) / (BADGE_HIDE - DOTS_SHOW);
+  if (gBadges) gBadges.style('opacity', bOp).style('pointer-events', bOp > .1 ? 'auto' : 'none');
+  if (gDots)   gDots.style('opacity', dOp).style('pointer-events', dOp > .2 ? 'auto' : 'none');
+}
 
-  /* ── AUTO-INIT ──────────────────────────────────────────── */
-  // Attendre que le globe soit prêt
-  function waitAndInit() {
-    if (document.getElementById('map-wrap')) {
-      injectBtn();
-    } else {
-      setTimeout(waitAndInit, 200);
-    }
-  }
+// ---- TOOLTIP -----------------------------------------------
+function showGlobeTT(e, txt) {
+  if (dragging) return;
+  const tt = document.getElementById('map-tt');
+  const rect = document.getElementById('map-wrap').getBoundingClientRect();
+  if (!tt) return;
+  tt.textContent = txt; tt.style.display = 'block';
+  tt.style.left = `${e.clientX - rect.left + 14}px`;
+  tt.style.top  = `${e.clientY - rect.top  - 30}px`;
+}
+function hideGlobeTT() {
+  const tt = document.getElementById('map-tt');
+  if (tt) tt.style.display = 'none';
+}
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', waitAndInit);
-  } else {
-    waitAndInit();
-  }
+// ---- ZOOM BUTTONS ------------------------------------------
+function zoomGlobeIn() {
+  if (!proj || !svgSel) return;
+  const W = +svgSel.attr('width'), H = +svgSel.attr('height');
+  const base = Math.min(W, H) / 2.05;
+  const ns = Math.min(proj.scale() * 1.5, base * 9);
+  proj.scale(ns);
+  svgSel.select('.globe-ocean').attr('r', ns);
+  svgSel.select('.globe-atmo').attr('r', ns + 6);
+  curK = ns / base; redrawGlobe(); applyGlobeZoom();
+}
+function zoomGlobeOut() {
+  if (!proj || !svgSel) return;
+  const W = +svgSel.attr('width'), H = +svgSel.attr('height');
+  const base = Math.min(W, H) / 2.05;
+  const ns = Math.max(proj.scale() * 0.67, base * 0.5);
+  proj.scale(ns);
+  svgSel.select('.globe-ocean').attr('r', ns);
+  svgSel.select('.globe-atmo').attr('r', ns + 6);
+  curK = ns / base; redrawGlobe(); applyGlobeZoom();
+}
+function zoomGlobeReset() {
+  if (!proj || !svgSel) return;
+  const W = +svgSel.attr('width'), H = +svgSel.attr('height');
+  const base = Math.min(W, H) / 2.05;
+  proj.scale(base).rotate([-15, -46]);
+  svgSel.select('.globe-ocean').attr('r', base);
+  svgSel.select('.globe-atmo').attr('r', base + 6);
+  curK = 1; redrawGlobe(); applyGlobeZoom();
+}
 
-})();
+// ---- EXPORTS -----------------------------------------------
+window.VV.globe = {
+  init: initGlobe,
+  redraw: redrawGlobe,
+  buildDots,
+  buildBadges,
+  highlightZone,
+  highlightTransMembers,
+  resetCountryColors,
+  drawSituations,
+  zoomIn: zoomGlobeIn,
+  zoomOut: zoomGlobeOut,
+  zoomReset: zoomGlobeReset,
+  isVisible,
+  isDragging: () => dragging,
+  _proj:   () => proj,
+  _pathFn: () => _path,
+};
