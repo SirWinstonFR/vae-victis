@@ -11,7 +11,7 @@ const GS_CFG = {
   SHEET_ID: '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
   APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbyCaQI2c5ds2uCmoeCw6_fALjh-8ii05fkOVgZmWPhbY64vyYbrNcFvqbFKRb7rUwyxwQ/exec',
   GIDS: {
-    Gouvernement: '', // À renseigner
+    Gouvernement: '789610864', // À renseigner
     nasa:         '',
     cia:          '',
     entreprises:  '',
