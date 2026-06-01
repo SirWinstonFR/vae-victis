@@ -970,6 +970,14 @@ async function confirmCrise() {
   }
 }
 
+// ---- EXPOSITION GLOBALE DES FONCTIONS CRISES ---------------
+window.openCriseModal     = openCriseModal;
+window.selectCriseOption  = selectCriseOption;
+window.toggleInvite       = toggleInvite;
+window.selectIdee         = selectIdee;
+window.closeCriseModal    = closeCriseModal;
+window.confirmCrise       = confirmCrise;
+
 function renderCrisesPanel(zoneName) {
   const sits = (window.VV.situations || []).filter(s => s.zone === zoneName);
   if (!sits.length) return;
