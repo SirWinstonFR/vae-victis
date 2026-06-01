@@ -426,6 +426,24 @@ async function confirmCrise() {
         invites:     invites,
         cycle:       window.VV.CYCLE || CYCLE,
       });
+      // Bloquer un slot pour l'initiateur
+      const resInv = await postScript({
+        action:        'add_attack',
+        cycle:         window.VV.CYCLE || CYCLE,
+        attaquant:     me.id,
+        cible:         me.id,
+        territoire_id: `crise_${zoneName}`,
+      });
+      if (resInv.ok || resInv.message) {
+        window.VV.attacks.push({
+          attacker:     me.id,
+          target:       me.id,
+          territory:    `crise_${zoneName}`,
+          capitulation: '',
+        });
+        if (typeof renderDock === 'function') renderDock();
+        if (typeof renderPlayerPanel === 'function') renderPlayerPanel();
+      }
       // Notif locale de confirmation
       addLocalNotif({
         title: 'Coalition lancée',
@@ -441,6 +459,24 @@ async function confirmCrise() {
         dieu:       me.id,
         cycle:      window.VV.CYCLE || CYCLE,
       });
+      // Bloquer un slot d'attaque
+      const res = await postScript({
+        action:        'add_attack',
+        cycle:         window.VV.CYCLE || CYCLE,
+        attaquant:     me.id,
+        cible:         me.id,
+        territoire_id: `crise_${zoneName}`,
+      });
+      if (res.ok || res.message) {
+        window.VV.attacks.push({
+          attacker:     me.id,
+          target:       me.id,
+          territory:    `crise_${zoneName}`,
+          capitulation: '',
+        });
+        if (typeof renderDock === 'function') renderDock();
+        if (typeof renderPlayerPanel === 'function') renderPlayerPanel();
+      }
 
     } else if (option === 'sacrifice') {
       const nation    = nations[zoneName] || {};
