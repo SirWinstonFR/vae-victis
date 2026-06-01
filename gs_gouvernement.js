@@ -7,11 +7,12 @@
 'use strict';
 
 // ---- CONFIG ------------------------------------------------
-const GOV_CFG = {
+window.GOV_CFG = window.GOV_CFG || {};
+const GOV_CFG = window.GOV_CFG = {
   SHEET_ID:    '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
   APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbyCaQI2c5ds2uCmoeCw6_fALjh-8ii05fkOVgZmWPhbY64vyYbrNcFvqbFKRb7rUwyxwQ/exec',
   GIDS: {
-    Gouvernement: '789610864', // À renseigner — onglet "gouvernement" dans le Sheet
+    gouvernement: '789610864',
   },
 };
 
@@ -113,7 +114,7 @@ let govData = {
 
 // ---- FETCH -------------------------------------------------
 async function govFetch() {
-  if (!GOV_CFG.GIDS.gouvernement) return null;
+  if (!GOV_CFG?.GIDS?.gouvernement) return null;
   const url = `https://docs.google.com/spreadsheets/d/${GOV_CFG.SHEET_ID}/gviz/tq?tqx=out:json&gid=${GOV_CFG.GIDS.gouvernement}`;
   try {
     const r   = await fetch(url);
