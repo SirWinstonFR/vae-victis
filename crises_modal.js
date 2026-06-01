@@ -540,7 +540,7 @@ function renderNotifPanel() {
   panel.innerHTML = `<div class="np-header">Notifications (${_notifications.filter(n=>!n.read).length} nouvelles)</div>${items}`;
 }
 
-async function repondreNotif(id, rep) {
+window.repondreNotif = async function repondreNotif(id, rep) {
   const notif = _notifications.find(n => n.id === id);
   if (!notif) return;
   notif.read = true;
