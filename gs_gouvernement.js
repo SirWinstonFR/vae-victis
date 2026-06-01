@@ -404,7 +404,6 @@ function govRenderLois() {
 
 // ---- CARTE USA (SVG simplifié avec coordonnées approx.) ----
 function govRenderMap() {
-  // Positions approximatives des états (cx, cy en %)
   const STATE_POS = {
     'Maine':          [92, 8],  'New Hampshire':  [90, 12], 'Vermont':       [87, 9],
     'Massachusetts':  [91, 15], 'Rhode Island':   [92, 17], 'Connecticut':   [90, 18],
@@ -425,33 +424,79 @@ function govRenderMap() {
     'Washington':     [14, 7],  'Alaska':         [10, 72], 'Hawaii':        [30, 75],
   };
 
-  const W = 500, H = 320;
+  const W = 500, H = 300;
   const dem = ELECTION_DATA.candidat_dem;
   const rep = ELECTION_DATA.candidat_rep;
+
+  // Contour simplifié des États-Unis continentaux (path approximatif)
+  const USA_PATH = `
+    M 68,22 L 75,18 L 82,14 L 90,10 L 105,8 L 120,7 L 135,6 L 150,6
+    L 165,7 L 178,9 L 190,10 L 200,10 L 210,11 L 220,11 L 228,10
+    L 235,12 L 240,14 L 245,16 L 248,20 L 250,24 L 252,28
+    L 255,32 L 258,36 L 260,40 L 262,45 L 264,50 L 266,55
+    L 268,62 L 268,70 L 266,78 L 264,84 L 260,90 L 255,94
+    L 248,98 L 240,102 L 232,106 L 224,110 L 216,112 L 208,114
+    L 200,115 L 192,116 L 184,116 L 176,116 L 168,115 L 160,114
+    L 152,113 L 144,113 L 136,112 L 128,112 L 120,112 L 112,112
+    L 104,112 L 96,112 L 88,113 L 80,114 L 74,115 L 68,116
+    L 62,115 L 56,112 L 50,108 L 44,104 L 38,100 L 32,96
+    L 26,92 L 20,88 L 16,84 L 14,78 L 12,72 L 11,66
+    L 11,60 L 12,54 L 14,48 L 17,42 L 21,36 L 26,30
+    L 32,26 L 40,22 L 50,20 L 60,20 Z
+  `;
+
+  // Golfe du Mexique / découpe Floride approximative
+  const FLORIDA = `M 220,112 L 228,118 L 232,126 L 234,134 L 232,142 L 228,148 L 222,152 L 216,150 L 212,144 L 210,136 L 212,128 L 216,120 Z`;
+
+  // Grands Lacs (zones bleues intérieures)
+  const LAKES = `
+    M 176,38 L 182,36 L 188,38 L 190,42 L 186,46 L 180,46 L 176,42 Z
+    M 192,34 L 198,32 L 204,34 L 206,40 L 202,44 L 196,44 L 192,40 Z
+    M 162,44 L 168,42 L 172,46 L 170,52 L 164,52 L 160,48 Z
+  `;
 
   const circles = Object.entries(ELECTION_DATA.etats).map(([name, data]) => {
     const pos = STATE_POS[name];
     if (!pos) return '';
-    const cx = pos[0] / 100 * W;
-    const cy = pos[1] / 100 * H;
+    const cx = (pos[0] / 100 * W * 0.85 + W * 0.04).toFixed(1);
+    const cy = (pos[1] / 100 * H * 0.78 + H * 0.04).toFixed(1);
     const color = data.gagnant === 'dem' ? dem.couleur : data.gagnant === 'rep' ? rep.couleur : '#3a5060';
-    const r = Math.max(4, Math.min(10, Math.sqrt(data.votes) * 2));
-    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r}" fill="${color}" fill-opacity="0.85" stroke="${color}" stroke-width="0.5" stroke-opacity="0.4">
-      <title>${name} — ${data.votes} GE — ${data.gagnant === 'dem' ? dem.nom : rep.nom}</title>
+    const r = Math.max(3.5, Math.min(11, Math.sqrt(data.votes) * 1.9));
+    return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" fill-opacity="0.88" stroke="#0a1428" stroke-width="1">
+      <title>${name} — ${data.votes} GE</title>
     </circle>`;
   }).join('');
 
   return `
     <div class="gov-map-inner">
       <div class="gov-map-legend">
-        <span class="gov-map-dot" style="background:${dem.couleur}"></span><span>${dem.parti.slice(0,3)}.</span>
-        <span class="gov-map-dot" style="background:${rep.couleur};margin-left:10px"></span><span>${rep.parti.slice(0,3)}.</span>
+        <span class="gov-map-dot" style="background:${dem.couleur}"></span><span style="margin-right:6px">${dem.parti}</span>
+        <span class="gov-map-dot" style="background:${rep.couleur}"></span><span>${rep.parti}</span>
+        <span style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:9px;color:#3a5880">Taille ∝ grands électeurs</span>
       </div>
       <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block" xmlns="http://www.w3.org/2000/svg">
-        <!-- Fond US approximatif -->
-        <rect x="0" y="0" width="${W}" height="${H}" fill="transparent"/>
-        <rect x="10" y="5" width="${W-20}" height="${H-20}" rx="8" fill="#0a1428" stroke="#1a2844" stroke-width="0.5" opacity="0.5"/>
+        <defs>
+          <filter id="map-glow">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <!-- Fond -->
+        <rect width="${W}" height="${H}" fill="#060e1c"/>
+        <!-- Contour USA continental -->
+        <path d="${USA_PATH}" fill="#0d1e34" stroke="#1e3a5a" stroke-width="1.2" transform="scale(2.1,2.1) translate(2,2)"/>
+        <!-- Floride -->
+        <path d="${FLORIDA}" fill="#0d1e34" stroke="#1e3a5a" stroke-width="1" transform="scale(2.1,2.1) translate(2,2)"/>
+        <!-- Grille subtile -->
+        <line x1="0" y1="${H/2}" x2="${W}" y2="${H/2}" stroke="#0e1e30" stroke-width="0.5" stroke-dasharray="2 4"/>
+        <line x1="${W/2}" y1="0" x2="${W/2}" y2="${H}" stroke="#0e1e30" stroke-width="0.5" stroke-dasharray="2 4"/>
+        <!-- Bulles états -->
         ${circles}
+        <!-- Alaska & Hawaii séparateur -->
+        <line x1="85" y1="${H-60}" x2="85" y2="${H-5}" stroke="#1a2844" stroke-width="0.5"/>
+        <line x1="160" y1="${H-60}" x2="160" y2="${H-5}" stroke="#1a2844" stroke-width="0.5"/>
+        <text x="45" y="${H-2}" text-anchor="middle" font-size="7" fill="#2a3a54" font-family="Share Tech Mono,monospace">Alaska</text>
+        <text x="122" y="${H-2}" text-anchor="middle" font-size="7" fill="#2a3a54" font-family="Share Tech Mono,monospace">Hawaii</text>
       </svg>
     </div>
   `;
