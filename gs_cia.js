@@ -36,7 +36,12 @@ async function ciaFetch() {
     const data = JSON.parse(m[1]);
     const rows = data.table.rows || [];
     if (!rows.length) return [];
-    const cols = data.table.cols.map(c => (c.label || '').trim().replace(/^"+|"+$/g, ''));
+    let cols = data.table.cols.map(c => (c.label || '').trim().replace(/^"+|"+$/g, ''));
+    // Si les labels sont vides, la première ligne contient les en-têtes
+    if (!cols.some(c => c.length > 0)) {
+      cols = rows[0].c.map(c => String(c?.v ?? '').trim());
+      return rows.slice(1).map(r => Object.fromEntries(cols.map((col, i) => [col, String(r?.c?.[i]?.v ?? '').trim()])));
+    }
     return rows.map(r => Object.fromEntries(cols.map((col, i) => [col, String(r?.c?.[i]?.v ?? '').trim()])));
   } catch(e) { console.warn('[CIA] fetch:', e); return []; }
 }
