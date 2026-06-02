@@ -378,6 +378,21 @@
     bubble.style.left = Math.max(8, left) + 'px';
   }
 
+  /* ── Observer l'ouverture des modals app pour updater le spotlight ── */
+  let _modalObserver = null;
+  function watchForModal(modalId) {
+    if (_modalObserver) { _modalObserver.disconnect(); _modalObserver = null; }
+    const target = document.getElementById(modalId);
+    if (!target) return;
+    _modalObserver = new MutationObserver(() => {
+      if (target.classList.contains('open')) {
+        spotlight('#' + modalId);
+        positionBubble('#' + modalId);
+      }
+    });
+    _modalObserver.observe(target, { attributes: true, attributeFilter: ['class'] });
+  }
+
   /* ── Render step ────────────────────────────────────────────── */
   function renderStep() {
     const chapter = CHAPTERS[ch];
@@ -437,6 +452,12 @@
     // spotlight + bulle
     spotlight(step.sel);
     positionBubble(step.sel);
+
+    // Si l'étape suivante attend une confirmation de modal, surveiller son ouverture
+    const nextStep = CHAPTERS[ch]?.steps[st + 1];
+    if (nextStep?.action === 'confirm-attack') {
+      watchForModal('modal-atk');
+    }
   }
 
   /* ── Navigation ─────────────────────────────────────────────── */
@@ -466,22 +487,26 @@
 
   /* ── Intercepter les gestes de l'utilisateur ────────────────── */
   function closeAppModals() {
-    // Fermer toutes les modals ouvertes de l'app avant d'avancer
     document.querySelectorAll('.modal-bg.open').forEach(m => m.classList.remove('open'));
   }
 
   function advanceIfMatch(action) {
     const step = CHAPTERS[ch].steps[st];
     if (!active || !step.action) return false;
-    // Comparaison STRICTE : l'action doit correspondre exactement
     if (step.action !== action) return false;
-    closeAppModals();
+
+    // Pour les actions qui ouvrent une modal (click-attack-*),
+    // on avance l'étape SANS fermer les modals — la modal doit rester ouverte
+    const opensModal = action.startsWith('click-attack-');
+    if (!opensModal) closeAppModals();
+
     st++;
     if (st >= CHAPTERS[ch].steps.length) {
       if (ch < CHAPTERS.length - 1) { ch++; st = 0; setTimeout(showSplash, 400); }
       else setTimeout(showFinish, 300);
     } else {
-      setTimeout(renderStep, 300);
+      // Délai plus court si on attend que la modal s'ouvre
+      setTimeout(renderStep, opensModal ? 500 : 300);
     }
     return true;
   }
