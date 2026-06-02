@@ -19,8 +19,6 @@ const NASA_CFG = window.NASA_CFG = {
     opposer:         1,
     renommer_projet: 2,
     renommer_astre:  5,
-    creer_agence:    3,
-    creer_projet:    2,
   },
 };
 
@@ -35,7 +33,7 @@ const ASTRES_BASE = {
     glowColor: '#4ad8f8',
     texture: null, // pas d'image — dessin SVG custom
     emoji: '🛸',
-    desc: 'Station orbitale internationale. Hub de coopération et de contrôle.',
+    desc:    `Station orbitale internationale. Hub de coopération et de contrôle.`,
     statut: 'active',
     projets: [], agences: [], influences: {},
   },
@@ -48,7 +46,7 @@ const ASTRES_BASE = {
     glowColor: '#9090a8',
     texture: null, gradient: ['#d0d4dc','#a0a8b4','#8090a0','#606878'], // Lune — gris bleuté
     emoji: '🌕',
-    desc: 'Satellite naturel de la Terre. Premier objectif de la course spatiale.',
+    desc:    `Satellite naturel de la Terre. Premier objectif de la course spatiale.`,
     statut: 'colonisée',
     projets: [], agences: [], influences: {},
   },
@@ -74,7 +72,7 @@ const ASTRES_BASE = {
     glowColor: '#aaaaaa',
     texture: null,
     emoji: '☄️',
-    desc: 'Zone de débris entre Mars et Jupiter. Richesse minérale inestimable.',
+    desc:    `Zone de débris entre Mars et Jupiter. Richesse minérale inestimable.`,
     statut: 'inexploré',
     projets: [], agences: [], influences: {},
   },
@@ -539,14 +537,7 @@ function nasaRenderAstrePanel(astreId) {
     : `<div style="font-size:9px;color:#2a3a54;font-family:'Share Tech Mono',monospace">Aucun projet actif</div>`;
 
   // Agences
-  const agencesHTML = astre.agences.length
-    ? astre.agences.map(ag => {
-        const fc = ag.faction === 'sovereign' ? '#4a8ad4' : ag.faction === 'shemning' ? '#b02828' : '#5a7a9a';
-        return `<div class="nasa-agence-chip" style="border-color:${fc}44;color:${fc}">
-          ${ag.nom} <span style="opacity:.5;font-size:8px">${ag.divinite}</span>
-        </div>`;
-      }).join('')
-    : `<div style="font-size:9px;color:#2a3a54;font-family:'Share Tech Mono',monospace">Aucune agence</div>`;
+  // agencesHTML remplacé par nasaRenderAgenceFiches()
 
   // Actions
   const actionsHTML = canAct ? `
@@ -556,8 +547,7 @@ function nasaRenderAstrePanel(astreId) {
       ${nasaActionBtn('opposer',         '✕', 'S\'opposer',            NASA_CFG.COUTS.opposer,         astreId)}
       ${nasaActionBtn('renommer_projet', '✎', 'Renommer un projet',   NASA_CFG.COUTS.renommer_projet, astreId)}
       ${nasaActionBtn('renommer_astre',  '★', 'Renommer l\'astre',    NASA_CFG.COUTS.renommer_astre,  astreId)}
-      ${nasaActionBtn('creer_agence',    '⬡', 'Créer une agence',     NASA_CFG.COUTS.creer_agence,    astreId)}
-      ${nasaActionBtn('creer_projet',    '+', 'Créer un projet',      NASA_CFG.COUTS.creer_projet,    astreId)}
+      <!-- Créer agence/projet = admin uniquement, retiré des actions joueur -->
     </div>` : '';
 
   return `
@@ -585,7 +575,7 @@ function nasaRenderAstrePanel(astreId) {
       <div style="margin-bottom:12px">${infHTML}</div>
 
       <div class="nasa-section-title">AGENCES PRÉSENTES</div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">${agencesHTML}</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">${nasaRenderAgenceFiches(astre)}</div>
 
       <div class="nasa-section-title">PROJETS ACTIFS</div>
       <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">${projetsHTML}</div>
@@ -594,6 +584,109 @@ function nasaRenderAstrePanel(astreId) {
     </div>
   `;
 }
+
+// ---- FICHES AGENCES ----------------------------------------
+const AGENCES_INFO = {
+  'NASA': {
+    sigle:   'NASA',
+    nom:     'National Aeronautics and Space Administration',
+    pays:    '🇺🇸 États-Unis',
+    couleur: '#1a6aaa',
+    desc:    `Agence spatiale civile américaine fondée en 1958. Pionnière de l'exploration lunaire et martienne.`,
+    budget:  '~25 Md$',
+    missions_phares: ['Artémis', 'James Webb', 'Perseverance'],
+  },
+  'CNSA': {
+    sigle:   'CNSA',
+    nom:     'China National Space Administration',
+    pays:    '🇨🇳 Chine',
+    couleur: '#cc2222',
+    desc:    `Agence spatiale nationale chinoise. Programme habité autonome et ambitions lunaires et martiennes.`,
+    budget:  '~12 Md$',
+    missions_phares: ['Tiangong', 'Change', 'Tianwen'],
+  },
+  'ESA': {
+    sigle:   'ESA',
+    nom:     'European Space Agency',
+    pays:    '🇪🇺 Europe',
+    couleur: '#2a8a5a',
+    desc:    `Agence spatiale européenne. Collaboration multi-nationale pour l'exploration et les satellites.`,
+    budget:  '~9 Md$',
+    missions_phares: ['Ariane 6', 'JUICE', 'ExoMars'],
+  },
+  'Roscosmos': {
+    sigle:   'ROSCOSMOS',
+    nom:     'Roscosmos State Corporation',
+    pays:    '🇷🇺 Russie',
+    couleur: '#8a3aaa',
+    desc:    `Agence spatiale russe, héritière du programme soviétique. Expertise en vols habités.`,
+    budget:  '~4 Md$',
+    missions_phares: ['Soyouz', 'Luna-25', 'GLONASS'],
+  },
+  'JAXA': {
+    sigle:   'JAXA',
+    nom:     'Japan Aerospace Exploration Agency',
+    pays:    '🇯🇵 Japon',
+    couleur: '#c8a84b',
+    desc:    `Agence spatiale japonaise, pionnière dans les missions d'exploration d'astéroïdes.`,
+    budget:  '~2 Md$',
+    missions_phares: ['Hayabusa2', 'SLIM', 'HTV'],
+  },
+};
+
+let nasaSelectedAgence = null;
+
+function nasaRenderAgenceFiches(astre) {
+  if (!astre.agences.length) {
+    return `<div style="font-size:9px;color:#2a3a54;font-family:'Share Tech Mono',monospace">Aucune agence présente sur cet astre</div>`;
+  }
+
+  return astre.agences.map((ag, idx) => {
+    const info = AGENCES_INFO[ag.nom] || { sigle: ag.nom, nom: ag.nom, pays: '', couleur: '#5a7a9a', desc:    ``, budget: '', missions_phares: [] };
+    const fc   = info.couleur;
+    const isOpen = nasaSelectedAgence === `${astre.id}-${idx}`;
+
+    return `
+      <div class="nasa-agence-fiche" data-agence-key="${astre.id}-${idx}"
+        style="border-color:${fc}33;background:${isOpen ? '#080e1c' : '#060a14'}"
+        onclick="nasaToggleAgence('${astre.id}-${idx}', '${astre.id}')">
+        <div class="nasa-agence-fiche-header">
+          <div class="nasa-agence-sigle" style="color:${fc};border-color:${fc}44;background:${fc}11">${info.sigle}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:11px;font-weight:600;color:#cfe4f7;letter-spacing:.04em">${info.nom}</div>
+            <div style="font-size:9px;color:#3a5880;font-family:'Share Tech Mono',monospace;margin-top:1px">${info.pays}</div>
+          </div>
+          <div style="font-size:10px;color:${fc};opacity:.6">${isOpen ? '▲' : '▼'}</div>
+        </div>
+        ${isOpen ? `
+          <div class="nasa-agence-fiche-body">
+            <div style="font-size:9px;color:#5a7a9a;line-height:1.6;margin-bottom:8px">${info.desc}</div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px">
+              <div>
+                <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#2a3a54;letter-spacing:.08em">BUDGET</div>
+                <div style="font-size:11px;font-weight:600;color:${fc}">${info.budget}</div>
+              </div>
+              <div>
+                <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#2a3a54;letter-spacing:.08em">MISSIONS PHARES</div>
+                <div style="font-size:10px;color:#8a9ab0">${info.missions_phares.join(' · ')}</div>
+              </div>
+            </div>
+            ${ag.divinite ? `<div style="font-size:9px;color:#3a5880;font-family:'Share Tech Mono',monospace">Responsable divin : <span style="color:#c8a84b">${ag.divinite}</span></div>` : ''}
+          </div>
+        ` : ''}
+      </div>`;
+  }).join('');
+}
+
+window.nasaToggleAgence = function(key, astreId) {
+  nasaSelectedAgence = nasaSelectedAgence === key ? null : key;
+  // Re-render juste le panel
+  const panel = document.getElementById('nasa-panel');
+  if (panel) {
+    panel.innerHTML = nasaRenderAstrePanel(astreId);
+    nasaBindPanelActions(astreId);
+  }
+};
 
 function nasaActionBtn(action, icon, label, cout, astreId) {
   const canAfford = nasaMyPoints >= cout;
@@ -654,18 +747,7 @@ async function nasaDoAction(action, astreId) {
     if (!nom?.trim()) return;
     payload.nouveau_nom = nom.trim();
   }
-  if (action === 'creer_agence') {
-    const nom = prompt('Nom de votre agence spatiale :');
-    if (!nom?.trim()) return;
-    payload.nom = nom.trim();
-  }
-  if (action === 'creer_projet') {
-    const nom  = prompt('Nom du projet spatial :');
-    if (!nom?.trim()) return;
-    const desc = prompt('Description courte (optionnel) :') || '';
-    payload.nom  = nom.trim();
-    payload.desc = desc.trim();
-  }
+  // creer_agence et creer_projet retirés (admin uniquement)
 
   // Confirmation
   if (!confirm(`Confirmer : "${nasaActionLabel(action)}" sur ${base.nom} — coût ${cout} point(s) spatial/aux ?`)) return;
@@ -705,12 +787,7 @@ function nasaApplyActionLocally(action, astreId, payload) {
     const p = astre.projets.find(x => x.id === payload.projet_id);
     if (p) p.oppose = nasaMe.id;
   }
-  if (action === 'creer_agence') {
-    astre.agences.push({ nom: payload.nom, faction: nasaFaction, divinite: nasaMe.id });
-  }
-  if (action === 'creer_projet') {
-    astre.projets.push({ id: `proj_${Date.now()}`, nom: payload.nom, desc: payload.desc, nomAlt: null, soutenu: '', oppose: '', agence: '' });
-  }
+  // creer_agence / creer_projet supprimés
   if (!astre.influences[nasaMe.id]) astre.influences[nasaMe.id] = 0;
   astre.influences[nasaMe.id] += NASA_CFG.COUTS[action];
 }
@@ -900,6 +977,23 @@ function nasaInjectStyles() {
     }
     .nasa-legend-item { display:flex;align-items:center;gap:4px;font-family:'Share Tech Mono',monospace;font-size:9px;color:#2a3a54; }
     .nasa-legend-dot  { width:7px;height:7px;border-radius:50%;flex-shrink:0; }
+
+    /* Fiches agences */
+    .nasa-agence-fiche {
+      border:1px solid;border-radius:8px;padding:10px 12px;cursor:pointer;
+      transition:background .15s,border-color .2s;
+    }
+    .nasa-agence-fiche:hover { background:#080e1c !important; }
+    .nasa-agence-fiche-header { display:flex;align-items:center;gap:10px; }
+    .nasa-agence-sigle {
+      font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:700;
+      letter-spacing:.1em;padding:4px 8px;border-radius:4px;border:1px solid;
+      flex-shrink:0;
+    }
+    .nasa-agence-fiche-body {
+      margin-top:10px;padding-top:10px;
+      border-top:1px solid #0e1e30;
+    }
   `;
   document.head.appendChild(style);
 }
