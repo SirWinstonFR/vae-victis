@@ -113,8 +113,8 @@ let govData = {
 
 // ---- FETCH -------------------------------------------------
 async function govFetch() {
-  if (!GOV_CFG?.GIDS?.gouvernement) return null;
-  const url = `https://docs.google.com/spreadsheets/d/${GOV_CFG.SHEET_ID}/gviz/tq?tqx=out:json&gid=${GOV_CFG.GIDS.gouvernement}`;
+  if (!GOV_GS_CFG?.GIDS?.gouvernement) return null;
+  const url = `https://docs.google.com/spreadsheets/d/${GOV_GS_CFG.SHEET_ID}/gviz/tq?tqx=out:json&gid=${GOV_GS_CFG.GIDS.gouvernement}`;
   try {
     const r   = await fetch(url);
     const raw = await r.text();
