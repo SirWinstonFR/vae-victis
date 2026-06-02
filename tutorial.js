@@ -579,31 +579,33 @@
             avatar: '', logo: '', player: fake.player, pass: 'tuto' };
       window.VV.DEITIES.unshift(d);
     } else {
-      Object.assign(d, { name: fake.name, color: fake.color, pi: fake.pi, player: fake.player });
+      Object.assign(d, { name: fake.name, color: fake.color, pi: fake.pi, player: fake.player, pass: 'tuto' });
     }
 
-    // Swapper window.me vers ce dieu fictif
-    // On passe par la portée globale car me est une var locale dans app.js
-    // On patche via le même mécanisme que loginScreenSubmit
-    window._vvt_realMe = window.me; // sauvegarder le vrai joueur
-    window.me = d;
+    // Sauvegarder le vrai joueur (une seule fois)
+    if (!window._vvt_realMe) {
+      window._vvt_realMe = window.VV.me || null;
+    }
 
-    // Vider les attaques fictives du chapitre précédent
+    // Vider les attaques du chapitre précédent (réelles ou fictives)
     if (window.VV.attacks) {
       window.VV.attacks = window.VV.attacks.filter(a => a._tuto !== true);
     }
 
-    // Rafraîchir l'interface : dock, panel, globe
+    // Swapper me via le bridge exposé par app.js
+    if (typeof window.VV.setMe === 'function') {
+      window.VV.setMe(d);
+    }
+
+    // Rafraîchir toute l'interface via le bridge
     try {
-      if (typeof renderDock === 'function') renderDock();
-      if (typeof renderPlayerPanel === 'function') renderPlayerPanel();
-      if (window.VV?.globe?.buildDots) window.VV.globe.buildDots();
-      if (window.VV?.globe?.buildBadges) window.VV.globe.buildBadges();
-      if (typeof updateWarningTicker === 'function') updateWarningTicker();
-      // Naviguer vers un territoire de départ cohérent avec le dieu
+      if (typeof window.VV.refreshUI === 'function') {
+        window.VV.refreshUI();
+      }
+      // Naviguer vers la zone de départ cohérente avec le dieu
       const startZone = { athena: 'Grèce & Balkans', judgment: 'USA', isis: 'Maghreb' }[godKey];
       if (startZone && typeof window.VV.onZoneClick === 'function') {
-        setTimeout(() => window.VV.onZoneClick(startZone), 300);
+        setTimeout(() => window.VV.onZoneClick(startZone), 400);
       }
     } catch(e) { /* app pas encore prête */ }
   }
@@ -639,13 +641,9 @@
     active = false;
     // Restaurer le vrai joueur connecté
     if (window._vvt_realMe !== undefined) {
-      window.me = window._vvt_realMe;
+      if (typeof window.VV?.setMe === 'function') window.VV.setMe(window._vvt_realMe);
       delete window._vvt_realMe;
-      try {
-        if (typeof renderDock === 'function') renderDock();
-        if (typeof renderPlayerPanel === 'function') renderPlayerPanel();
-        if (window.VV?.globe?.buildDots) window.VV.globe.buildDots();
-      } catch(e) {}
+      try { if (typeof window.VV?.refreshUI === 'function') window.VV.refreshUI(); } catch(e) {}
     }
     ['vvt-topbar','vvt-band-top','vvt-band-bot','vvt-band-left','vvt-band-right',
      'vvt-spotlight-ring','vvt-bubble','vvt-splash','vvt-finish','vvt-css'].forEach(id => {
