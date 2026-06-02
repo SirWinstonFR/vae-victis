@@ -497,6 +497,8 @@
       if (e.target.closest('#vvt-bubble, #vvt-topbar, #vvt-splash, #vvt-finish')) return;
       // Laisser passer si une modal de l'app est ouverte (atk-modal, etc.)
       if (e.target.closest('.modal-bg.open, .modal.open, #modal-atk')) return;
+      // Laisser passer le bouton d'attaque et les boutons d'action importants (ils ouvrent une modal)
+      if (e.target.closest('#panel-atk-btn, .atk-btn, #atk-confirm, #atk-cancel, [data-close]')) return;
       // Zone autorisée = l'élément spotlighté
       const allowed = step.sel ? document.querySelector(step.sel) : null;
       if (!allowed) return;
