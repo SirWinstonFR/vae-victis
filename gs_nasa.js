@@ -7,11 +7,12 @@
 'use strict';
 
 // ---- CONFIG ------------------------------------------------
-const NASA_CFG = {
+window.NASA_CFG = window.NASA_CFG || {};
+const NASA_CFG = window.NASA_CFG = {
   SHEET_ID:    '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
   APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbyCaQI2c5ds2uCmoeCw6_fALjh-8ii05fkOVgZmWPhbY64vyYbrNcFvqbFKRb7rUwyxwQ/exec',
   GIDS: {
-    spatial: '', // GID de l'onglet 'spatial' — à renseigner
+    spatial: '170628062', // ← colle ici le GID de l'onglet spatial
   },
   COUTS: {
     soutenir:        1,
