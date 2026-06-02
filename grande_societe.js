@@ -165,10 +165,16 @@ function renderGrandeSociete() {
       <!-- GRILLE DES 5 CERCLES -->
       <div style="display:flex;justify-content:center;align-items:flex-start;gap:22px;flex-wrap:wrap">
         ${gsRenderNode('gouvernement', '🏛', 'Gouvernement', 'Américain', 'AUTORITÉ EXÉCUTIVE', '#1e4080', '#4a8ad4')}
+        /* NASA — décommenter pour réactiver
         ${gsRenderNode('nasa', '🚀', 'NASA', '', 'PROGRAMME SPATIAL', '#0d5a6e', '#2ab8d8')}
+        */
         ${gsRenderNode('cia', '👁', 'NSA / CIA', '', 'RENSEIGNEMENT', '#6e1414', '#cc3030')}
+        /* ENTREPRISES — décommenter pour réactiver
         ${gsRenderNode('entreprises', '📈', 'Entreprises', 'Américaines', 'PUISSANCE ÉCON.', '#6e5200', '#c8a84b')}
+        */
+        /* BONUS — décommenter pour réactiver
         ${gsRenderNode('bonus', '⭐', 'Bonus', 'Organismes', 'AVANTAGES ACTIFS', '#1a5030', '#3a8a5a')}
+        */
       </div>
 
       <!-- BANDE DÉFILANTE -->
