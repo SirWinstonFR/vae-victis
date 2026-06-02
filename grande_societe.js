@@ -257,6 +257,9 @@ function gsOpenModule(moduleId) {
   } else if (moduleId === 'cia' && typeof gsRenderCIA === 'function') {
     const deity = window.VV?.me || (typeof me !== 'undefined' ? me : null);
     gsRenderCIA(content, deity);
+  } else if (moduleId === 'entreprises' && typeof gsRenderEntreprises === 'function') {
+    const deity = window.VV?.me || (typeof me !== 'undefined' ? me : null);
+    gsRenderEntreprises(content, deity);
   } else {
     content.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px">
