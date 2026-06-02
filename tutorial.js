@@ -468,21 +468,43 @@
   function advanceIfMatch(action) {
     const step = CHAPTERS[ch].steps[st];
     if (!active || !step.action) return false;
-    if (step.action === action || action.startsWith(step.action.split('-').slice(0,2).join('-'))) {
-      st++;
-      if (st >= CHAPTERS[ch].steps.length) {
-        if (ch < CHAPTERS.length - 1) { ch++; st = 0; setTimeout(showSplash, 300); }
-        else setTimeout(showFinish, 300);
-      } else {
-        setTimeout(renderStep, 200);
-      }
-      return true;
+    // Comparaison STRICTE : l'action doit correspondre exactement
+    if (step.action !== action) return false;
+    st++;
+    if (st >= CHAPTERS[ch].steps.length) {
+      if (ch < CHAPTERS.length - 1) { ch++; st = 0; setTimeout(showSplash, 300); }
+      else setTimeout(showFinish, 300);
+    } else {
+      setTimeout(renderStep, 200);
     }
-    return false;
+    return true;
   }
 
   /* ── Patch des fonctions de l'app réelle ────────────────────── */
   function patchApp() {
+    // Intercepteur global en capture : bloque tout clic hors zone spotlight
+    document.addEventListener('click', e => {
+      if (!active) return;
+      const step = CHAPTERS[ch]?.steps[st];
+      if (!step?.action) return; // étape libre, pas de blocage
+      // Laisser passer les éléments tuto
+      if (e.target.closest('#vvt-bubble, #vvt-topbar, #vvt-splash, #vvt-finish')) return;
+      // Zone autorisée = l'élément spotlighté
+      const allowed = step.sel ? document.querySelector(step.sel) : null;
+      if (!allowed) return;
+      if (!allowed.contains(e.target) && e.target !== allowed) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        // Flash rouge des bandes = feedback visuel "zone bloquée"
+        ['vvt-band-top','vvt-band-bot','vvt-band-left','vvt-band-right'].forEach(id => {
+          const b = document.getElementById(id);
+          if (!b) return;
+          b.style.background = 'rgba(180,30,30,.6)';
+          setTimeout(() => { b.style.background = 'rgba(2,5,12,.82)'; }, 220);
+        });
+      }
+    }, true);
+
     // Surveiller les clics sur le dock
     document.getElementById('dock')?.addEventListener('click', e => {
       const chip = e.target.closest('.dchip[data-id]');
@@ -549,22 +571,41 @@
   function injectFakeMe(godKey) {
     const fake = FAKE[godKey];
     if (!window.VV || !window.VV.DEITIES) return;
-    // Ajouter ou patcher la divinité fictive
+
+    // S'assurer que la divinité fictive existe dans DEITIES
     let d = window.VV.DEITIES.find(x => x.id === fake.id);
     if (!d) {
-      d = { ...fake };
+      d = { id: fake.id, name: fake.name, color: fake.color, pi: fake.pi,
+            avatar: '', logo: '', player: fake.player, pass: 'tuto' };
       window.VV.DEITIES.unshift(d);
+    } else {
+      Object.assign(d, { name: fake.name, color: fake.color, pi: fake.pi, player: fake.player });
     }
-    Object.assign(d, fake);
-    // Se "connecter" comme ce dieu
-    if (typeof window !== 'undefined') {
-      // On patch me via la variable globale — sans déclencher le vrai login
-      try {
-        // Appeler renderPlayerPanel si elle existe
-        if (typeof renderDock === 'function') renderDock();
-        if (typeof renderPlayerPanel === 'function') renderPlayerPanel();
-      } catch(e) { /* app pas encore prête */ }
+
+    // Swapper window.me vers ce dieu fictif
+    // On passe par la portée globale car me est une var locale dans app.js
+    // On patche via le même mécanisme que loginScreenSubmit
+    window._vvt_realMe = window.me; // sauvegarder le vrai joueur
+    window.me = d;
+
+    // Vider les attaques fictives du chapitre précédent
+    if (window.VV.attacks) {
+      window.VV.attacks = window.VV.attacks.filter(a => a._tuto !== true);
     }
+
+    // Rafraîchir l'interface : dock, panel, globe
+    try {
+      if (typeof renderDock === 'function') renderDock();
+      if (typeof renderPlayerPanel === 'function') renderPlayerPanel();
+      if (window.VV?.globe?.buildDots) window.VV.globe.buildDots();
+      if (window.VV?.globe?.buildBadges) window.VV.globe.buildBadges();
+      if (typeof updateWarningTicker === 'function') updateWarningTicker();
+      // Naviguer vers un territoire de départ cohérent avec le dieu
+      const startZone = { athena: 'Grèce & Balkans', judgment: 'USA', isis: 'Maghreb' }[godKey];
+      if (startZone && typeof window.VV.onZoneClick === 'function') {
+        setTimeout(() => window.VV.onZoneClick(startZone), 300);
+      }
+    } catch(e) { /* app pas encore prête */ }
   }
 
   /* ── Écran de fin ────────────────────────────────────────────── */
@@ -596,6 +637,16 @@
   /* ── Nettoyage complet ────────────────────────────────────────── */
   function teardown() {
     active = false;
+    // Restaurer le vrai joueur connecté
+    if (window._vvt_realMe !== undefined) {
+      window.me = window._vvt_realMe;
+      delete window._vvt_realMe;
+      try {
+        if (typeof renderDock === 'function') renderDock();
+        if (typeof renderPlayerPanel === 'function') renderPlayerPanel();
+        if (window.VV?.globe?.buildDots) window.VV.globe.buildDots();
+      } catch(e) {}
+    }
     ['vvt-topbar','vvt-band-top','vvt-band-bot','vvt-band-left','vvt-band-right',
      'vvt-spotlight-ring','vvt-bubble','vvt-splash','vvt-finish','vvt-css'].forEach(id => {
       document.getElementById(id)?.remove();
