@@ -465,17 +465,23 @@
   }
 
   /* ── Intercepter les gestes de l'utilisateur ────────────────── */
+  function closeAppModals() {
+    // Fermer toutes les modals ouvertes de l'app avant d'avancer
+    document.querySelectorAll('.modal-bg.open').forEach(m => m.classList.remove('open'));
+  }
+
   function advanceIfMatch(action) {
     const step = CHAPTERS[ch].steps[st];
     if (!active || !step.action) return false;
     // Comparaison STRICTE : l'action doit correspondre exactement
     if (step.action !== action) return false;
+    closeAppModals();
     st++;
     if (st >= CHAPTERS[ch].steps.length) {
-      if (ch < CHAPTERS.length - 1) { ch++; st = 0; setTimeout(showSplash, 300); }
+      if (ch < CHAPTERS.length - 1) { ch++; st = 0; setTimeout(showSplash, 400); }
       else setTimeout(showFinish, 300);
     } else {
-      setTimeout(renderStep, 200);
+      setTimeout(renderStep, 300);
     }
     return true;
   }
@@ -548,6 +554,8 @@
 
   /* ── Splash intro chapitre ───────────────────────────────────── */
   function showSplash() {
+    // Fermer toutes les modals app encore ouvertes
+    document.querySelectorAll('.modal-bg.open').forEach(m => m.classList.remove('open'));
     // Masquer overlay spotlights pendant le splash
     ['vvt-band-top','vvt-band-bot','vvt-band-left','vvt-band-right','vvt-spotlight-ring','vvt-bubble'].forEach(id => {
       const el = document.getElementById(id);
@@ -725,5 +733,5 @@
     init();
   }
 
-  window.VVTutorial = { launch, teardown };
+  window.VVTutorial = { launch, teardown, get active() { return active; } };
 })();
