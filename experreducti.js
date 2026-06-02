@@ -17,6 +17,8 @@ const EXP_CFG = {
 };
 
 // State
+let expLocked   = true; // Interface verrouillée par défaut
+const EXP_UNLOCK_CODE = 'OLYMPE2025'; // Code admin pour débloquer
 let expPNJ      = [];
 let expLois     = [];
 let expMe       = null; // divinité connectée
@@ -67,7 +69,66 @@ async function expPostScript(payload) {
 }
 
 // ---- OPEN / CLOSE ------------------------------------------
+function renderExpLockScreen() {
+  const inner = document.getElementById('exp-inner');
+  if (!inner) return;
+
+  inner.style.cssText = `
+    width:100%;max-width:600px;
+    background:linear-gradient(160deg,#04080f,#060d1a);
+    border:1px solid #c8901a33;border-radius:12px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:60px 40px;gap:24px;
+    position:relative;overflow:hidden;
+  `;
+
+  inner.innerHTML = `
+    <div style="position:absolute;inset:0;backdrop-filter:blur(8px);background:rgba(2,5,12,.7);z-index:0;border-radius:12px"></div>
+    <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center">
+      <div style="font-size:64px;filter:drop-shadow(0 0 20px #c8901a44)">🔒</div>
+      <div>
+        <div style="font-family:Cinzel,serif;font-size:20px;font-weight:700;color:#c8901a;letter-spacing:.15em;margin-bottom:8px">EXPERREDUCTI</div>
+        <div style="font-size:11px;color:#3a5a7a;letter-spacing:.1em;text-transform:uppercase">Conseil Parlementaire Olympien</div>
+      </div>
+      <div style="font-size:12px;color:#2a4a6a;max-width:300px;line-height:1.6">
+        Cette interface est actuellement verrouillée.<br>Accès restreint aux membres autorisés.
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <input type="password" id="exp-lock-input" placeholder="Code d'accès"
+          style="padding:8px 14px;border-radius:6px;border:1px solid #1a3a5a;background:#04080f;color:#c8901a;font-family:Rajdhani,sans-serif;font-size:13px;font-weight:600;letter-spacing:.1em;width:180px;outline:none;text-align:center"
+          onkeydown="if(event.key==='Enter') expTryUnlock()">
+        <button onclick="expTryUnlock()"
+          style="padding:8px 16px;border-radius:6px;border:1px solid #c8901a44;background:#14100a;color:#c8901a;font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;cursor:pointer">
+          DÉVERROUILLER
+        </button>
+      </div>
+      <div id="exp-lock-err" style="font-size:10px;color:#cc3030;min-height:14px"></div>
+      <button onclick="closeExperreducti()"
+        style="margin-top:10px;background:none;border:1px solid #1a2e4a;border-radius:6px;color:#3a5a7a;padding:5px 14px;cursor:pointer;font-family:Rajdhani,sans-serif;font-size:11px">
+        FERMER
+      </button>
+    </div>
+  `;
+}
+
+function expTryUnlock() {
+  const input = document.getElementById('exp-lock-input');
+  const err = document.getElementById('exp-lock-err');
+  if (!input) return;
+  if (input.value.trim() === EXP_UNLOCK_CODE) {
+    expLocked = false;
+    // Relancer l'ouverture
+    openExperreducti(window._expLastDeityId);
+  } else {
+    if (err) err.textContent = 'Code incorrect.';
+    input.value = '';
+    input.style.borderColor = '#cc3030';
+    setTimeout(() => { if (input) input.style.borderColor = '#1a3a5a'; }, 1000);
+  }
+}
+
 async function openExperreducti(deityId) {
+  window._expLastDeityId = deityId;
   expMe = window.VV?.DEITIES?.find(d => d.id === deityId) || null;
 
   // Create modal if needed
@@ -87,6 +148,12 @@ async function openExperreducti(deityId) {
     display:flex;align-items:center;justify-content:center;
     padding:20px;
   `;
+
+  // Afficher écran de verrouillage si locked
+  if (expLocked) {
+    renderExpLockScreen();
+    return;
+  }
 
   document.getElementById('exp-inner').innerHTML = `
     <div style="width:12px;height:12px;background:#c8901a;border-radius:50%;margin:0 auto 20px;animation:exp-pulse 1s infinite"></div>
@@ -558,6 +625,7 @@ async function expRefresh() {
 
 // ---- EXPORT ------------------------------------------------
 window.openExperreducti  = openExperreducti;
+window.expTryUnlock      = expTryUnlock;
 window.closeExperreducti = closeExperreducti;
 window.expSelectPNJ      = expSelectPNJ;
 window.expSelectLoi      = expSelectLoi;
