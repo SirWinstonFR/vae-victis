@@ -165,16 +165,10 @@ function renderGrandeSociete() {
       <!-- GRILLE DES 5 CERCLES -->
       <div style="display:flex;justify-content:center;align-items:flex-start;gap:22px;flex-wrap:wrap">
         ${gsRenderNode('gouvernement', '🏛', 'Gouvernement', 'Américain', 'AUTORITÉ EXÉCUTIVE', '#1e4080', '#4a8ad4')}
-        /* NASA — décommenter pour réactiver
-        ${gsRenderNode('nasa', '🚀', 'NASA', '', 'PROGRAMME SPATIAL', '#0d5a6e', '#2ab8d8')}
-        */
+        ${gsRenderNodeLocked('nasa', '🚀', 'NASA', '', 'PROGRAMME SPATIAL', '#0d5a6e', '#2ab8d8')}
         ${gsRenderNode('cia', '👁', 'NSA / CIA', '', 'RENSEIGNEMENT', '#6e1414', '#cc3030')}
-        /* ENTREPRISES — décommenter pour réactiver
-        ${gsRenderNode('entreprises', '📈', 'Entreprises', 'Américaines', 'PUISSANCE ÉCON.', '#6e5200', '#c8a84b')}
-        */
-        /* BONUS — décommenter pour réactiver
-        ${gsRenderNode('bonus', '⭐', 'Bonus', 'Organismes', 'AVANTAGES ACTIFS', '#1a5030', '#3a8a5a')}
-        */
+        ${gsRenderNodeLocked('entreprises', '📈', 'Entreprises', 'Américaines', 'PUISSANCE ÉCON.', '#6e5200', '#c8a84b')}
+        ${gsRenderNodeLocked('bonus', '⭐', 'Bonus', 'Organismes', 'AVANTAGES ACTIFS', '#1a5030', '#3a8a5a')}
       </div>
 
       <!-- BANDE DÉFILANTE -->
@@ -213,6 +207,27 @@ function gsRenderNode(id, icon, label1, label2, sub, borderColor, accentColor) {
       </div>
       <div class="gs-node-label" style="color:${accentColor}">${label1}${label2 ? '<br>' + label2 : ''}</div>
       <div class="gs-node-sub">${sub}</div>
+    </div>
+  `;
+}
+
+// ---- RENDER NODE LOCKED (Coming Soon) ---------------------
+function gsRenderNodeLocked(id, icon, label1, label2, sub, borderColor, accentColor) {
+  return `
+    <div class="gs-node" style="--gs-border:${borderColor};--gs-accent:${accentColor};opacity:.5;cursor:not-allowed;position:relative">
+      <div class="gs-circle-wrap">
+        <div class="gs-ring" style="border-color:${accentColor}22"></div>
+        <div class="gs-circle" style="background:#050810;border:2px solid ${borderColor}44;position:relative">
+          <span style="font-size:28px;line-height:1;display:block;margin-bottom:4px;filter:grayscale(1);opacity:.4">${icon}</span>
+          <!-- Cadenas -->
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px">
+            <span style="font-size:20px">🔒</span>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:7px;color:#3a5060;letter-spacing:.1em">COMING SOON</span>
+          </div>
+        </div>
+      </div>
+      <div class="gs-node-label" style="color:#2a3a54">${label1}${label2 ? '<br>' + label2 : ''}</div>
+      <div class="gs-node-sub" style="color:#1a2a3a">${sub}</div>
     </div>
   `;
 }
