@@ -29,15 +29,15 @@ function corpLogo(domaine, couleur) {
 }
 
 const CORP_BASE = {
-  apple:     { ticker:'AAPL', nom:'Apple Inc.',         secteur:'Big Tech',  couleur:'#a0a8b8', logo:'apple.com', icon:'🍎', desc:'Devices, logiciels et services premium. Capitalisation la plus haute au monde.' },
-  microsoft: { ticker:'MSFT', nom:'Microsoft Corp.',    secteur:'Big Tech',  couleur:'#4a8ad4', logo:'microsoft.com', icon:'🪟', desc:'Cloud Azure, Office 365, Xbox. Domination du marché B2B mondial.' },
-  google:    { ticker:'GOOGL', nom:'Alphabet Inc.',     secteur:'Big Tech',  couleur:'#e8b030', logo:'google.com', icon:'🔍', desc:'Moteur de recherche, YouTube, publicité numérique et IA.' },
-  amazon:    { ticker:'AMZN', nom:'Amazon.com Inc.',    secteur:'Big Tech',  couleur:'#f0a020', logo:'amazon.com', icon:'📦', desc:'E-commerce mondial, cloud AWS, logistique et streaming.' },
-  meta:      { ticker:'META', nom:'Meta Platforms',     secteur:'Big Tech',  couleur:'#1a7adc', logo:'meta.com', icon:'👁', desc:'Facebook, Instagram, WhatsApp. 3 milliards d\'utilisateurs actifs.' },
-  nvidia:    { ticker:'NVDA', nom:'NVIDIA Corp.',       secteur:'Big Tech',  couleur:'#76b900', logo:'nvidia.com', icon:'⚡', desc:'Puces GPU, IA et data centers. Moteur de la révolution IA.' },
-  exxon:     { ticker:'XOM',  nom:'ExxonMobil Corp.',   secteur:'Énergie',   couleur:'#cc3030', logo:'exxon.com', icon:'🛢', desc:'Première major pétrolière américaine. Présence dans 50+ pays.' },
-  jpmorgan:  { ticker:'JPM',  nom:'JPMorgan Chase',     secteur:'Finance',   couleur:'#2a6aaa', logo:'jpmorgan.com', icon:'🏦', desc:'Première banque américaine. 3,9 trillions de dollars d\'actifs.' },
-  lockheed:  { ticker:'LMT',  nom:'Lockheed Martin',    secteur:'Défense',   couleur:'#5a7a9a', logo:'lockheedmartin.com', icon:'🚀', desc:'Premier contractant de défense américain. F-35, missiles, spatial.' },
+  apple:     { ticker:'AAPL', nom:'Apple Inc.',         secteur:'Big Tech',  couleur:'#a0a8b8', logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/240px-Apple_logo_black.svg.png', icon:'🍎', desc:'Devices, logiciels et services premium. Capitalisation la plus haute au monde.' },
+  microsoft: { ticker:'MSFT', nom:'Microsoft Corp.',    secteur:'Big Tech',  couleur:'#4a8ad4', logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/240px-Microsoft_logo.svg.png', icon:'🪟', desc:'Cloud Azure, Office 365, Xbox. Domination du marché B2B mondial.' },
+  google:    { ticker:'GOOGL', nom:'Alphabet Inc.',     secteur:'Big Tech',  couleur:'#e8b030', logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/240px-Google_2015_logo.svg.png', icon:'🔍', desc:'Moteur de recherche, YouTube, publicité numérique et IA.' },
+  amazon:    { ticker:'AMZN', nom:'Amazon.com Inc.',    secteur:'Big Tech',  couleur:'#f0a020', logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/240px-Amazon_logo.svg.png', icon:'📦', desc:'E-commerce mondial, cloud AWS, logistique et streaming.' },
+  meta:      { ticker:'META', nom:'Meta Platforms',     secteur:'Big Tech',  couleur:'#1a7adc', logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Meta_Platforms_Inc._logo.svg/240px-Meta_Platforms_Inc._logo.svg.png', icon:'👁', desc:'Facebook, Instagram, WhatsApp. 3 milliards d\'utilisateurs actifs.' },
+  nvidia:    { ticker:'NVDA', nom:'NVIDIA Corp.',       secteur:'Big Tech',  couleur:'#76b900', logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Nvidia_logo.svg/240px-Nvidia_logo.svg.png', icon:'⚡', desc:'Puces GPU, IA et data centers. Moteur de la révolution IA.' },
+  exxon:     { ticker:'XOM',  nom:'ExxonMobil Corp.',   secteur:'Énergie',   couleur:'#cc3030', logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/ExxonMobil_Logo.svg/240px-ExxonMobil_Logo.svg.png', icon:'🛢', desc:'Première major pétrolière américaine. Présence dans 50+ pays.' },
+  jpmorgan:  { ticker:'JPM',  nom:'JPMorgan Chase',     secteur:'Finance',   couleur:'#2a6aaa', logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/J_P_Morgan_Logo_2008_1.svg/240px-J_P_Morgan_Logo_2008_1.svg.png', icon:'🏦', desc:'Première banque américaine. 3,9 trillions de dollars d\'actifs.' },
+  lockheed:  { ticker:'LMT',  nom:'Lockheed Martin',    secteur:'Défense',   couleur:'#5a7a9a', logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Lockheed_Martin_logo.svg/240px-Lockheed_Martin_logo.svg.png', icon:'🚀', desc:'Premier contractant de défense américain. F-35, missiles, spatial.' },
 };
 
 const SECTEUR_COULEUR = {
@@ -234,7 +234,7 @@ function corpRenderGrid() {
         <div class="corp-card-top">
           <div class="corp-card-icon" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center">
           ${e.logo
-            ? `<img src="https://logo.clearbit.com/${e.logo}"
+            ? `<img src="${e.logo}"
                 style="width:28px;height:28px;object-fit:contain;border-radius:6px"
                 onerror="this.style.display='none'" alt="${e.ticker}"/>`
             : `<span style="font-size:20px">${e.icon}</span>`
@@ -295,7 +295,7 @@ function corpOpenFiche(id) {
       <div class="corp-fiche-header" style="border-color:${e.couleur}44">
         <div class="corp-fiche-icon" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
         ${e.logo
-          ? `<img src="https://logo.clearbit.com/${e.logo}"
+          ? `<img src="${e.logo}"
               style="width:48px;height:48px;object-fit:contain;border-radius:10px"
               onerror="this.style.display='none'" alt="${e.ticker}"/>`
           : `<span style="font-size:32px">${e.icon}</span>`
