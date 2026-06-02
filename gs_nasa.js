@@ -155,6 +155,7 @@ async function nasaLoadData() {
         oppose:   (r.oppose  || '').trim(),
         agence:   (r.agence  || '').trim(),
         desc:     (r.desc    || '').trim(),
+        statut:   (r.statut_projet || 'en_cours').trim(), // en_cours | réussi | échoué
       });
     }
     if (type === 'agence' && astre) {
@@ -164,10 +165,29 @@ async function nasaLoadData() {
         divinite: (r.divinite || '').trim(),
       });
     }
-    if (type === 'influence' && astre) {
-      const did = (r.divinite || '').trim();
-      astre.influences[did] = Number(r.points) || 0;
-    }
+    // "influence" n'est plus saisie manuellement
+    // Elle est calculée automatiquement depuis les projets réussis (voir nasaComputeInfluences)
+  });
+}
+
+// ---- CALCUL INFLUENCE AUTO --------------------------------
+function nasaComputeInfluences() {
+  // Reset toutes les influences
+  Object.values(nasaData).forEach(a => { a.influences = {}; });
+
+  Object.values(nasaData).forEach(astre => {
+    astre.projets.forEach(p => {
+      if (p.statut === 'réussi' && p.soutenu) {
+        // Le soutien d'un projet réussi rapporte de l'influence
+        if (!astre.influences[p.soutenu]) astre.influences[p.soutenu] = 0;
+        astre.influences[p.soutenu] += 2; // +2 par projet réussi soutenu
+      }
+      if (p.statut === 'échoué' && p.oppose) {
+        // L'opposition à un projet échoué rapporte aussi de l'influence
+        if (!astre.influences[p.oppose]) astre.influences[p.oppose] = 0;
+        astre.influences[p.oppose] += 1; // +1 par projet échoué contesté
+      }
+    });
   });
 }
 
@@ -187,6 +207,7 @@ async function renderNASA(container, deityOverride) {
 
   nasaInjectStyles();
   await nasaLoadData();
+  nasaComputeInfluences(); // calcul auto depuis projets réussis
   nasaRenderInterface(container);
 }
 
@@ -493,15 +514,25 @@ function nasaRenderAstrePanel(astreId) {
   const projetsHTML = astre.projets.length
     ? astre.projets.map(p => {
         const nomP = p.nomAlt || p.nom;
-        const soutenuD = p.soutenu ? window.VV?.DEITIES?.find(x => x.id === p.soutenu) : null;
-        const opposeD  = p.oppose  ? window.VV?.DEITIES?.find(x => x.id === p.oppose)  : null;
-        return `<div class="nasa-projet-item">
-          <div class="nasa-projet-nom">${nomP}${p.nomAlt ? ` <span style="opacity:.4;font-size:8px">(${p.nom})</span>` : ''}</div>
-          ${p.agence ? `<div style="font-size:9px;color:#3a5880;margin-bottom:3px">Agence : ${p.agence}</div>` : ''}
+        const deities = window.VV?.DEITIES || (typeof window.VV !== 'undefined' ? [] : []);
+        const soutenuD = p.soutenu ? deities.find(x => x.id === p.soutenu) : null;
+        const opposeD  = p.oppose  ? deities.find(x => x.id === p.oppose)  : null;
+        const statutProjet = p.statut || 'en_cours';
+        const statutColor  = statutProjet === 'réussi' ? '#2a8a3a' : statutProjet === 'échoué' ? '#cc3030' : '#c8a84b';
+        const statutLabel  = statutProjet === 'réussi' ? '✓ RÉUSSI' : statutProjet === 'échoué' ? '✕ ÉCHOUÉ' : '⟳ EN COURS';
+        return `<div class="nasa-projet-item" style="border-color:${statutColor}22">
+          <div class="nasa-projet-nom" style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+            <span>${nomP}${p.nomAlt ? ` <span style="opacity:.4;font-size:8px">(${p.nom})</span>` : ''}</span>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:${statutColor};
+              border:1px solid ${statutColor}33;padding:1px 5px;border-radius:2px;white-space:nowrap">${statutLabel}</span>
+          </div>
+          ${p.agence ? `<div style="font-size:9px;color:#3a5880;margin:3px 0">Agence : ${p.agence}</div>` : ''}
           ${p.desc   ? `<div class="nasa-projet-desc">${p.desc}</div>` : ''}
-          <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
-            ${soutenuD ? `<span style="font-size:9px;color:#2a8a3a">✦ Soutenu par ${soutenuD.name}</span>` : ''}
-            ${opposeD  ? `<span style="font-size:9px;color:#cc3030">✕ Contesté par ${opposeD.name}</span>` : ''}
+          <div style="display:flex;gap:8px;margin-top:5px;flex-wrap:wrap;align-items:center">
+            ${soutenuD ? `<span style="font-size:9px;color:#2a8a3a">✦ ${soutenuD.name}</span>` : ''}
+            ${opposeD  ? `<span style="font-size:9px;color:#cc3030">✕ ${opposeD.name}</span>` : ''}
+            ${statutProjet === 'réussi' && soutenuD ? `<span style="font-size:8px;color:#1a6a2a;font-family:'Share Tech Mono',monospace">+2 influence</span>` : ''}
+            ${statutProjet === 'échoué' && opposeD  ? `<span style="font-size:8px;color:#8a1a1a;font-family:'Share Tech Mono',monospace">+1 influence</span>` : ''}
           </div>
         </div>`;
       }).join('')
