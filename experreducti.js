@@ -73,58 +73,62 @@ function renderExpLockScreen() {
   const inner = document.getElementById('exp-inner');
   if (!inner) return;
 
+  // L'interface se charge normalement puis est recouverte d'un overlay flou
   inner.style.cssText = `
-    width:100%;max-width:600px;
-    background:linear-gradient(160deg,#04080f,#060d1a);
-    border:1px solid #c8901a33;border-radius:12px;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    padding:60px 40px;gap:24px;
-    position:relative;overflow:hidden;
+    width:100%;max-width:1200px;height:85vh;max-height:800px;
+    background:linear-gradient(160deg,#04080f 0%,#060d1a 60%,#08101e 100%);
+    border:1px solid #c8901a44;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    position:relative;overflow:hidden;font-family:'Rajdhani',sans-serif;
   `;
 
   inner.innerHTML = `
-    <div style="position:absolute;inset:0;backdrop-filter:blur(8px);background:rgba(2,5,12,.7);z-index:0;border-radius:12px"></div>
-    <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center">
-      <div style="font-size:64px;filter:drop-shadow(0 0 20px #c8901a44)">🔒</div>
-      <div>
-        <div style="font-family:Cinzel,serif;font-size:20px;font-weight:700;color:#c8901a;letter-spacing:.15em;margin-bottom:8px">EXPERREDUCTI</div>
-        <div style="font-size:11px;color:#3a5a7a;letter-spacing:.1em;text-transform:uppercase">Conseil Parlementaire Olympien</div>
+    <!-- Fond flouté qui ressemble à l'interface -->
+    <div style="position:absolute;inset:0;filter:blur(6px);opacity:.4;pointer-events:none;z-index:0">
+      <div style="padding:14px 20px;border-bottom:1px solid #1a2e4a;display:flex;align-items:center;gap:12px">
+        <div style="width:32px;height:32px;border-radius:50%;background:#c8901a;display:flex;align-items:center;justify-content:center;font-size:16px">⚡</div>
+        <div style="font-size:16px;font-weight:700;color:#f0c060;letter-spacing:.12em">EXPERREDUCTI</div>
       </div>
-      <div style="font-size:12px;color:#2a4a6a;max-width:300px;line-height:1.6">
-        Cette interface est actuellement verrouillée.<br>Accès restreint aux membres autorisés.
+      <div style="display:grid;grid-template-columns:260px 1fr;height:calc(100% - 60px)">
+        <div style="border-right:1px solid #1a2e4a;padding:20px">
+          ${[1,2,3].map(()=>`<div style="height:60px;background:#0a1628;border-radius:6px;margin-bottom:10px;border:1px solid #1a2e4a"></div>`).join('')}
+        </div>
+        <div style="padding:20px">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+            ${[1,2,3].map(()=>`<div style="height:120px;background:#0a1628;border-radius:8px;border:1px solid #1a2e4a"></div>`).join('')}
+          </div>
+          <div style="height:200px;background:#04080f;border-radius:8px;border:1px solid #1a2e4a;display:flex;align-items:center;justify-content:center">
+            <div style="width:300px;height:150px;border-radius:50% 50% 0 0;background:#0a1628;border:1px solid #1a2e4a"></div>
+          </div>
+        </div>
       </div>
-      <div style="display:flex;gap:10px;margin-top:8px">
-        <input type="password" id="exp-lock-input" placeholder="Code d'accès"
-          style="padding:8px 14px;border-radius:6px;border:1px solid #1a3a5a;background:#04080f;color:#c8901a;font-family:Rajdhani,sans-serif;font-size:13px;font-weight:600;letter-spacing:.1em;width:180px;outline:none;text-align:center"
-          onkeydown="if(event.key==='Enter') expTryUnlock()">
-        <button onclick="expTryUnlock()"
-          style="padding:8px 16px;border-radius:6px;border:1px solid #c8901a44;background:#14100a;color:#c8901a;font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;cursor:pointer">
-          DÉVERROUILLER
-        </button>
+    </div>
+
+    <!-- Overlay message -->
+    <div style="position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;padding:40px;max-width:480px">
+      <div style="font-size:48px;margin-bottom:4px">🏛️</div>
+      <div style="font-family:Cinzel,serif;font-size:18px;font-weight:700;color:#c8901a;letter-spacing:.12em">EXPERREDUCTI</div>
+      <div style="font-size:11px;color:#3a5a7a;letter-spacing:.1em;text-transform:uppercase;margin-top:-8px">Conseil Parlementaire Olympien</div>
+      <div style="width:40px;height:1px;background:linear-gradient(90deg,transparent,#c8901a,transparent);margin:4px 0"></div>
+      <div style="font-size:13px;color:#7a9aaa;line-height:1.8;font-style:italic">
+        "Ce contenu n'est pas encore disponible.<br>
+        Profitez de découvrir bien d'autres choses<br>
+        avant d'en arriver là..."
       </div>
-      <div id="exp-lock-err" style="font-size:10px;color:#cc3030;min-height:14px"></div>
+      <div style="font-size:10px;color:#2a4a6a;margin-top:8px;letter-spacing:.08em">— Les Experreducti</div>
       <button onclick="closeExperreducti()"
-        style="margin-top:10px;background:none;border:1px solid #1a2e4a;border-radius:6px;color:#3a5a7a;padding:5px 14px;cursor:pointer;font-family:Rajdhani,sans-serif;font-size:11px">
-        FERMER
+        style="margin-top:16px;padding:8px 20px;border-radius:6px;border:1px solid #1a2e4a;background:none;color:#3a5a7a;cursor:pointer;font-family:Rajdhani,sans-serif;font-size:12px;font-weight:600;letter-spacing:.06em;transition:all .15s"
+        onmouseover="this.style.borderColor='#c8901a44';this.style.color='#c8901a'"
+        onmouseout="this.style.borderColor='#1a2e4a';this.style.color='#3a5a7a'">
+        REVENIR PLUS TARD
       </button>
     </div>
   `;
 }
 
 function expTryUnlock() {
-  const input = document.getElementById('exp-lock-input');
-  const err = document.getElementById('exp-lock-err');
-  if (!input) return;
-  if (input.value.trim() === EXP_UNLOCK_CODE) {
-    expLocked = false;
-    // Relancer l'ouverture
-    openExperreducti(window._expLastDeityId);
-  } else {
-    if (err) err.textContent = 'Code incorrect.';
-    input.value = '';
-    input.style.borderColor = '#cc3030';
-    setTimeout(() => { if (input) input.style.borderColor = '#1a3a5a'; }, 1000);
-  }
+  expLocked = false;
+  openExperreducti(window._expLastDeityId);
 }
 
 async function openExperreducti(deityId) {
@@ -151,6 +155,16 @@ async function openExperreducti(deityId) {
 
   // Afficher écran de verrouillage si locked
   if (expLocked) {
+    // Create modal first
+    let modal = document.getElementById('exp-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'exp-modal';
+      modal.innerHTML = `<div id="exp-inner"></div>`;
+      document.body.appendChild(modal);
+      modal.addEventListener('click', e => { if (e.target === modal) closeExperreducti(); });
+    }
+    modal.style.cssText = `position:fixed;inset:0;z-index:2000;background:rgba(0,2,8,.92);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;`;
     renderExpLockScreen();
     return;
   }
