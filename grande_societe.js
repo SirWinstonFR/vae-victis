@@ -44,7 +44,11 @@ async function gsFetch(gid) {
 
 // ---- OPEN / CLOSE ------------------------------------------
 async function openGrandeSociete(deityId) {
-  gsMe = window.VV?.DEITIES?.find(d => d.id === deityId) || null;
+  // Récupérer me depuis toutes les sources disponibles
+  gsMe = window.VV?.DEITIES?.find(d => d.id === deityId)
+      || window.VV?.me
+      || (typeof me !== 'undefined' ? me : null)
+      || null;
   gsActiveModule = null;
 
   // Créer le modal si besoin
@@ -244,9 +248,15 @@ function gsOpenModule(moduleId) {
   // Charger le bon module
   const content = document.getElementById('gs-module-content');
   if (moduleId === 'gouvernement' && typeof gsRenderGouvernement === 'function') {
-    gsRenderGouvernement(content);
+    const deity = window.VV?.me || (typeof me !== 'undefined' ? me : null);
+    gsRenderGouvernement(content, deity);
   } else if (moduleId === 'nasa' && typeof gsRenderNASA === 'function') {
-    gsRenderNASA(content);
+    // Passer me explicitement — window.VV peut être indisponible dans ce contexte
+    const deity = window.VV?.me || (typeof me !== 'undefined' ? me : null);
+    gsRenderNASA(content, deity);
+  } else if (moduleId === 'cia' && typeof gsRenderCIA === 'function') {
+    const deity = window.VV?.me || (typeof me !== 'undefined' ? me : null);
+    gsRenderCIA(content, deity);
   } else {
     content.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px">
