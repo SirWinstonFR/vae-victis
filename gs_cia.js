@@ -11,7 +11,7 @@ const CIA_CFG = {
   SHEET_ID:    '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
   APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbyCaQI2c5ds2uCmoeCw6_fALjh-8ii05fkOVgZmWPhbY64vyYbrNcFvqbFKRb7rUwyxwQ/exec',
   GIDS: {
-    cia: '', // GID de l'onglet 'cia' — à renseigner
+    cia: '1248775428', // GID de l'onglet 'cia' — à renseigner
   },
   // Code d'accès global (peut être écrasé par le Sheet)
   CODE_ACCES: 'NSA-7749',
@@ -88,46 +88,9 @@ function ciaShowLogin() {
 
       <!-- Logo NSA -->
       <div class="cia-login-logo">
-        <svg width="110" height="110" viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg"
-        style="filter:drop-shadow(0 0 14px #1a4aaa55)">
-        <!-- Cercle extérieur -->
-        <circle cx="55" cy="55" r="52" fill="#0a1428" stroke="#1a4aaa" stroke-width="2"/>
-        <circle cx="55" cy="55" r="48" fill="none" stroke="#1a4aaa" stroke-width="0.5" opacity="0.4"/>
-        <!-- Fond bleu foncé intérieur -->
-        <circle cx="55" cy="55" r="44" fill="#061030"/>
-        <!-- Aigle stylisé NSA -->
-        <!-- Corps -->
-        <ellipse cx="55" cy="52" rx="16" ry="12" fill="#1a4aaa" opacity="0.9"/>
-        <!-- Tête -->
-        <circle cx="55" cy="38" r="8" fill="#e8e0cc"/>
-        <!-- Bec -->
-        <polygon points="55,43 52,47 58,47" fill="#c8a020"/>
-        <!-- Aile gauche -->
-        <path d="M 39,52 Q 28,42 18,48 Q 24,56 38,58 Z" fill="#e8e0cc" opacity="0.95"/>
-        <path d="M 39,56 Q 26,54 16,62 Q 24,66 40,62 Z" fill="#c8c0b0" opacity="0.8"/>
-        <!-- Aile droite -->
-        <path d="M 71,52 Q 82,42 92,48 Q 86,56 72,58 Z" fill="#e8e0cc" opacity="0.95"/>
-        <path d="M 71,56 Q 84,54 94,62 Q 86,66 70,62 Z" fill="#c8c0b0" opacity="0.8"/>
-        <!-- Serres avec éléments -->
-        <path d="M 46,62 Q 44,70 42,76 L 46,76 Q 48,70 50,64 Z" fill="#c8a020"/>
-        <path d="M 55,64 Q 55,72 55,78 L 58,78 Q 58,72 58,66 Z" fill="#c8a020"/>
-        <path d="M 64,62 Q 66,70 68,76 L 64,76 Q 62,70 60,64 Z" fill="#c8a020"/>
-        <!-- Bouclier sur le corps -->
-        <path d="M 50,48 L 55,44 L 60,48 L 60,58 Q 55,62 50,58 Z" fill="#1a3080" stroke="#c8a020" stroke-width="0.8"/>
-        <line x1="50" y1="53" x2="60" y2="53" stroke="#c8a020" stroke-width="0.5"/>
-        <line x1="55" y1="48" x2="55" y2="58" stroke="#c8a020" stroke-width="0.5"/>
-        <!-- Texte NSA en arc -->
-        <path id="nsa-arc" d="M 18,55 A 37,37 0 0,1 92,55" fill="none"/>
-        <text font-family="Arial,sans-serif" font-size="7" font-weight="700" fill="#c8a020" letter-spacing="4">
-          <textPath href="#nsa-arc" startOffset="8%">NATIONAL SECURITY AGENCY</textPath>
-        </text>
-        <!-- Étoiles décoratives -->
-        <text x="24" y="80" font-size="7" fill="#c8a020" opacity="0.7">★</text>
-        <text x="80" y="80" font-size="7" fill="#c8a020" opacity="0.7">★</text>
-        <text x="52" y="88" font-size="7" fill="#c8a020" opacity="0.7">★</text>
-        <!-- Cercle décoratif bas -->
-        <circle cx="55" cy="55" r="52" fill="none" stroke="#c8a020" stroke-width="0.5" opacity="0.2"/>
-      </svg>
+        <img src="https://i.imgur.com/gdR9QGK.png"
+        width="110" height="110" alt="NSA"
+        style="filter:drop-shadow(0 0 14px #1a4aaa55);opacity:.95"/>
       </div>
 
       <div class="cia-login-agency">NATIONAL SECURITY AGENCY</div>
