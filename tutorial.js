@@ -633,11 +633,25 @@
     document.body.appendChild(btn);
   }
 
+  function waitForLogin(cb) {
+    // Attend que window.me soit défini (= joueur connecté)
+    // Vérifie toutes les 500ms, abandonne après 5 minutes
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries++;
+      if (window.me && window.me.id) {
+        clearInterval(timer);
+        cb();
+      }
+      if (tries > 600) clearInterval(timer); // timeout 5min
+    }, 500);
+  }
+
   function init() {
     addTriggerBtn();
     if (!localStorage.getItem('vvt_tuto_done')) {
-      // Attendre que l'app soit initialisée (login affiché)
-      setTimeout(launch, 1200);
+      // Lancer le tuto uniquement APRÈS que le joueur s'est connecté
+      waitForLogin(launch);
     }
   }
 
