@@ -16,16 +16,28 @@ const CORP_CFG = {
 };
 
 // ---- DONNÉES STATIQUES BASE --------------------------------
+// Logos via Clearbit Logo API (public, no CORS)
+function corpLogo(domaine, couleur) {
+  return `<img src="https://logo.clearbit.com/${domaine}" 
+    style="width:28px;height:28px;object-fit:contain;border-radius:6px"
+    onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+    alt=""/>
+  <div style="display:none;width:28px;height:28px;border-radius:6px;background:${couleur}22;
+    align-items:center;justify-content:center;font-size:14px;border:1px solid ${couleur}44">
+    ${couleur === '#a0a8b8' ? '🍎' : '🏢'}
+  </div>`;
+}
+
 const CORP_BASE = {
-  apple:     { ticker:'AAPL', nom:'Apple Inc.',         secteur:'Big Tech',  couleur:'#a0a8b8', icon:'🍎', desc:'Devices, logiciels et services premium. Capitalisation la plus haute au monde.' },
-  microsoft: { ticker:'MSFT', nom:'Microsoft Corp.',    secteur:'Big Tech',  couleur:'#4a8ad4', icon:'🪟', desc:'Cloud Azure, Office 365, Xbox. Domination du marché B2B mondial.' },
-  google:    { ticker:'GOOGL', nom:'Alphabet Inc.',     secteur:'Big Tech',  couleur:'#e8b030', icon:'🔍', desc:'Moteur de recherche, YouTube, publicité numérique et IA.' },
-  amazon:    { ticker:'AMZN', nom:'Amazon.com Inc.',    secteur:'Big Tech',  couleur:'#f0a020', icon:'📦', desc:'E-commerce mondial, cloud AWS, logistique et streaming.' },
-  meta:      { ticker:'META', nom:'Meta Platforms',     secteur:'Big Tech',  couleur:'#1a7adc', icon:'👁', desc:'Facebook, Instagram, WhatsApp. 3 milliards d\'utilisateurs actifs.' },
-  nvidia:    { ticker:'NVDA', nom:'NVIDIA Corp.',       secteur:'Big Tech',  couleur:'#76b900', icon:'⚡', desc:'Puces GPU, IA et data centers. Moteur de la révolution IA.' },
-  exxon:     { ticker:'XOM',  nom:'ExxonMobil Corp.',   secteur:'Énergie',   couleur:'#cc3030', icon:'🛢', desc:'Première major pétrolière américaine. Présence dans 50+ pays.' },
-  jpmorgan:  { ticker:'JPM',  nom:'JPMorgan Chase',     secteur:'Finance',   couleur:'#2a6aaa', icon:'🏦', desc:'Première banque américaine. 3,9 trillions de dollars d\'actifs.' },
-  lockheed:  { ticker:'LMT',  nom:'Lockheed Martin',    secteur:'Défense',   couleur:'#5a7a9a', icon:'🚀', desc:'Premier contractant de défense américain. F-35, missiles, spatial.' },
+  apple:     { ticker:'AAPL', nom:'Apple Inc.',         secteur:'Big Tech',  couleur:'#a0a8b8', logo:'apple.com', icon:'🍎', desc:'Devices, logiciels et services premium. Capitalisation la plus haute au monde.' },
+  microsoft: { ticker:'MSFT', nom:'Microsoft Corp.',    secteur:'Big Tech',  couleur:'#4a8ad4', logo:'microsoft.com', icon:'🪟', desc:'Cloud Azure, Office 365, Xbox. Domination du marché B2B mondial.' },
+  google:    { ticker:'GOOGL', nom:'Alphabet Inc.',     secteur:'Big Tech',  couleur:'#e8b030', logo:'google.com', icon:'🔍', desc:'Moteur de recherche, YouTube, publicité numérique et IA.' },
+  amazon:    { ticker:'AMZN', nom:'Amazon.com Inc.',    secteur:'Big Tech',  couleur:'#f0a020', logo:'amazon.com', icon:'📦', desc:'E-commerce mondial, cloud AWS, logistique et streaming.' },
+  meta:      { ticker:'META', nom:'Meta Platforms',     secteur:'Big Tech',  couleur:'#1a7adc', logo:'meta.com', icon:'👁', desc:'Facebook, Instagram, WhatsApp. 3 milliards d\'utilisateurs actifs.' },
+  nvidia:    { ticker:'NVDA', nom:'NVIDIA Corp.',       secteur:'Big Tech',  couleur:'#76b900', logo:'nvidia.com', icon:'⚡', desc:'Puces GPU, IA et data centers. Moteur de la révolution IA.' },
+  exxon:     { ticker:'XOM',  nom:'ExxonMobil Corp.',   secteur:'Énergie',   couleur:'#cc3030', logo:'exxon.com', icon:'🛢', desc:'Première major pétrolière américaine. Présence dans 50+ pays.' },
+  jpmorgan:  { ticker:'JPM',  nom:'JPMorgan Chase',     secteur:'Finance',   couleur:'#2a6aaa', logo:'jpmorgan.com', icon:'🏦', desc:'Première banque américaine. 3,9 trillions de dollars d\'actifs.' },
+  lockheed:  { ticker:'LMT',  nom:'Lockheed Martin',    secteur:'Défense',   couleur:'#5a7a9a', logo:'lockheedmartin.com', icon:'🚀', desc:'Premier contractant de défense américain. F-35, missiles, spatial.' },
 };
 
 const SECTEUR_COULEUR = {
@@ -81,6 +93,7 @@ async function corpLoadData() {
       const base = CORP_BASE[id] || {};
       corpData.entreprises.push({
         id,
+        logo:       (r.logo       || base.logo    || '').trim(),
         ticker:     (r.ticker     || base.ticker  || id.toUpperCase()).trim(),
         nom:        (r.nom        || base.nom      || id).trim(),
         secteur:    (r.secteur    || base.secteur  || '').trim(),
@@ -219,7 +232,14 @@ function corpRenderGrid() {
       <div class="corp-card${isOpen ? ' corp-card-active' : ''}" data-id="${e.id}"
         style="--corp-color:${e.couleur};border-color:${isOpen ? e.couleur : e.couleur + '33'}">
         <div class="corp-card-top">
-          <div class="corp-card-icon">${e.icon}</div>
+          <div class="corp-card-icon" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center">
+          ${e.logo
+            ? `<img src="https://logo.clearbit.com/${e.logo}"
+                style="width:28px;height:28px;object-fit:contain;border-radius:6px"
+                onerror="this.style.display='none'" alt="${e.ticker}"/>`
+            : `<span style="font-size:20px">${e.icon}</span>`
+          }
+        </div>
           <div style="flex:1;min-width:0">
             <div class="corp-card-ticker" style="color:${e.couleur}">${e.ticker}</div>
             <div class="corp-card-nom">${e.nom}</div>
@@ -273,7 +293,14 @@ function corpOpenFiche(id) {
 
       <!-- En-tête -->
       <div class="corp-fiche-header" style="border-color:${e.couleur}44">
-        <div class="corp-fiche-icon">${e.icon}</div>
+        <div class="corp-fiche-icon" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        ${e.logo
+          ? `<img src="https://logo.clearbit.com/${e.logo}"
+              style="width:48px;height:48px;object-fit:contain;border-radius:10px"
+              onerror="this.style.display='none'" alt="${e.ticker}"/>`
+          : `<span style="font-size:32px">${e.icon}</span>`
+        }
+      </div>
         <div style="flex:1;min-width:0">
           <div class="corp-fiche-nom" style="color:${e.couleur}">${e.nom}</div>
           <div class="corp-fiche-ticker-line">
