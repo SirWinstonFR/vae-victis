@@ -1148,7 +1148,7 @@ window.loginScreenSubmit = function() {
     screen.style.opacity = '0';
     setTimeout(() => {
       screen.style.display = 'none';
-      me = d;
+      me = d; window.VV.me = d;
       const bl = $('btn-login');
       if (bl) bl.innerHTML = `<i class="ti ti-user-check"></i> ${d.name}`;
       const ba = $('btn-admin');
@@ -1170,7 +1170,7 @@ function doLogin() {
   const pw = $('login-pw').value;
   const d  = getD(id);
   if (!d?.pass || d.pass !== pw) { $('login-err').textContent = 'Identifiants incorrects'; return; }
-  me = d;
+  me = d; window.VV.me = d;
   closeModal('modal-login');
   const bl = $('btn-login');
   if (bl) bl.innerHTML = `<i class="ti ti-user-check"></i> ${d.name}`;
@@ -1275,6 +1275,19 @@ async function fullRefresh() {
   else if (me)       renderPlayerPanel();
   else               showPrompt();
 }
+
+// ---- TUTORIAL BRIDGE (accès depuis tutorial.js) -------------------
+window.VV.setMe = function(d) {
+  me = d;
+  window.VV.me = d;
+};
+window.VV.refreshUI = function() {
+  renderDock();
+  if (me) renderPlayerPanel(); else showPrompt();
+  if (window.VV.globe?.buildDots) window.VV.globe.buildDots();
+  if (window.VV.globe?.buildBadges) window.VV.globe.buildBadges();
+  updateWarningTicker();
+};
 
 // ---- INIT --------------------------------------------------
 async function init() {
