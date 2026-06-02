@@ -11,7 +11,7 @@ const CIA_CFG = {
   SHEET_ID:    '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
   APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbyCaQI2c5ds2uCmoeCw6_fALjh-8ii05fkOVgZmWPhbY64vyYbrNcFvqbFKRb7rUwyxwQ/exec',
   GIDS: {
-    cia: '1248775428', // GID de l'onglet 'cia' — à renseigner
+    cia: '', // GID de l'onglet 'cia' — à renseigner
   },
   // Code d'accès global (peut être écrasé par le Sheet)
   CODE_ACCES: 'NSA-7749',
@@ -88,18 +88,9 @@ function ciaShowLogin() {
 
       <!-- Logo NSA -->
       <div class="cia-login-logo">
-        <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="40" cy="40" r="38" stroke="#cc3030" stroke-width="1.5"/>
-          <circle cx="40" cy="40" r="30" stroke="#cc3030" stroke-width="0.5" opacity="0.4"/>
-          <circle cx="40" cy="40" r="20" stroke="#cc3030" stroke-width="0.5" opacity="0.3"/>
-          <!-- Aigle stylisé -->
-          <ellipse cx="40" cy="36" rx="14" ry="10" fill="#cc3030" opacity="0.15"/>
-          <path d="M 22,38 Q 40,28 58,38 Q 40,44 22,38 Z" fill="#cc3030" opacity="0.6"/>
-          <circle cx="40" cy="36" r="4" fill="#cc3030" opacity="0.9"/>
-          <!-- Flèches -->
-          <line x1="26" y1="46" x2="34" y2="40" stroke="#cc3030" stroke-width="1" opacity="0.5"/>
-          <line x1="54" y1="46" x2="46" y2="40" stroke="#cc3030" stroke-width="1" opacity="0.5"/>
-        </svg>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/National_Security_Agency.svg/240px-National_Security_Agency.svg.png"
+        width="110" height="110" alt="NSA"
+        style="filter:drop-shadow(0 0 12px #1a3a8a66);opacity:.92"/>
       </div>
 
       <div class="cia-login-agency">NATIONAL SECURITY AGENCY</div>
@@ -215,7 +206,7 @@ function ciaShowInterface() {
   const dem = ciaData.dossiers.filter(d => d.faction === 'olympiens' || d.faction === 'shemning' || d.faction === 'général' || !d.faction);
 
   const classifColor = {
-    'TOP SECRET':          '#cc3030',
+    'TOP SECRET':          '#1a4aaa',
     'SECRET':              '#c8a84b',
     'CONFIDENTIEL':        '#4a8ad4',
     'NON CLASSIFIÉ':       '#3a8a5a',
@@ -298,7 +289,7 @@ function ciaRenderDossierList(dossiers, classifColor, factionColor) {
             ${d.faction ? ` · ${d.faction.toUpperCase()}` : ''}
           </div>
         </div>
-        <div class="cia-dossier-statut" style="color:${d.statut === 'actif' ? '#2a8a3a' : '#cc3030'}">
+        <div class="cia-dossier-statut" style="color:${d.statut === 'actif' ? '#2a8a3a' : '#1a4aaa'}">
           ${d.statut === 'actif' ? '● ACTIF' : '○ ARCHIVÉ'}
         </div>
       </div>
@@ -328,7 +319,7 @@ window.ciaOpenDossierPanel = function(idx) {
   });
 
   const classifColor = {
-    'TOP SECRET': '#cc3030', 'SECRET': '#c8a84b',
+    'TOP SECRET': '#1a4aaa', 'SECRET': '#c8a84b',
     'CONFIDENTIEL': '#4a8ad4', 'NON CLASSIFIÉ': '#3a8a5a',
   };
   const cc = classifColor[d.classification] || '#5a7a9a';
@@ -352,7 +343,7 @@ window.ciaOpenDossierPanel = function(idx) {
         <div class="cia-doc-meta-right">
           ${d.date ? `<div class="cia-doc-date">DATE : ${d.date}</div>` : ''}
           <div class="cia-doc-analyste">ANALYSTE : ${d.analyste}</div>
-          <div class="cia-doc-statut" style="color:${d.statut==='actif'?'#2a8a3a':'#cc3030'}">
+          <div class="cia-doc-statut" style="color:${d.statut==='actif'?'#2a8a3a':'#1a4aaa'}">
             ${d.statut === 'actif' ? '● ACTIF' : '○ ARCHIVÉ'}
           </div>
         </div>
@@ -409,7 +400,7 @@ window.ciaFilter = function(faction, btn) {
   const list = document.getElementById('cia-dossiers-list');
   if (list) {
     list.innerHTML = ciaRenderDossierList(filtered, {
-      'TOP SECRET':'#cc3030','SECRET':'#c8a84b','CONFIDENTIEL':'#4a8ad4','NON CLASSIFIÉ':'#3a8a5a'
+      'TOP SECRET':'#1a4aaa','SECRET':'#c8a84b','CONFIDENTIEL':'#4a8ad4','NON CLASSIFIÉ':'#3a8a5a'
     }, { 'olympiens':'#c8901a','shemning':'#b02828','général':'#5a7a9a','':'#5a7a9a' });
   }
 
@@ -446,72 +437,72 @@ function ciaInjectStyles() {
     /* LOGIN */
     .cia-login-root {
       display:flex;flex-direction:column;align-items:center;justify-content:center;
-      height:100%;background:#04080c;position:relative;gap:16px;padding:30px;
+      height:100%;background:#03060f;position:relative;gap:16px;padding:30px;
     }
     .cia-login-logo { animation:cia-fadein .6s ease; }
     .cia-login-agency {
       font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;
-      letter-spacing:.22em;color:#cc3030;text-transform:uppercase;
+      letter-spacing:.22em;color:#1a4aaa;text-transform:uppercase;
     }
     .cia-login-subtitle {
-      font-family:'Share Tech Mono',monospace;font-size:9px;color:#3a1a1a;
+      font-family:'Share Tech Mono',monospace;font-size:9px;color:#0e1e38;
       letter-spacing:.14em;margin-top:-8px;
     }
     .cia-terminal {
-      width:100%;max-width:560px;background:#020608;border:1px solid #cc303044;
+      width:100%;max-width:560px;background:#02040c;border:1px solid #1a4aaa44;
       border-radius:6px;padding:18px 20px;font-family:'Share Tech Mono',monospace;
       min-height:120px;display:flex;flex-direction:column;gap:8px;
     }
     .cia-terminal.cia-shake { animation:cia-shake .4s ease; }
     .cia-terminal-line {
-      font-size:11px;color:#cc3030;letter-spacing:.06em;line-height:1.5;
+      font-size:11px;color:#1a4aaa;letter-spacing:.06em;line-height:1.5;
     }
-    .cia-terminal-line.cia-error  { color:#ff4444;margin-top:4px; }
-    .cia-terminal-line.cia-success{ color:#2a8a3a; }
+    .cia-terminal-line.cia-error  { color:#4a8ad4;margin-top:4px; }
+    .cia-terminal-line.cia-success{ color:#2a6aaa; }
     .cia-input-line {
       display:flex;align-items:center;gap:10px;margin-top:6px;
     }
-    .cia-prompt { font-size:11px;color:#cc3030;white-space:nowrap;letter-spacing:.06em; }
+    .cia-prompt { font-size:11px;color:#1a4aaa;white-space:nowrap;letter-spacing:.06em; }
     .cia-code-input {
-      background:none;border:none;border-bottom:1px solid #cc303066;
-      color:#cc3030;font-family:'Share Tech Mono',monospace;font-size:13px;
+      background:none;border:none;border-bottom:1px solid #1a4aaa66;
+      color:#1a4aaa;font-family:'Share Tech Mono',monospace;font-size:13px;
       letter-spacing:.18em;outline:none;flex:1;padding:2px 0;
       text-transform:uppercase;
     }
-    .cia-code-input::placeholder { color:#3a1a1a; }
+    .cia-code-input::placeholder { color:#0e1e38; }
     .cia-submit-wrap { margin-top:10px; }
     .cia-submit-btn {
-      background:none;border:1px solid #cc3030;border-radius:4px;
-      color:#cc3030;font-family:'Share Tech Mono',monospace;font-size:10px;
+      background:none;border:1px solid #1a4aaa;border-radius:4px;
+      color:#1a4aaa;font-family:'Share Tech Mono',monospace;font-size:10px;
       letter-spacing:.14em;padding:6px 18px;cursor:pointer;
       transition:all .15s;
     }
-    .cia-submit-btn:hover { background:#cc303018;box-shadow:0 0 12px #cc303044; }
+    .cia-submit-btn:hover { background:#1a4aaa18;box-shadow:0 0 12px #1a4aaa44; }
     .cia-login-warning {
-      font-family:'Share Tech Mono',monospace;font-size:8px;color:#2a0a0a;
+      font-family:'Share Tech Mono',monospace;font-size:8px;color:#060e20;
       letter-spacing:.08em;text-align:center;max-width:500px;line-height:1.5;
     }
 
     /* INTERFACE */
     .cia-root {
       display:flex;flex-direction:column;height:100%;
-      background:#04080c;position:relative;font-family:'Share Tech Mono',monospace;
+      background:#03060f;position:relative;font-family:'Share Tech Mono',monospace;
     }
     .cia-header {
-      padding:10px 18px;border-bottom:1px solid #cc303033;
-      background:linear-gradient(90deg,#08040c,#04080c);
+      padding:10px 18px;border-bottom:1px solid #1a4aaa33;
+      background:linear-gradient(90deg,#04080f,#04080c);
       display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
     }
     .cia-header-left  { display:flex;align-items:center;gap:12px; }
-    .cia-header-title { font-size:11px;font-weight:700;letter-spacing:.14em;color:#cc3030;text-transform:uppercase; }
-    .cia-header-sub   { font-size:8px;color:#3a1a1a;letter-spacing:.1em;margin-top:2px; }
+    .cia-header-title { font-size:11px;font-weight:700;letter-spacing:.14em;color:#1a4aaa;text-transform:uppercase; }
+    .cia-header-sub   { font-size:8px;color:#0e1e38;letter-spacing:.1em;margin-top:2px; }
     .cia-header-right { display:flex;align-items:center;gap:10px; }
-    .cia-blink-dot    { width:7px;height:7px;border-radius:50%;background:#cc3030;animation:cia-blink 1.2s infinite;flex-shrink:0; }
-    .cia-agent-badge  { font-size:8px;color:#2a8a3a;border:1px solid #1a5a2a;padding:2px 8px;border-radius:2px;letter-spacing:.1em; }
-    .cia-logout-btn   { background:none;border:1px solid #3a1a1a;border-radius:4px;color:#5a2a2a;
+    .cia-blink-dot    { width:7px;height:7px;border-radius:50%;background:#1a4aaa;animation:cia-blink 1.2s infinite;flex-shrink:0; }
+    .cia-agent-badge  { font-size:8px;color:#2a6aaa;border:1px solid #1a3a6a;padding:2px 8px;border-radius:2px;letter-spacing:.1em; }
+    .cia-logout-btn   { background:none;border:1px solid #0e1e38;border-radius:4px;color:#2a4a8a;
       font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:.08em;padding:3px 10px;cursor:pointer;
       transition:all .15s; }
-    .cia-logout-btn:hover { border-color:#cc3030;color:#cc3030; }
+    .cia-logout-btn:hover { border-color:#1a4aaa;color:#1a4aaa; }
 
     .cia-body {
       display:grid;grid-template-columns:320px 1fr;flex:1;min-height:0;overflow:hidden;
@@ -519,42 +510,42 @@ function ciaInjectStyles() {
 
     /* LISTE DOSSIERS */
     .cia-dossiers-col {
-      border-right:1px solid #cc303022;overflow-y:auto;display:flex;flex-direction:column;
+      border-right:1px solid #1a4aaa22;overflow-y:auto;display:flex;flex-direction:column;
     }
     .cia-col-title {
-      padding:10px 14px;border-bottom:1px solid #cc303022;
-      font-size:9px;color:#3a1a1a;letter-spacing:.14em;
+      padding:10px 14px;border-bottom:1px solid #1a4aaa22;
+      font-size:9px;color:#0e1e38;letter-spacing:.14em;
       display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
       flex-wrap:wrap;gap:6px;
     }
     .cia-filter-btn {
-      background:none;border:1px solid #2a1a1a;border-radius:3px;
-      color:#2a1a1a;font-family:'Share Tech Mono',monospace;font-size:7px;
+      background:none;border:1px solid #0a1830;border-radius:3px;
+      color:#0a1830;font-family:'Share Tech Mono',monospace;font-size:7px;
       letter-spacing:.08em;padding:2px 6px;cursor:pointer;transition:all .15s;
     }
-    .cia-filter-btn.active { border-color:#cc3030;color:#cc3030;background:#cc303011; }
+    .cia-filter-btn.active { border-color:#1a4aaa;color:#1a4aaa;background:#1a4aaa11; }
     .cia-dossiers-list { flex:1;overflow-y:auto; }
-    .cia-empty { padding:20px;font-size:9px;color:#1a0a0a;text-align:center;letter-spacing:.1em; }
+    .cia-empty { padding:20px;font-size:9px;color:#060e20;text-align:center;letter-spacing:.1em; }
 
     .cia-dossier-item {
-      padding:12px 14px;border-bottom:1px solid #cc303011;cursor:pointer;
+      padding:12px 14px;border-bottom:1px solid #1a4aaa11;cursor:pointer;
       display:flex;align-items:flex-start;gap:8px;transition:background .15s;
     }
-    .cia-dossier-item:hover   { background:#0c0408; }
-    .cia-dossier-item.cia-dossier-active { background:#100408;border-left:2px solid #cc3030; }
+    .cia-dossier-item:hover   { background:#060a14; }
+    .cia-dossier-item.cia-dossier-active { background:#080e1c;border-left:2px solid #1a4aaa; }
     .cia-dossier-classif {
       font-size:7px;font-weight:700;letter-spacing:.1em;
       padding:2px 5px;border-radius:2px;border:1px solid;flex-shrink:0;white-space:nowrap;
       margin-top:2px;
     }
     .cia-dossier-meta { flex:1;min-width:0; }
-    .cia-dossier-op   { font-size:10px;font-weight:700;color:#cc3030;letter-spacing:.06em;margin-bottom:2px; }
+    .cia-dossier-op   { font-size:10px;font-weight:700;color:#1a4aaa;letter-spacing:.06em;margin-bottom:2px; }
     .cia-dossier-cible{ font-size:8px;letter-spacing:.06em;opacity:.8; }
     .cia-dossier-statut{ font-size:8px;letter-spacing:.06em;flex-shrink:0;margin-top:2px; }
 
     /* DOSSIER OUVERT */
     .cia-dossier-view {
-      overflow-y:auto;background:#030608;
+      overflow-y:auto;background:#030810;
       display:flex;flex-direction:column;
     }
     .cia-dossier-vide {
@@ -587,15 +578,15 @@ function ciaInjectStyles() {
 
     .cia-doc-section       { margin-bottom:18px; }
     .cia-doc-section-title {
-      font-size:9px;font-weight:700;letter-spacing:.16em;color:#cc303077;
-      margin-bottom:8px;border-bottom:1px solid #cc303022;padding-bottom:4px;
+      font-size:9px;font-weight:700;letter-spacing:.16em;color:#1a4aaa77;
+      margin-bottom:8px;border-bottom:1px solid #1a4aaa22;padding-bottom:4px;
     }
-    .cia-doc-section-body  { font-size:11px;color:#8a6a6a;line-height:1.8;letter-spacing:.04em; }
+    .cia-doc-section-body  { font-size:11px;color:#8a9ab0;line-height:1.8;letter-spacing:.04em; }
 
     .cia-doc-footer {
-      margin-top:20px;padding-top:10px;border-top:1px solid #1a0808;
+      margin-top:20px;padding-top:10px;border-top:1px solid #060e1c;
       display:flex;justify-content:space-between;
-      font-size:8px;color:#1a0808;letter-spacing:.06em;
+      font-size:8px;color:#060e1c;letter-spacing:.06em;
     }
   `;
   document.head.appendChild(style);
