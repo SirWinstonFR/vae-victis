@@ -1033,7 +1033,7 @@ function openLogin() {
     { key:'shemning',  name:'Shemning',  color:'#b02828', members:['entite','isis','seth','osiris','hel','tyr','loki','shiva','vishnu','brahma','amaterasu'] },
   ];
 
-  loginScreen.style.cssText = 'position:fixed;inset:0;z-index:5000;background:#020508;display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;animation:login-fade-in .4s ease;overflow-y:auto;';
+  loginScreen.style.cssText = 'position:fixed;inset:0;z-index:5000;background:#020508;display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;animation:login-fade-in .4s ease;overflow-y:auto;overflow-x:hidden;';
 
   const deityCards = factions.map(f => `
     <div style="margin-bottom:16px">
@@ -1107,16 +1107,17 @@ window.loginSelectDeity = function(id, color) {
   const card = document.getElementById('lcard-' + id);
   if (card) {
     card.style.borderColor = color;
-    card.style.background = color + '15';
-    card.style.boxShadow = '0 0 12px ' + color + '44';
+    card.style.background = 'rgba(10,15,25,1)';
+    card.style.boxShadow = '0 0 10px ' + color + '55, inset 0 -2px 0 ' + color;
   }
   const d = window.VV.DEITIES.find(x => x.id === id);
   const disp = document.getElementById('ls-display');
   if (disp && d) disp.textContent = d.name + (d.player ? ' · ' + d.player : '');
   const btn = document.getElementById('ls-btn');
   if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.boxShadow = '0 4px 20px ' + color + '66'; }
+  // Subtle color accent on border only, no background change
   const screen = document.getElementById('vv-login-screen');
-  if (screen) screen.style.background = 'radial-gradient(ellipse at center, ' + color + '0d 0%, #020508 65%)';
+  if (screen) screen.style.borderTop = '2px solid ' + color;
 };
 
 window.loginTogglePw = function() {
