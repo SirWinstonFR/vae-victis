@@ -980,6 +980,19 @@ function openAtkModalDirect(ownerId, terrId) {
 async function confirmAttack() {
   const sel = $('atk-terr');
   if (!sel?.value) { alert('Choisissez un territoire cible'); return; }
+
+  // Mode tutoriel : simuler l'attaque sans appel réseau
+  if (window.VVTutorial?.active) {
+    window.VV.attacks.push({ attacker:me.id, target:pendingAtk.target, territory:sel.value, _tuto:true });
+    closeModal('modal-atk');
+    renderDock(); window.VV.globe.buildDots();
+    if (selZone) renderZonePanel(selZone);
+    else if (selTrans) renderTransPanel(selTrans);
+    else renderPlayerPanel();
+    updateWarningTicker();
+    return;
+  }
+
   const btn = $('atk-confirm');
   btn.disabled = true; btn.textContent = 'Envoi…';
   const res = await postScript({ action:'add_attack', cycle:CYCLE, attaquant:me.id, cible:pendingAtk.target, territoire_id:sel.value });
