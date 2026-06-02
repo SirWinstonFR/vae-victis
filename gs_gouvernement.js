@@ -177,6 +177,8 @@ async function renderGouvernement(container) {
 
   await govLoadData();
   gsInjectGovStyles();
+  // La carte D3 est dessinée après le render du HTML
+  setTimeout(govDrawMap, 50);
 
   const eveil   = govData.eveil;
   const eveilLabel = eveil < 33 ? 'DISCRET' : eveil < 66 ? 'INQUIET' : 'RÉVÉLÉ';
@@ -258,7 +260,7 @@ async function renderGouvernement(container) {
 
           <!-- Carte USA simplifiée -->
           <div class="gov-map-wrap" id="gov-map-container">
-            ${govRenderMap()}
+            <div id='gov-map-d3' style='width:100%;height:100%;min-height:220px'></div>
           </div>
 
         </div>
@@ -402,106 +404,123 @@ function govRenderLois() {
 }
 
 // ---- CARTE USA (SVG simplifié avec coordonnées approx.) ----
-function govRenderMap() {
-  const STATE_POS = {
-    'Maine':          [92, 8],  'New Hampshire':  [90, 12], 'Vermont':       [87, 9],
-    'Massachusetts':  [91, 15], 'Rhode Island':   [92, 17], 'Connecticut':   [90, 18],
-    'New York':       [84, 16], 'New Jersey':     [87, 21], 'Pennsylvania':  [82, 21],
-    'Delaware':       [87, 24], 'Maryland':       [84, 25], 'D.C.':          [85, 26],
-    'Virginia':       [82, 28], 'West Virginia':  [80, 26], 'North Carolina':[80, 32],
-    'South Carolina': [80, 36], 'Georgia':        [78, 40], 'Florida':       [78, 47],
-    'Ohio':           [76, 22], 'Michigan':       [73, 15], 'Indiana':       [73, 24],
-    'Kentucky':       [74, 29], 'Tennessee':      [73, 34], 'Alabama':       [72, 40],
-    'Mississippi':    [70, 42], 'Wisconsin':      [66, 15], 'Illinois':      [67, 24],
-    'Minnesota':      [62, 11], 'Iowa':           [62, 21], 'Missouri':      [64, 31],
-    'Arkansas':       [64, 38], 'Louisiana':      [64, 46], 'North Dakota':  [52, 9],
-    'South Dakota':   [52, 16], 'Nebraska':       [52, 24], 'Kansas':        [52, 31],
-    'Oklahoma':       [52, 38], 'Texas':          [50, 46], 'Montana':       [38, 10],
-    'Wyoming':        [38, 18], 'Colorado':       [38, 27], 'New Mexico':    [36, 36],
-    'Idaho':          [28, 13], 'Utah':           [28, 25], 'Arizona':       [26, 35],
-    'Nevada':         [20, 22], 'California':     [14, 28], 'Oregon':        [14, 14],
-    'Washington':     [14, 7],  'Alaska':         [10, 72], 'Hawaii':        [30, 75],
-  };
+function govDrawMap() {
+  const container = document.getElementById('gov-map-d3');
+  if (!container) return;
 
-  const W = 500, H = 300;
   const dem = ELECTION_DATA.candidat_dem;
   const rep = ELECTION_DATA.candidat_rep;
 
-  // Contour simplifié des États-Unis continentaux (path approximatif)
-  const USA_PATH = `
-    M 68,22 L 75,18 L 82,14 L 90,10 L 105,8 L 120,7 L 135,6 L 150,6
-    L 165,7 L 178,9 L 190,10 L 200,10 L 210,11 L 220,11 L 228,10
-    L 235,12 L 240,14 L 245,16 L 248,20 L 250,24 L 252,28
-    L 255,32 L 258,36 L 260,40 L 262,45 L 264,50 L 266,55
-    L 268,62 L 268,70 L 266,78 L 264,84 L 260,90 L 255,94
-    L 248,98 L 240,102 L 232,106 L 224,110 L 216,112 L 208,114
-    L 200,115 L 192,116 L 184,116 L 176,116 L 168,115 L 160,114
-    L 152,113 L 144,113 L 136,112 L 128,112 L 120,112 L 112,112
-    L 104,112 L 96,112 L 88,113 L 80,114 L 74,115 L 68,116
-    L 62,115 L 56,112 L 50,108 L 44,104 L 38,100 L 32,96
-    L 26,92 L 20,88 L 16,84 L 14,78 L 12,72 L 11,66
-    L 11,60 L 12,54 L 14,48 L 17,42 L 21,36 L 26,30
-    L 32,26 L 40,22 L 50,20 L 60,20 Z
-  `;
+  // Mapping nom anglais → données élection
+  const STATE_NAME_MAP = {
+    'Alabama':'Alabama','Alaska':'Alaska','Arizona':'Arizona','Arkansas':'Arkansas',
+    'California':'California','Colorado':'Colorado','Connecticut':'Connecticut',
+    'Delaware':'Delaware','Florida':'Florida','Georgia':'Georgia','Hawaii':'Hawaii',
+    'Idaho':'Idaho','Illinois':'Illinois','Indiana':'Indiana','Iowa':'Iowa',
+    'Kansas':'Kansas','Kentucky':'Kentucky','Louisiana':'Louisiana','Maine':'Maine',
+    'Maryland':'Maryland','Massachusetts':'Massachusetts','Michigan':'Michigan',
+    'Minnesota':'Minnesota','Mississippi':'Mississippi','Missouri':'Missouri',
+    'Montana':'Montana','Nebraska':'Nebraska','Nevada':'Nevada','New Hampshire':'New Hampshire',
+    'New Jersey':'New Jersey','New Mexico':'New Mexico','New York':'New York',
+    'North Carolina':'North Carolina','North Dakota':'North Dakota','Ohio':'Ohio',
+    'Oklahoma':'Oklahoma','Oregon':'Oregon','Pennsylvania':'Pennsylvania',
+    'Rhode Island':'Rhode Island','South Carolina':'South Carolina','South Dakota':'South Dakota',
+    'Tennessee':'Tennessee','Texas':'Texas','Utah':'Utah','Vermont':'Vermont',
+    'Virginia':'Virginia','Washington':'Washington','West Virginia':'West Virginia',
+    'Wisconsin':'Wisconsin','Wyoming':'Wyoming',
+  };
 
-  // Golfe du Mexique / découpe Floride approximative
-  const FLORIDA = `M 220,112 L 228,118 L 232,126 L 234,134 L 232,142 L 228,148 L 222,152 L 216,150 L 212,144 L 210,136 L 212,128 L 216,120 Z`;
+  // Charger le TopoJSON US states
+  fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json')
+    .then(r => r.json())
+    .then(us => {
+      const W = container.clientWidth  || 680;
+      const H = container.clientHeight || 220;
 
-  // Grands Lacs (zones bleues intérieures)
-  const LAKES = `
-    M 176,38 L 182,36 L 188,38 L 190,42 L 186,46 L 180,46 L 176,42 Z
-    M 192,34 L 198,32 L 204,34 L 206,40 L 202,44 L 196,44 L 192,40 Z
-    M 162,44 L 168,42 L 172,46 L 170,52 L 164,52 L 160,48 Z
-  `;
+      // Nettoyer
+      container.innerHTML = '';
 
-  const circles = Object.entries(ELECTION_DATA.etats).map(([name, data]) => {
-    const pos = STATE_POS[name];
-    if (!pos) return '';
-    const cx = (pos[0] / 100 * W * 0.85 + W * 0.04).toFixed(1);
-    const cy = (pos[1] / 100 * H * 0.78 + H * 0.04).toFixed(1);
-    const color = data.gagnant === 'dem' ? dem.couleur : data.gagnant === 'rep' ? rep.couleur : '#3a5060';
-    const r = Math.max(3.5, Math.min(11, Math.sqrt(data.votes) * 1.9));
-    return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" fill-opacity="0.88" stroke="#0a1428" stroke-width="1">
-      <title>${name} — ${data.votes} GE</title>
-    </circle>`;
-  }).join('');
+      const svg = d3.select(container).append('svg')
+        .attr('width', '100%')
+        .attr('height', '100%')
+        .attr('viewBox', `0 0 ${W} ${H}`)
+        .style('display', 'block')
+        .style('background', '#060e1c');
 
-  return `
-    <div class="gov-map-inner">
-      <div class="gov-map-legend">
-        <span class="gov-map-dot" style="background:${dem.couleur}"></span><span style="margin-right:6px">${dem.parti}</span>
-        <span class="gov-map-dot" style="background:${rep.couleur}"></span><span>${rep.parti}</span>
-        <span style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:9px;color:#3a5880">Taille ∝ grands électeurs</span>
-      </div>
-      <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <filter id="map-glow">
-            <feGaussianBlur stdDeviation="2" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-        </defs>
-        <!-- Fond -->
-        <rect width="${W}" height="${H}" fill="#060e1c"/>
-        <!-- Contour USA continental -->
-        <path d="${USA_PATH}" fill="#0d1e34" stroke="#1e3a5a" stroke-width="1.2" transform="scale(2.1,2.1) translate(2,2)"/>
-        <!-- Floride -->
-        <path d="${FLORIDA}" fill="#0d1e34" stroke="#1e3a5a" stroke-width="1" transform="scale(2.1,2.1) translate(2,2)"/>
-        <!-- Grille subtile -->
-        <line x1="0" y1="${H/2}" x2="${W}" y2="${H/2}" stroke="#0e1e30" stroke-width="0.5" stroke-dasharray="2 4"/>
-        <line x1="${W/2}" y1="0" x2="${W/2}" y2="${H}" stroke="#0e1e30" stroke-width="0.5" stroke-dasharray="2 4"/>
-        <!-- Bulles états -->
-        ${circles}
-        <!-- Alaska & Hawaii séparateur -->
-        <line x1="85" y1="${H-60}" x2="85" y2="${H-5}" stroke="#1a2844" stroke-width="0.5"/>
-        <line x1="160" y1="${H-60}" x2="160" y2="${H-5}" stroke="#1a2844" stroke-width="0.5"/>
-        <text x="45" y="${H-2}" text-anchor="middle" font-size="7" fill="#2a3a54" font-family="Share Tech Mono,monospace">Alaska</text>
-        <text x="122" y="${H-2}" text-anchor="middle" font-size="7" fill="#2a3a54" font-family="Share Tech Mono,monospace">Hawaii</text>
-      </svg>
-    </div>
-  `;
+      // Projection Albers USA (standard pour les cartes US)
+      const projection = d3.geoAlbersUsa()
+        .fitSize([W, H], topojson.feature(us, us.objects.states));
+
+      const path = d3.geoPath().projection(projection);
+
+      // Noms des états par FIPS (topojson us-atlas)
+      const STATE_FIPS = {
+        '01':'Alabama','02':'Alaska','04':'Arizona','05':'Arkansas','06':'California',
+        '08':'Colorado','09':'Connecticut','10':'Delaware','12':'Florida','13':'Georgia',
+        '15':'Hawaii','16':'Idaho','17':'Illinois','18':'Indiana','19':'Iowa',
+        '20':'Kansas','21':'Kentucky','22':'Louisiana','23':'Maine','24':'Maryland',
+        '25':'Massachusetts','26':'Michigan','27':'Minnesota','28':'Mississippi',
+        '29':'Missouri','30':'Montana','31':'Nebraska','32':'Nevada','33':'New Hampshire',
+        '34':'New Jersey','35':'New Mexico','36':'New York','37':'North Carolina',
+        '38':'North Dakota','39':'Ohio','40':'Oklahoma','41':'Oregon','42':'Pennsylvania',
+        '44':'Rhode Island','45':'South Carolina','46':'South Dakota','47':'Tennessee',
+        '48':'Texas','49':'Utah','50':'Vermont','51':'Virginia','53':'Washington',
+        '54':'West Virginia','55':'Wisconsin','56':'Wyoming',
+      };
+
+      const states = topojson.feature(us, us.objects.states).features;
+
+      // Dessiner les états
+      svg.selectAll('.state')
+        .data(states)
+        .enter().append('path')
+        .attr('class', 'state')
+        .attr('d', path)
+        .attr('fill', d => {
+          const fips = String(d.id).padStart(2, '0');
+          const name = STATE_FIPS[fips];
+          const etat = name ? ELECTION_DATA.etats[name] : null;
+          if (!etat) return '#0d1e34';
+          return etat.gagnant === 'dem'
+            ? dem.couleur + 'cc'
+            : etat.gagnant === 'rep'
+            ? rep.couleur + 'cc'
+            : '#3a5060';
+        })
+        .attr('stroke', '#060e1c')
+        .attr('stroke-width', 0.5)
+        .append('title')
+        .text(d => {
+          const fips = String(d.id).padStart(2, '0');
+          const name = STATE_FIPS[fips];
+          const etat = name ? ELECTION_DATA.etats[name] : null;
+          return name ? `${name}${etat ? ' — ' + etat.votes + ' GE' : ''}` : '';
+        });
+
+      // Frontières entre états
+      svg.append('path')
+        .datum(topojson.mesh(us, us.objects.states, (a, b) => a !== b))
+        .attr('fill', 'none')
+        .attr('stroke', '#0a1828')
+        .attr('stroke-width', 0.8)
+        .attr('d', path);
+
+      // Légende
+      const leg = svg.append('g').attr('transform', `translate(8, ${H-18})`);
+      leg.append('circle').attr('r', 5).attr('fill', dem.couleur).attr('cx', 5).attr('cy', 0);
+      leg.append('text').attr('x', 14).attr('y', 4).attr('fill', '#8a9ab0')
+        .attr('font-size', 9).attr('font-family', 'Share Tech Mono,monospace').text(dem.parti);
+      leg.append('circle').attr('r', 5).attr('fill', rep.couleur).attr('cx', 85).attr('cy', 0);
+      leg.append('text').attr('x', 94).attr('y', 4).attr('fill', '#8a9ab0')
+        .attr('font-size', 9).attr('font-family', 'Share Tech Mono,monospace').text(rep.parti);
+    })
+    .catch(e => {
+      console.warn('[GOV MAP]', e);
+      container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:Share Tech Mono,monospace;font-size:10px;color:#2a3a54">Carte indisponible</div>';
+    });
 }
 
-// ---- STYLES ------------------------------------------------
+// ---- STYLES// ---- STYLES ------------------------------------------------
 function gsInjectGovStyles() {
   if (document.getElementById('gs-gov-style')) return;
   const style = document.createElement('style');
