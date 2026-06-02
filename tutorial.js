@@ -41,7 +41,7 @@
         { sel:'#ranking-panel', title:'Chercher une cible',        text:'Regarde le classement. Les nations avec un faible PI et des territoires peu défendus sont des cibles idéales. Clique sur <strong>Grèce & Balkans</strong> pour inspecter ce territoire Olympien.', action:'click-zone-Grèce & Balkans' },
         { sel:'#dock',   title:'Lire la fiche ennemie',     text:'Tu vois la fiche de Grèce & Balkans. Maintenant <strong>clique sur Athéna dans le dock</strong> en bas — sa fiche s\'ouvrira avec le bouton d\'attaque.', action:'click-deity-athena' },
         { sel:'#panel-inner',   title:'Le bouton d\'attaque',      text:'Le bouton <strong>rouge "Déclarer une attaque"</strong> apparaît quand tu peux frapper cette divinité. Conditions : tu dois être connecté, avoir moins de 2 attaques ce cycle, et ta cible doit avoir moins de 2 attaques reçues. Clique dessus.', action:'click-attack-athena' },
-        { sel:'.modal.open, #modal-atk', title:'Choisir le territoire cible', text:'La modal d\'attaque te demande de <strong>choisir le territoire précis</strong> que tu vises. Ce choix est stratégique : certains territoires valent plus de PI que d\'autres (×2, ×3…). Choisis puis confirme.', action:'confirm-attack' },
+        { sel:'#modal-atk',             title:'Choisir le territoire cible', text:'La modal d\'attaque te demande de <strong>choisir le territoire précis</strong> que tu vises. Ce choix est stratégique : certains territoires valent plus de PI que d\'autres (×2, ×3…). Choisis puis confirme.', action:'confirm-attack' },
         { sel:'#panel-inner',   title:'L\'attaque est enregistrée', text:'Ton attaque apparaît maintenant dans <strong>ton panel joueur</strong>. Tu vois le slot utilisé. Si tu avais 2 attaques ET 2 attaques reçues, tu devrais choisir un territoire à capituler. À la clôture, un webhook Discord vous notifie tous.', action:null },
       ],
     },
@@ -489,6 +489,8 @@
       if (!step?.action) return; // étape libre, pas de blocage
       // Laisser passer les éléments tuto
       if (e.target.closest('#vvt-bubble, #vvt-topbar, #vvt-splash, #vvt-finish')) return;
+      // Laisser passer si une modal de l'app est ouverte (atk-modal, etc.)
+      if (e.target.closest('.modal-bg.open, .modal.open, #modal-atk')) return;
       // Zone autorisée = l'élément spotlighté
       const allowed = step.sel ? document.querySelector(step.sel) : null;
       if (!allowed) return;
@@ -519,16 +521,29 @@
       advanceIfMatch('click-zone-' + item.dataset.zone);
     }, true);
 
-    // Surveiller le bouton attaque dans le panel
-    document.getElementById('panel-inner')?.addEventListener('click', e => {
-      const btn = e.target.closest('#panel-atk-btn, .atk-btn');
-      if (btn) advanceIfMatch('click-attack-' + (btn.dataset?.owner || 'any'));
-    }, true);
+    // Surveiller le bouton attaque — délégation sur document car bouton recréé dynamiquement
+    document.addEventListener('click', e => {
+      if (!active) return;
+      const btn = e.target.closest('#panel-atk-btn');
+      if (!btn) return;
+      // Récupérer l'id de la cible depuis openAtkModal — on le lit dans le DOM du panel
+      // Le bouton appelle openAtkModal(d.id) — on détecte l'owner via le panel courant
+      const nameEl = document.querySelector('#panel-inner .d-avatar + div div:first-child');
+      // Fallback : chercher n'importe quel owner lisible
+      const step = CHAPTERS[ch]?.steps[st];
+      if (step?.action?.startsWith('click-attack-')) {
+        const expectedOwner = step.action.replace('click-attack-', '');
+        advanceIfMatch('click-attack-' + expectedOwner);
+      }
+    }, false); // bubble phase, après que l'app a traité le clic
 
-    // Surveiller la confirmation d'attaque
-    document.getElementById('atk-confirm')?.addEventListener('click', () => {
-      advanceIfMatch('confirm-attack');
-    }, true);
+    // Surveiller la confirmation d'attaque — délégation car modal peut ne pas exister au moment du patchApp
+    document.addEventListener('click', e => {
+      if (!active) return;
+      if (e.target.closest('#atk-confirm')) {
+        advanceIfMatch('confirm-attack');
+      }
+    }, false);
   }
 
   /* ── Splash intro chapitre ───────────────────────────────────── */
