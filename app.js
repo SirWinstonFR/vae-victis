@@ -10,7 +10,7 @@ window.VV = window.VV || {};
 // ---- CONFIG ------------------------------------------------
 const CFG = {
   SHEET_ID:    '1L9hbQuAD9A4WQFG1G47teZlUPM6-JkMmuuX2Ys-TYt8',
-  APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbyCaQI2c5ds2uCmoeCw6_fALjh-8ii05fkOVgZmWPhbY64vyYbrNcFvqbFKRb7rUwyxwQ/exec',
+  APPS_SCRIPT: 'https://script.google.com/macros/s/AKfycbxzrk3x8qu0LZLT7-MIxkwa9DsoRhUiSl7LlYul-oTYnzD4kG6-vs_OQZVbIbU6or95uw/exec',
   FANDOM_URL:  'https://vae-victis.fandom.com/fr/wiki/Wiki_Vae_Victis',
   REFRESH_MIN: 5,
   GIDS: {
@@ -267,24 +267,8 @@ async function loadData() {
         dieu1:    (r.dieu1 || '').trim(),
         dieu2:    (r.dieu2 || '').trim(),
         bio:      (r.leader_bio || '').trim(),
-        idees:    [1,2,3,4].map(i => {
-          const img  = (r[`idee${i}_img`]  || '').trim();
-          const nom  = (r[`idee${i}_nom`]  || '').trim();
-          const type = (r[`idee${i}_type`] || '').trim().toLowerCase();
-          if (!img && !nom) return null;
-          return {
-            img,
-            nom,
-            type:  ['bonus','malus','neutre'].includes(type) ? type : 'neutre',
-            court: (r[`idee${i}_court`] || '').trim(),
-            long:  (r[`idee${i}_long`]  || '').trim(),
-            effet: (r[`idee${i}_effet`] || '').trim(),
-          };
-        }),
       };
     });
-
-    window.VV.NATIONS = nations; // pour mapmode-influence.js
 
     // Situations
     window.VV.situations = situ.filter(r => r.zone && r.type).map(r => ({
@@ -578,194 +562,6 @@ function renderTransPanel(key) {
   bindTerrButtons();
 }
 
-// ---- IDÉES NATIONALES --------------------------------------
-(function injectIdeeStyles() {
-  if (document.getElementById('vv-idees-style')) return;
-  const s = document.createElement('style');
-  s.id = 'vv-idees-style';
-  s.textContent = `
-    .idees-section { padding: 0 12px 10px; }
-    .idees-label { font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--c-text3);font-family:Rajdhani,sans-serif;margin-bottom:6px; }
-    .idees-row { display:flex;gap:8px;align-items:flex-start; }
-    .idee-slot { position:relative;width:58px;height:58px;flex-shrink:0;cursor:pointer; }
-    .idee-slot .pw { width:58px;height:58px;position:relative;transition:transform .28s cubic-bezier(.34,1.56,.64,1);filter:drop-shadow(0 2px 6px rgba(0,0,0,.6)); }
-    .idee-slot:hover .pw { transform:scale(1.18) translateY(-4px); }
-    .idee-slot .pimg { position:absolute;top:0;left:0;width:58px;height:58px;clip-path:polygon(50% 4%,97% 33%,79% 92%,21% 92%,3% 33%);overflow:hidden; }
-    .idee-slot .pimg img { width:100%;height:100%;object-fit:cover;transition:transform .28s ease; }
-    .idee-slot:hover .pimg img { transform:scale(1.1); }
-    .idee-slot .pborder { position:absolute;top:0;left:0;width:58px;height:58px;pointer-events:none; }
-    .idee-slot .povl { position:absolute;top:0;left:0;width:58px;height:58px;clip-path:polygon(50% 4%,97% 33%,79% 92%,21% 92%,3% 33%);opacity:0;transition:opacity .2s; }
-    .idee-slot:hover .povl { opacity:1; }
-    .idee-slot.bonus .pw { animation:pvBonus 3s ease-in-out infinite; }
-    .idee-slot.malus .pw { animation:pvMalus 2.6s ease-in-out infinite; }
-    .idee-slot.neutre .pw { animation:pvNeutre 3.4s ease-in-out infinite; }
-    @keyframes pvBonus { 0%,100%{filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))} 50%{filter:drop-shadow(0 2px 12px rgba(60,180,60,.5))} }
-    @keyframes pvMalus { 0%,100%{filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))} 50%{filter:drop-shadow(0 2px 12px rgba(200,60,60,.5))} }
-    @keyframes pvNeutre { 0%,100%{filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))} 50%{filter:drop-shadow(0 2px 12px rgba(60,130,220,.4))} }
-    .idee-slot .itt { position:fixed;width:180px;background:#111820;border:.5px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;pointer-events:none;opacity:0;transition:opacity .18s;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.85); }
-    .idee-slot:hover .itt { opacity:1; }
-    .itt-name { font-size:11px;font-weight:600;color:#fff;margin-bottom:3px;display:flex;align-items:center;gap:5px; }
-    .itt-badge { font-size:8px;font-weight:700;letter-spacing:.06em;padding:1px 5px;border-radius:3px;text-transform:uppercase; }
-    .bd-bonus{background:#1f3a1f;color:#5ec95e;border:.5px solid #3d7a3d;}
-    .bd-malus{background:#3a1a1a;color:#e06060;border:.5px solid #7a3a3a;}
-    .bd-neutre{background:#1a2540;color:#6aabdd;border:.5px solid #3a5f80;}
-    .itt-desc { font-size:10px;color:#8a9ab0;line-height:1.45;margin-bottom:4px; }
-    .itt-effet { font-size:10px;font-weight:500; }
-    .itt-effet.bonus{color:#5ec95e;} .itt-effet.malus{color:#e06060;} .itt-effet.neutre{color:#6aabdd;}
-    .idee-empty .pw { animation:none!important; }
-    .idee-detail-panel { margin:0 12px 10px;background:rgba(255,255,255,.03);border:.5px solid rgba(255,255,255,.07);border-radius:9px;overflow:hidden;display:none; }
-    .idee-detail-panel.open { display:block; }
-    .idp-card { display:flex;gap:9px;align-items:flex-start;padding:9px 10px 8px; }
-    .idp-thumb { width:52px;height:52px;flex-shrink:0;overflow:hidden;border-radius:6px; }
-    .idp-thumb img { width:100%;height:100%;object-fit:cover;display:block; }
-    .idp-right { flex:1;min-width:0; }
-    .idp-head { display:flex;align-items:flex-start;justify-content:space-between;gap:4px;margin-bottom:3px; }
-    .idp-title { font-size:12px;font-weight:700;font-family:Rajdhani,sans-serif;color:var(--c-text1);line-height:1.3; }
-    .idp-court { font-size:10px;color:var(--c-text3);margin-bottom:5px;line-height:1.4; }
-    .idp-close { background:none;border:none;color:var(--c-text3);cursor:pointer;font-size:12px;padding:0;line-height:1;flex-shrink:0; }
-    .idp-close:hover { color:var(--c-text1); }
-    .idp-desc { font-size:10px;color:var(--c-text2);line-height:1.55;margin:6px 10px 7px;padding-top:6px;border-top:.5px solid rgba(255,255,255,.06); }
-    .idp-effet { font-size:10px;font-weight:500;padding:4px 8px;border-radius:5px;display:inline-flex;align-items:center;gap:4px;margin:0 10px 9px; }
-    .idp-effet.bonus{background:#1a2e1a;color:#5ec95e;} .idp-effet.malus{background:#2e1a1a;color:#e06060;} .idp-effet.neutre{background:#1a2333;color:#6aabdd;}
-  `;
-  document.head.appendChild(s);
-})();
-
-const IDEE_PTS = '50,4 97,33 79,92 21,92 3,33';
-
-function renderIdeeNationales(idees, zoneKey) {
-  const filled = (idees||[]).filter(Boolean);
-  const slots  = [...filled, ...Array(4 - filled.length).fill(null)];
-
-  const slotsHTML = slots.map((idea, i) => {
-    if (!idea) {
-      return `<div class="idee-slot idee-empty">
-        <div class="pw">
-          <svg class="pborder" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <polygon points="${IDEE_PTS}" fill="#1e2a38" stroke="#2e3e50" stroke-width="1.5" stroke-dasharray="4 2"/>
-            <text x="50" y="57" text-anchor="middle" fill="#2e3e50" font-size="22">+</text>
-          </svg>
-        </div>
-      </div>`;
-    }
-    const bl  = idea.type==='bonus' ? 'Bonus' : idea.type==='malus' ? 'Malus' : 'Neutre';
-    const arr = idea.type==='bonus' ? '\u25b2' : idea.type==='malus' ? '\u25bc' : '\u25c6';
-    return `<div class="idee-slot ${idea.type}" data-idee="${i}" data-zone="${zoneKey}">
-      <div class="pw">
-        <div class="pimg"><img src="${idea.img}" alt="${idea.nom}" loading="lazy"></div>
-        <div class="pborder"></div>
-      </div>
-      <div class="itt">
-        <div class="itt-name">${idea.nom}<span class="itt-badge bd-${idea.type}">${bl}</span></div>
-        ${idea.court ? `<div class="itt-desc">${idea.court}</div>` : ''}
-        ${idea.effet ? `<div class="itt-effet ${idea.type}">${arr} ${idea.effet}</div>` : ''}
-      </div>
-    </div>`;
-  }).join('');
-
-  return `
-    <div class="idees-section">
-      <div class="idees-label">Id\u00e9es nationales</div>
-      <div class="idees-row" id="idees-row-${zoneKey}">${slotsHTML}</div>
-    </div>
-    <div class="idee-detail-panel" id="idee-detail-${zoneKey}"></div>
-  `;
-}
-
-function bindIdeeClicks(zoneKey, idees) {
-  const row    = document.getElementById(`idees-row-${zoneKey}`);
-  const detail = document.getElementById(`idee-detail-${zoneKey}`);
-  if (!row || !detail) return;
-  let openIdx = null;
-  const filled = (idees||[]).filter(Boolean);
-  row.querySelectorAll('.idee-slot[data-idee]').forEach(el => {
-    const i    = parseInt(el.dataset.idee);
-    const idea = filled[i];
-    if (!idea) return;
-    el.addEventListener('mouseenter', () => {
-      const tt  = el.querySelector('.itt');
-      if (!tt) return;
-      const r   = el.getBoundingClientRect();
-      const ttW = 180;
-      let left  = r.left + r.width/2 - ttW/2;
-      left = Math.max(8, Math.min(left, window.innerWidth - ttW - 8));
-      tt.style.left = left + 'px';
-      tt.style.top  = (r.top - tt.offsetHeight - 10) + 'px';
-    });
-    el.addEventListener('click', () => {
-      if (openIdx === i) { detail.classList.remove('open'); openIdx = null; return; }
-      openIdx = i;
-      const arr = idea.type==='bonus' ? '\u25b2' : idea.type==='malus' ? '\u25bc' : '\u25c6';
-      detail.innerHTML = `
-        <div class="idp-card">
-          <div class="idp-thumb"><img src="${idea.img}" alt="${idea.nom}" loading="lazy"></div>
-          <div class="idp-right">
-            <div class="idp-head">
-              <div class="idp-title">${idea.nom}</div>
-              <button class="idp-close" onclick="this.closest('.idee-detail-panel').classList.remove('open')">✕</button>
-            </div>
-            ${idea.court ? `<div class="idp-court">${idea.court}</div>` : ''}
-            ${idea.effet ? `<div class="idp-effet ${idea.type}" style="margin:0;padding:3px 7px">${arr} ${idea.effet}</div>` : ''}
-          </div>
-        </div>
-        ${idea.long ? `<div class="idp-desc">${idea.long}</div>` : ''}`;
-      detail.classList.add('open');
-    });
-  });
-}
-
-function renderCrisesPanel(zoneName) {
-  const sits = (window.VV.situations || []).filter(s => s.zone === zoneName);
-  if (!sits.length) return;
-
-  const canManage = !!me;
-  const items = sits.map(s => {
-    const color = window.VV.getSituationColor(s.type, s.intensity) || '#ff9944';
-    const st    = window.VV.SITUATION_TYPES[s.type] || {};
-    return `
-      <div class="crise-item">
-        <div class="crise-dot" style="background:${color};box-shadow:0 0 5px ${color}"></div>
-        <div class="crise-info">
-          <div class="crise-label" style="color:${color}">${st.label||s.type} — Intensité ${s.intensity}</div>
-          ${s.desc ? `<div class="crise-desc">${s.desc}</div>` : ''}
-        </div>
-        ${canManage ? `<button class="crise-btn" onclick="openCriseModal('${zoneName}','${s.type}',${s.intensity})">Gérer</button>` : ''}
-      </div>`;
-  }).join('');
-
-  const section = document.createElement('div');
-  section.className = 'crise-section';
-  section.innerHTML = `
-    <div class="idees-label" style="color:#ff7744;font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-family:Rajdhani,sans-serif;padding:10px 12px 4px">⚠ Crises actives</div>
-    <div style="padding:0 12px 10px">${items}</div>
-  `;
-
-  // Insérer avant les idées nationales si elles existent, sinon à la fin du panel
-  const ideeSection = document.querySelector('#panel-inner .idees-section');
-  const panelInner  = document.getElementById('panel-inner');
-  if (ideeSection) {
-    ideeSection.parentNode.insertBefore(section, ideeSection);
-  } else if (panelInner) {
-    panelInner.appendChild(section);
-  }
-
-  // Injecter les styles si pas encore présents
-  if (!document.getElementById('vv-crises-style-local')) {
-    const st = document.createElement('style');
-    st.id = 'vv-crises-style-local';
-    st.textContent = `
-      .crise-item { display:flex;align-items:flex-start;gap:8px;padding:7px 9px;border-radius:7px;margin-bottom:5px;background:rgba(255,255,255,.03);border:.5px solid rgba(255,255,255,.07); }
-      .crise-dot  { width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px; }
-      .crise-info { flex:1;min-width:0; }
-      .crise-label{ font-size:11px;font-weight:600;font-family:Rajdhani,sans-serif; }
-      .crise-desc { font-size:10px;color:var(--c-text2);margin-top:2px;line-height:1.4; }
-      .crise-btn  { font-size:10px;font-weight:600;font-family:Rajdhani,sans-serif;padding:3px 8px;border-radius:5px;border:none;cursor:pointer;background:rgba(255,120,60,.15);color:#ff9955;border:.5px solid rgba(255,120,60,.3);transition:background .15s;white-space:nowrap;flex-shrink:0; }
-      .crise-btn:hover { background:rgba(255,120,60,.28); }
-    `;
-    document.head.appendChild(st);
-  }
-}
-
 function renderZonePanel(zoneName) {
   selZone = zoneName;
   const data   = window.VV.ZONES[zoneName];
@@ -821,8 +617,7 @@ function renderZonePanel(zoneName) {
           </div>
         </div>
       </div>
-    </div>
-    ${renderIdeeNationales(nation.idees||[], zoneName)}`;
+    </div>`;
 
   setPanel(`
     <button class="back-btn" id="back-btn"><i class="ti ti-arrow-left"></i> Vue globale</button>
@@ -833,8 +628,6 @@ function renderZonePanel(zoneName) {
 
   $('back-btn')?.addEventListener('click', clearZone);
   bindTerrButtons();
-  bindIdeeClicks(zoneName, nation.idees);
-  renderCrisesPanel(zoneName);
   renderRankingPanel(); // Update active state
 }
 
@@ -989,7 +782,10 @@ function renderPlayerPanel() {
     ${[0,1].map(i => {
       const a = atks[i];
       return `<div class="slot${a?' atk':''}">
-        ${a?`<div class="slot-text atk"><i class="ti ti-sword"></i> ${a.territory?.startsWith('crise_') ? '⚠ Crise — '+a.territory.replace('crise_','') : getD(a.target).name+' — '+(getT(a.territory)?.name||a.territory)}</div>
+        ${a?`<div class="slot-text atk">
+          <i class="ti ti-${a.territory?.startsWith('scene_')?'masks-theater':'sword'}"></i>
+          ${getD(a.target).name}${a.territory?.startsWith('scene_')?' — Scène RP':' — '+(getT(a.territory)?.name||a.territory)}
+        </div>
              <button class="xbtn" data-idx="${i}"><i class="ti ti-x"></i></button>`
           :`<span class="slot-text">${i===0?'Sélectionner une divinité ennemie':'Slot 2 optionnel'}</span>`}
       </div>`;
@@ -1223,13 +1019,157 @@ function openLogin() {
   openModal('modal-login');
 }
 
+function openLogin() {
+  let loginScreen = document.getElementById('vv-login-screen');
+  if (!loginScreen) {
+    loginScreen = document.createElement('div');
+    loginScreen.id = 'vv-login-screen';
+    document.body.appendChild(loginScreen);
+  }
+
+  const factions = [
+    { key:'sovereign', name:'Sovereign', color:'#3a7acc', members:['liberty','capital','judgment','union','manifest','wrath','industry','old media','new media','vigil','science'] },
+    { key:'olympien',  name:'Olympiens', color:'#c8901a', members:['zeus','hera','poseidon','demeter','persephone','athena','artemis','ares','hades','apollon','hermes','dionysos','hestia','hephaistos','aphrodite'] },
+    { key:'shemning',  name:'Shemning',  color:'#b02828', members:['entite','isis','seth','osiris','hel','tyr','loki','shiva','vishnu','brahma','amaterasu'] },
+  ];
+
+  loginScreen.style.cssText = 'position:fixed;inset:0;z-index:5000;background:#020508;display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;animation:login-fade-in .4s ease;overflow-y:auto;';
+
+  const deityCards = factions.map(f => `
+    <div style="margin-bottom:16px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:${f.color};background:${f.color}18;border:1px solid ${f.color}33;border-radius:3px;padding:2px 8px;display:inline-block;margin-bottom:10px">${f.name}</div>
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;scrollbar-color:${f.color}44 transparent">
+        ${window.VV.DEITIES.filter(d => f.members.includes(d.id)).map(d => `
+          <div onclick="loginSelectDeity('${d.id}','${f.color}')"
+            id="lcard-${d.id}"
+            style="flex-shrink:0;width:76px;display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px;border-radius:8px;border:1px solid #1a2e4a;cursor:pointer;transition:all .15s;background:rgba(255,255,255,.02)"
+            onmouseover="this.style.background='rgba(255,255,255,.06)'"
+            onmouseout="if(window._loginSelId!=='${d.id}')this.style.background='rgba(255,255,255,.02)'">
+            <div style="width:42px;height:42px;border-radius:50%;overflow:hidden;background:${f.color}18;display:flex;align-items:center;justify-content:center;border:2px solid ${f.color}44;font-size:12px;font-weight:700;color:${f.color}">
+              ${d.avatar?`<img src="${d.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display='none'">`:''}
+              ${!d.avatar?d.name.slice(0,2).toUpperCase():''}
+            </div>
+            <div style="font-size:10px;font-weight:600;color:#7a9aaa;text-align:center;line-height:1.2;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  loginScreen.innerHTML = `
+    <style>
+      @keyframes login-fade-in{from{opacity:0}to{opacity:1}}
+      @keyframes login-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+      @keyframes login-glow{0%,100%{opacity:.3}50%{opacity:.8}}
+    </style>
+    <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
+      ${Array.from({length:25},(_,i)=>`<div style="position:absolute;width:${Math.random()<.5?1:2}px;height:${Math.random()<.5?1:2}px;border-radius:50%;background:#c8901a;opacity:${(Math.random()*.5+.1).toFixed(2)};left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%;animation:login-glow ${(Math.random()*3+2).toFixed(1)}s ease-in-out infinite ${(Math.random()*2).toFixed(1)}s"></div>`).join('')}
+    </div>
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#c8901a,#f0c060,#c8901a,transparent)"></div>
+    <div style="width:100%;max-width:700px;padding:30px 24px;display:flex;flex-direction:column;align-items:center;gap:0">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:32px;animation:login-float 4s ease-in-out infinite">
+        <img src="https://imgur.com/3VqtRdh.png" style="width:72px;height:72px;border-radius:14px;border:1px solid #c8901a44;box-shadow:0 0 30px #c8901a44" onerror="this.style.display='none'">
+        <div style="text-align:center">
+          <div style="font-family:Cinzel,serif;font-size:30px;font-weight:700;letter-spacing:.2em;color:#f0c060;text-shadow:0 0 24px #c8901a66">VAE VICTIS</div>
+          <div style="font-size:11px;color:#3a5a7a;letter-spacing:.15em;text-transform:uppercase;margin-top:6px">Salle de Guerre · Cycle <span id="ls-cycle">—</span></div>
+        </div>
+      </div>
+      <div style="width:100%;margin-bottom:20px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:#3a5a7a;text-transform:uppercase;text-align:center;margin-bottom:16px">Choisissez votre divinité</div>
+        ${deityCards}
+      </div>
+      <div style="width:100%;max-width:340px;position:relative;margin-bottom:12px">
+        <input id="ls-pw" type="password" placeholder="Code secret" autocomplete="current-password"
+          style="width:100%;padding:13px 44px 13px 16px;border-radius:8px;border:1px solid #1a3a5a;background:rgba(255,255,255,.04);color:#cfe4f7;font-family:Rajdhani,sans-serif;font-size:14px;font-weight:600;letter-spacing:.08em;outline:none;text-align:center;transition:border-color .2s;box-sizing:border-box"
+          onkeydown="if(event.key==='Enter')loginScreenSubmit()">
+        <button onclick="loginTogglePw()" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#3a5a7a;cursor:pointer;font-size:18px;line-height:1;padding:0"><i class="ti ti-eye" id="ls-eye"></i></button>
+      </div>
+      <div id="ls-err" style="font-size:11px;color:#cc3030;min-height:16px;margin-bottom:10px;text-align:center"></div>
+      <button id="ls-btn" onclick="loginScreenSubmit()" disabled
+        style="width:100%;max-width:340px;padding:14px;border-radius:10px;font-family:Cinzel,Rajdhani,sans-serif;font-size:14px;font-weight:700;letter-spacing:.12em;cursor:pointer;border:none;background:linear-gradient(135deg,#c8901a,#f0c060);color:#04080f;transition:all .2s;opacity:.4"
+      >ENTRER DANS LE CONSEIL</button>
+      <div id="ls-display" style="margin-top:14px;font-size:11px;color:#2a4a6a;letter-spacing:.06em;text-align:center;min-height:16px"></div>
+    </div>
+  `;
+
+  const cycleEl = document.getElementById('ls-cycle');
+  if (cycleEl) cycleEl.textContent = window.VV?.CYCLE || '—';
+  window._loginSelId = null;
+}
+
+window.loginSelectDeity = function(id, color) {
+  window._loginSelId = id;
+  document.querySelectorAll('[id^="lcard-"]').forEach(c => {
+    c.style.borderColor = '#1a2e4a';
+    c.style.background = 'rgba(255,255,255,.02)';
+    c.style.boxShadow = 'none';
+  });
+  const card = document.getElementById('lcard-' + id);
+  if (card) {
+    card.style.borderColor = color;
+    card.style.background = color + '15';
+    card.style.boxShadow = '0 0 12px ' + color + '44';
+  }
+  const d = window.VV.DEITIES.find(x => x.id === id);
+  const disp = document.getElementById('ls-display');
+  if (disp && d) disp.textContent = d.name + (d.player ? ' · ' + d.player : '');
+  const btn = document.getElementById('ls-btn');
+  if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.boxShadow = '0 4px 20px ' + color + '66'; }
+  const screen = document.getElementById('vv-login-screen');
+  if (screen) screen.style.background = 'radial-gradient(ellipse at center, ' + color + '0d 0%, #020508 65%)';
+};
+
+window.loginTogglePw = function() {
+  const pw = document.getElementById('ls-pw');
+  const eye = document.getElementById('ls-eye');
+  if (!pw) return;
+  pw.type = pw.type === 'password' ? 'text' : 'password';
+  if (eye) eye.className = pw.type === 'password' ? 'ti ti-eye' : 'ti ti-eye-off';
+};
+
+window.loginScreenSubmit = function() {
+  const id = window._loginSelId;
+  const pw = document.getElementById('ls-pw')?.value;
+  const err = document.getElementById('ls-err');
+  const btn = document.getElementById('ls-btn');
+  if (!id) { if (err) err.textContent = 'Sélectionnez votre divinité.'; return; }
+  const d = window.VV.getD(id);
+  if (!d?.pass || d.pass !== pw) {
+    if (err) err.textContent = 'Code secret incorrect.';
+    const p = document.getElementById('ls-pw');
+    if (p) { p.style.borderColor = '#cc3030'; setTimeout(() => { if (p) p.style.borderColor = '#1a3a5a'; }, 800); }
+    return;
+  }
+  if (btn) { btn.textContent = 'CONNEXION…'; btn.disabled = true; }
+  const screen = document.getElementById('vv-login-screen');
+  if (screen) {
+    screen.style.transition = 'opacity .5s ease';
+    screen.style.opacity = '0';
+    setTimeout(() => {
+      screen.style.display = 'none';
+      me = d;
+      const bl = $('btn-login');
+      if (bl) bl.innerHTML = `<i class="ti ti-user-check"></i> ${d.name}`;
+      const ba = $('btn-admin');
+      if (ba) ba.style.display = 'inline-flex';
+      selDeity = d.id;
+      const myCapRow = window.VV.attacks.find(a => a.attacker === d.id && a.capitulation);
+      capitulation = myCapRow ? myCapRow.capitulation : null;
+      renderDock();
+      window.VV.globe.buildDots();
+      renderPlayerPanel();
+      updateWarningTicker();
+      showFactionOrgBtn(d.id);
+      window.VV.onZoneClick('France');
+    }, 500);
+  }
+};
 function doLogin() {
   const id = $('login-sel').value;
   const pw = $('login-pw').value;
   const d  = getD(id);
   if (!d?.pass || d.pass !== pw) { $('login-err').textContent = 'Identifiants incorrects'; return; }
   me = d;
-  window.VV.me = d;
   closeModal('modal-login');
   const bl = $('btn-login');
   if (bl) bl.innerHTML = `<i class="ti ti-user-check"></i> ${d.name}`;
@@ -1243,9 +1183,6 @@ function doLogin() {
   window.VV.globe.buildDots();
   renderPlayerPanel();
   updateWarningTicker();
-  // Charger les notifications de crise
-  window.VV.crises?.loadNotifs();
-  window.VV.crises?.injectNotifBtn();
   // Afficher le bouton de faction
   showFactionOrgBtn(d.id);
 }
@@ -1348,12 +1285,9 @@ async function init() {
   window.VV.globe.init(world);
   renderDock();
   renderRankingPanel();
-  // Afficher France par défaut
-  if (window.VV.ZONES['France']) {
-    window.VV.onZoneClick('France');
-  } else {
-    showPrompt();
-  }
+  showPrompt();
+  // Ouvrir l'écran de connexion au chargement
+  openLogin();
   setInterval(fullRefresh, CFG.REFRESH_MIN * 60 * 1000);
 }
 
@@ -1465,11 +1399,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Boutons faction (placeholder — fonctionnalité à définir)
-document.getElementById('btn-grande-societe')?.addEventListener('click', () => {
-    if (typeof openGrandeSociete === 'function') {
-        openGrandeSociete(me?.id || null);
-    }
-});
+  document.getElementById('btn-grande-societe')?.addEventListener('click', () => {
+    alert('La Grande Société — fonctionnalité à venir.');
+  });
   document.getElementById('btn-experreducti')?.addEventListener('click', () => {
     if (typeof openExperreducti === 'function') {
       openExperreducti(me?.id || null);
