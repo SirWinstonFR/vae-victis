@@ -719,6 +719,7 @@ window.closeCriseModal   = closeCriseModal;
 window.confirmCrise      = confirmCrise;
 
 // Appeler au login via app.js
+window.VV = window.VV || {};
 window.VV.crises = {
   loadNotifs:    loadNotifications,
   injectNotifBtn: injectNotifButton,
