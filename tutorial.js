@@ -647,10 +647,23 @@
       window.VV.setMe(d);
     }
 
+    // Mettre à jour selDeity pour que l'app considère ce dieu comme "moi"
+    if (typeof selDeity !== 'undefined') { window._vvt_realSelDeity = window._vvt_realSelDeity || selDeity; }
+    try { window.selDeity = d.id; } catch(e) {}
+
+    // Vider les attaques fictives du chapitre précédent
+    if (window.VV.attacks) {
+      window.VV.attacks = window.VV.attacks.filter(a => a._tuto !== true);
+    }
+
     // Rafraîchir toute l'interface via le bridge
     try {
       if (typeof window.VV.refreshUI === 'function') {
         window.VV.refreshUI();
+      }
+      // Mettre à jour le bouton faction pour le bon dieu
+      if (typeof showFactionOrgBtn === 'function') {
+        showFactionOrgBtn(d.id);
       }
       // Naviguer vers la zone de départ cohérente avec le dieu
       const startZone = { athena: 'Grèce & Balkans', judgment: 'USA', isis: 'Maghreb' }[godKey];
@@ -692,8 +705,14 @@
     // Restaurer le vrai joueur connecté
     if (window._vvt_realMe !== undefined) {
       if (typeof window.VV?.setMe === 'function') window.VV.setMe(window._vvt_realMe);
+      // Restaurer selDeity
+      try { window.selDeity = window._vvt_realSelDeity || null; } catch(e) {}
       delete window._vvt_realMe;
-      try { if (typeof window.VV?.refreshUI === 'function') window.VV.refreshUI(); } catch(e) {}
+      delete window._vvt_realSelDeity;
+      try {
+        if (typeof window.VV?.refreshUI === 'function') window.VV.refreshUI();
+        if (window._vvt_realMe && typeof showFactionOrgBtn === 'function') showFactionOrgBtn(window._vvt_realMe.id);
+      } catch(e) {}
     }
     ['vvt-topbar','vvt-band-top','vvt-band-bot','vvt-band-left','vvt-band-right',
      'vvt-spotlight-ring','vvt-bubble','vvt-splash','vvt-finish','vvt-css'].forEach(id => {
