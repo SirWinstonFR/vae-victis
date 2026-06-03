@@ -268,6 +268,7 @@ async function loadData() {
         dieu1:    (r.dieu1 || '').trim(),
         dieu2:    (r.dieu2 || '').trim(),
         bio:      (r.leader_bio || '').trim(),
+        idees:    (() => { try { return JSON.parse(r.idees_nationales || '[]'); } catch(e) { return []; } })(),
       };
     });
 
@@ -820,6 +821,10 @@ function renderZonePanel(zoneName) {
   $('back-btn')?.addEventListener('click', clearZone);
   bindTerrButtons();
   renderRankingPanel(); // Update active state
+  // Idées nationales + crises
+  if (typeof window.VV?.crisis?.renderInPanel === 'function') {
+    window.VV.crisis.renderInPanel(zoneName);
+  }
 }
 
 function renderAlignTriangle(ax=0.5, ay=0.5) {
