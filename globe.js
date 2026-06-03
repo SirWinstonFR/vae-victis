@@ -43,23 +43,23 @@ function initGlobe(world) {
     .style('display', 'block');
 
   // Fond
-  svgSel.append('rect').attr('width', W).attr('height', H).attr('fill', '#070d18');
+  svgSel.append('rect').attr('width', W).attr('height', H).attr('fill', '#050b14');
 
   // Halo atmosphérique
   const defs = svgSel.append('defs');
   const atmoGrad = defs.append('radialGradient')
     .attr('id', 'atmo-grad')
     .attr('cx', '50%').attr('cy', '50%').attr('r', '50%');
-  atmoGrad.append('stop').attr('offset', '85%').attr('stop-color', '#0d2848').attr('stop-opacity', 0);
-  atmoGrad.append('stop').attr('offset', '100%').attr('stop-color', '#2060aa').attr('stop-opacity', .4);
+  atmoGrad.append('stop').attr('offset', '85%').attr('stop-color', '#0a2040').attr('stop-opacity', 0);
+  atmoGrad.append('stop').attr('offset', '100%').attr('stop-color', '#1a5090').attr('stop-opacity', .35);
 
   // Océan
   svgSel.append('circle')
     .attr('class', 'globe-ocean')
     .attr('cx', W / 2).attr('cy', H / 2)
     .attr('r', proj.scale())
-    .attr('fill', '#0d1e32')
-    .attr('stroke', '#2a4a7a').attr('stroke-width', .8);
+    .attr('fill', '#081422')
+    .attr('stroke', '#1a3060').attr('stroke-width', .8);
 
   // Atmosphère
   svgSel.append('circle')
@@ -81,7 +81,7 @@ function initGlobe(world) {
     .datum(d3.geoGraticule()())
     .attr('d', _path)
     .attr('fill', 'none')
-    .attr('stroke', '#1e3a52')
+    .attr('stroke', '#162a3e')
     .attr('stroke-width', .25)
     .attr('opacity', .6);
 
