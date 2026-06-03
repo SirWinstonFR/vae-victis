@@ -5,11 +5,12 @@
 // ================================================================
 
 // ---- CHEFS DE PANTHÉON ----------------------------------------
-const PANTHEON_CHIEFS = {
+window.PANTHEON_CHIEFS = window.PANTHEON_CHIEFS || {
   sovereign: 'liberty',
   olympien:  'zeus',
   shemning:  'entite',
 };
+const PANTHEON_CHIEFS = window.PANTHEON_CHIEFS;
 
 // ---- INJECTION CSS --------------------------------------------
 (function injectCriseStyles() {
