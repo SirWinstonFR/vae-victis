@@ -274,6 +274,9 @@ async function loadData() {
       };
     });
 
+    // Exposer nations sur window.VV pour mapmode-influence.js
+    window.VV.NATIONS = nations;
+
     // Situations
     window.VV.situations = situ.filter(r => r.zone && r.type).map(r => ({
       zone:      r.zone.trim(),
