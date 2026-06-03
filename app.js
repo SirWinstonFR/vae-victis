@@ -1747,16 +1747,23 @@ function renderHubMain() {
     ].join(' ');
   }
 
+  // Add tiny gap to avoid degenerate arcs when a segment = 100% or 0%
+  const GAP = 0.001;
+  const nonZero = segments.filter(s => s.val > 0);
   let startAngle = 0;
   const paths = segments.map(seg => {
+    if (seg.val === 0) return { ...seg, path: null, lx:0, ly:0, pct:0, sweep:0 };
     const pct      = seg.val / total;
-    const sweep    = pct * 2 * Math.PI;
+    // If only one segment, draw almost-full circle (gap at top)
+    const sweep    = nonZero.length === 1
+      ? 2 * Math.PI - GAP
+      : pct * 2 * Math.PI - GAP;
     const endAngle = startAngle + sweep;
     const midAngle = startAngle + sweep / 2;
     const labelR   = (R + r) / 2;
     const lp       = polarToCart(midAngle, labelR);
     const path     = makeArcPath(startAngle, endAngle, R, r);
-    startAngle     = endAngle;
+    startAngle     = startAngle + pct * 2 * Math.PI; // advance by full slice
     return { ...seg, path, lx: lp.x, ly: lp.y, pct, sweep };
   });
 
@@ -1783,7 +1790,7 @@ function renderHubMain() {
         <!-- Camembert -->
         <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
           <svg viewBox="0 0 200 200" style="width:200px;height:200px;overflow:visible" xmlns="http://www.w3.org/2000/svg">
-            ${paths.map(p => `
+            ${paths.filter(p=>p.path).map(p => `
               <path d="${p.path}" fill="${p.color}" opacity=".85" stroke="var(--c-bg1)" stroke-width="2"
                 style="cursor:pointer;transition:opacity .15s"
                 onmouseover="this.style.opacity='1'"
