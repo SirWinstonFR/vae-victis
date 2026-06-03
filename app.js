@@ -943,6 +943,19 @@ function bindTerrButtons() {
   );
 }
 
+function getDeityPoints(deityId) {
+  // Find row in pointsData by deity id (first column)
+  const row = pointsData.find(r => {
+    const firstVal = Object.values(r)[0];
+    return firstVal?.toLowerCase?.() === deityId.toLowerCase();
+  }) || {};
+  return {
+    territoire: Number(row['Territoire'] || row['territoire'] || 0),
+    organisation: Number(row['Organisation'] || row['organisation'] || 0),
+    societal: Number(row['Sociétal'] || row['societal'] || row['Societal'] || 0),
+  };
+}
+
 function renderPlayerPanel() {
   if (!me) return;
   const myT = allT().filter(t => t.owner===me.id);
@@ -964,6 +977,40 @@ function renderPlayerPanel() {
         <div style="font-size:10px;color:${faction?faction.color:'var(--c-text3)'}">${faction?.name||''}</div>
         <div style="font-size:10px;color:var(--c-text3)">${me.pi}PI · ${myT.length} territoire${myT.length>1?'s':''}</div>
         <button class="btn btn-info" style="margin-top:5px;font-size:10px;padding:3px 8px" onclick="openInfluenceModal('${me.id}')"><i class="ti ti-chart-radar"></i> Mon influence</button>
+      </div>
+    </div>
+
+    ${(() => {
+      const pts = getDeityPoints(me.id);
+      const total = pts.territoire + pts.organisation + pts.societal;
+      const maxVal = Math.max(pts.territoire, pts.organisation, pts.societal, 1);
+      const bars = [
+        { label: 'Territoires', icon: 'ti-map-pin', val: pts.territoire, color: '#3a7acc' },
+        { label: 'Organisations', icon: 'ti-building', val: pts.organisation, color: '#c8901a' },
+        { label: 'Sociétal', icon: 'ti-users', val: pts.societal, color: '#2a9a4a' },
+      ];
+      return `<div style="background:var(--c-bg2);border:1px solid var(--c-border);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px">
+        <div style="font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--c-text3);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+          <span><i class="ti ti-chart-bar" style="margin-right:4px"></i>Décomposition des points</span>
+          <span style="color:var(--c-text1);font-size:13px">${total} PI total</span>
+        </div>
+        ${bars.map(b => `
+          <div style="margin-bottom:8px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--c-text2)">
+                <i class="ti ${b.icon}" style="font-size:12px;color:${b.color}"></i>
+                ${b.label}
+              </div>
+              <span style="font-size:12px;font-weight:600;color:${b.color}">${b.val} PI</span>
+            </div>
+            <div style="height:5px;background:var(--c-bg);border-radius:3px;overflow:hidden;border:1px solid var(--c-border)">
+              <div style="height:100%;width:${Math.round(b.val/maxVal*100)}%;background:${b.color};border-radius:3px;transition:width .4s ease"></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>`;
+    })()}
+    <div style="display:none">
       </div>
     </div>
 
