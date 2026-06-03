@@ -1513,6 +1513,11 @@ document.addEventListener('DOMContentLoaded', () => {
     openHistModal(cycles);
   });
 
+  // News
+  $('btn-news')?.addEventListener('click', () => {
+    if (typeof openNews === 'function') openNews();
+  });
+
   $('btn-fandom')?.addEventListener('click', () => window.open(CFG.FANDOM_URL, '_blank'));
 
   // Situations
