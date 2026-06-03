@@ -1717,34 +1717,47 @@ function renderHubMain() {
   const pts     = getDeityPoints(_hubDeityId);
   const total   = pts.territoire + pts.organisation + pts.societal || 1;
 
-  // SVG Donut chart
-  const W = 180, cx = 90, cy = 90, R = 70, r = 42;
+  // SVG Donut chart — calcul arc correct
+  const cx = 100, cy = 100, R = 75, r = 44;
   const segments = [
     { label:'Territoires',   val:pts.territoire,   color:'#3a7acc', icon:'ti-map-pin',   view:'territoires' },
     { label:'Organisations', val:pts.organisation, color:'#c8901a', icon:'ti-building',  view:'organisations' },
     { label:'Sociétal',      val:pts.societal,     color:'#2a9a4a', icon:'ti-users',     view:'societal' },
   ];
 
-  let currentAngle = -Math.PI / 2;
+  function polarToCart(angle, radius) {
+    return {
+      x: cx + radius * Math.cos(angle - Math.PI / 2),
+      y: cy + radius * Math.sin(angle - Math.PI / 2),
+    };
+  }
+
+  function makeArcPath(startAngle, endAngle, outerR, innerR) {
+    const s1 = polarToCart(startAngle, outerR);
+    const e1 = polarToCart(endAngle,   outerR);
+    const s2 = polarToCart(endAngle,   innerR);
+    const e2 = polarToCart(startAngle, innerR);
+    const large = endAngle - startAngle > Math.PI ? 1 : 0;
+    return [
+      `M ${s1.x.toFixed(2)} ${s1.y.toFixed(2)}`,
+      `A ${outerR} ${outerR} 0 ${large} 1 ${e1.x.toFixed(2)} ${e1.y.toFixed(2)}`,
+      `L ${s2.x.toFixed(2)} ${s2.y.toFixed(2)}`,
+      `A ${innerR} ${innerR} 0 ${large} 0 ${e2.x.toFixed(2)} ${e2.y.toFixed(2)}`,
+      'Z'
+    ].join(' ');
+  }
+
+  let startAngle = 0;
   const paths = segments.map(seg => {
-    const pct   = seg.val / total;
-    const angle = pct * 2 * Math.PI;
-    const x1    = cx + R * Math.cos(currentAngle);
-    const y1    = cy + R * Math.sin(currentAngle);
-    currentAngle += angle;
-    const x2    = cx + R * Math.cos(currentAngle);
-    const y2    = cy + R * Math.sin(currentAngle);
-    const large = angle > Math.PI ? 1 : 0;
-    // Inner points
-    const ix1 = cx + r * Math.cos(currentAngle - angle);
-    const iy1 = cy + r * Math.sin(currentAngle - angle);
-    const ix2 = cx + r * Math.cos(currentAngle);
-    const iy2 = cy + r * Math.sin(currentAngle);
-    // Mid angle for label
-    const mid  = currentAngle - angle / 2;
-    const lx   = cx + (R + r) / 2 * Math.cos(mid);
-    const ly   = cy + (R + r) / 2 * Math.sin(mid);
-    return { ...seg, path: `M${x1.toFixed(1)},${y1.toFixed(1)} A${R},${R} 0 ${large},1 ${x2.toFixed(1)},${y2.toFixed(1)} L${ix2.toFixed(1)},${iy2.toFixed(1)} A${r},${r} 0 ${large},0 ${ix1.toFixed(1)},${iy1.toFixed(1)} Z`, lx, ly, pct };
+    const pct      = seg.val / total;
+    const sweep    = pct * 2 * Math.PI;
+    const endAngle = startAngle + sweep;
+    const midAngle = startAngle + sweep / 2;
+    const labelR   = (R + r) / 2;
+    const lp       = polarToCart(midAngle, labelR);
+    const path     = makeArcPath(startAngle, endAngle, R, r);
+    startAngle     = endAngle;
+    return { ...seg, path, lx: lp.x, ly: lp.y, pct, sweep };
   });
 
   modal.innerHTML = `
@@ -1769,19 +1782,19 @@ function renderHubMain() {
 
         <!-- Camembert -->
         <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
-          <svg viewBox="0 0 ${W} ${W}" style="width:200px;height:200px;overflow:visible" xmlns="http://www.w3.org/2000/svg">
+          <svg viewBox="0 0 200 200" style="width:200px;height:200px;overflow:visible" xmlns="http://www.w3.org/2000/svg">
             ${paths.map(p => `
               <path d="${p.path}" fill="${p.color}" opacity=".85" stroke="var(--c-bg1)" stroke-width="2"
                 style="cursor:pointer;transition:opacity .15s"
                 onmouseover="this.style.opacity='1'"
                 onmouseout="this.style.opacity='.85'"
                 onclick="hubGoTo('${p.view}')"/>
-              ${p.val > 0 ? `<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="700" fill="white" pointer-events="none">${Math.round(p.pct*100)}%</text>` : ''}
+              ${p.val > 0 && p.sweep > 0.3 ? `<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="700" fill="white" pointer-events="none">${Math.round(p.pct*100)}%</text>` : ''}
             `).join('')}
             <!-- Centre -->
-            <circle cx="${cx}" cy="${cy}" r="${r-4}" fill="var(--c-bg1)" stroke="var(--c-border)" stroke-width="1"/>
-            <text x="${cx}" y="${cy-6}" text-anchor="middle" font-size="18" font-weight="700" fill="var(--c-text1)" font-family="Rajdhani,sans-serif">${total}</text>
-            <text x="${cx}" y="${cy+10}" text-anchor="middle" font-size="9" fill="var(--c-text3)" font-family="Rajdhani,sans-serif" letter-spacing=".06em">PI TOTAL</text>
+            <circle cx="100" cy="100" r="40" fill="var(--c-bg1)" stroke="var(--c-border)" stroke-width="1"/>
+            <text x="100" y="94" text-anchor="middle" font-size="18" font-weight="700" fill="var(--c-text1)" font-family="Rajdhani,sans-serif">${total}</text>
+            <text x="100" y="110" text-anchor="middle" font-size="9" fill="var(--c-text3)" font-family="Rajdhani,sans-serif" letter-spacing=".06em">PI TOTAL</text>
           </svg>
           <div style="font-size:10px;color:var(--c-text4);font-family:Rajdhani,sans-serif;letter-spacing:.06em;text-align:center">Cliquez une part pour le détail</div>
         </div>
