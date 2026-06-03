@@ -733,12 +733,12 @@
   }
 
   function waitForLogin(cb) {
-    // Attend que window.me soit défini (= joueur connecté)
-    // Vérifie toutes les 500ms, abandonne après 5 minutes
+    // Attend que window.VV.me soit défini (= joueur connecté via bridge app.js)
+    // me est une let locale dans app.js, exposée via window.VV.me au login
     let tries = 0;
     const timer = setInterval(() => {
       tries++;
-      if (window.me && window.me.id) {
+      if (window.VV?.me?.id) {
         clearInterval(timer);
         cb();
       }
