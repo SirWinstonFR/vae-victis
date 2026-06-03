@@ -963,6 +963,7 @@ function renderPlayerPanel() {
         <div style="font-family:Rajdhani,sans-serif;font-size:15px;font-weight:700;color:var(--c-text1)">${me.name}</div>
         <div style="font-size:10px;color:${faction?faction.color:'var(--c-text3)'}">${faction?.name||''}</div>
         <div style="font-size:10px;color:var(--c-text3)">${me.pi}PI · ${myT.length} territoire${myT.length>1?'s':''}</div>
+        <button class="btn btn-info" style="margin-top:5px;font-size:10px;padding:3px 8px" onclick="openInfluenceModal('${me.id}')"><i class="ti ti-chart-radar"></i> Mon influence</button>
       </div>
     </div>
 
