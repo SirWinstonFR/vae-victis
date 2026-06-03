@@ -11,7 +11,7 @@
 
 :root {
   /* Palette principale */
-  --c-bg:        #070d18;
+  --c-bg:        #050b14;
   --c-bg1:       #080f1a;
   --c-bg2:       #0c1622;
   --c-bg3:       #101d2d;
@@ -500,11 +500,11 @@ html, body {
 }
 
 /* Globe country styles */
-.country { fill: #0e1a2a; stroke: #1a2e44; stroke-width: .3; }
+.country { fill: #0c1825; stroke: #162a3e; stroke-width: .3; }
 .country.has-zone { cursor: pointer; transition: fill .12s; }
-.country.has-zone:hover { fill: #152438; }
-.country.active { fill: #1e4070 !important; stroke: #4a7acc; stroke-width: .8; }
-.country.zone-member { fill: #1e3a60 !important; }
+.country.has-zone:hover { fill: #162438; }
+.country.active { fill: #1a3a64 !important; stroke: #3a6aaa; stroke-width: .8; }
+.country.zone-member { fill: #162e50 !important; }
 .country.trans-member { fill: #1a3050 !important; stroke: #2a5a8a; stroke-width: .5; }
 
 /* Zoom controls */
