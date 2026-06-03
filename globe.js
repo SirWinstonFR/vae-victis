@@ -24,6 +24,7 @@ function initGlobe(world) {
   const W = wrap.clientWidth, H = wrap.clientHeight;
 
   _countries = topojson.feature(world, world.objects.countries);
+  // Exposer pour mapmode-influence.js
   window.VV._world = _countries;
 
   proj = d3.geoOrthographic()
@@ -33,8 +34,9 @@ function initGlobe(world) {
     .rotate([-15, -46]);
 
   _path = d3.geoPath().projection(proj);
-  window.VV._proj  = proj;   // référence directe pour mapmode-influence.js
-  window.VV._path  = _path;  // idem
+  // Exposer pour mapmode-influence.js
+  window.VV._proj = proj;
+  window.VV._path = _path;
 
   svgSel = d3.select('#world-svg')
     .attr('width', W).attr('height', H)
@@ -175,7 +177,7 @@ function initGlobe(world) {
 function redrawGlobe() {
   if (!_path || !gMap) return;
   _path = d3.geoPath().projection(proj);
-  window.VV._path = _path; // sync pour mapmode
+  window.VV._path = _path; // sync mapmode
 
   gMap.select('path:first-child').attr('d', d3.geoPath().projection(proj)(d3.geoGraticule()()));
   gMap.selectAll('path.country').attr('d', _path);
@@ -496,6 +498,4 @@ window.VV.globe = {
   zoomReset: zoomGlobeReset,
   isVisible,
   isDragging: () => dragging,
-  _proj:   () => proj,
-  _pathFn: () => _path,
 };
