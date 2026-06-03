@@ -420,13 +420,13 @@ let pointsData = []; // Toutes les lignes du sheet Points
 const INFLUENCE_CRITERIA = [
   { key: null, label: 'Célébrations récurrentes',           icon: '🕯️', desc: 'Fêtes, rituels, célébrations régulières dans la société' },
   { key: null, label: 'Enseignement obligatoire',           icon: '📚', desc: 'Présence dans les cursus scolaires et universitaires' },
-  { key: null, label: 'Opposition d'autres cultes',        icon: '⚔️', desc: 'Capacité à contrer ou affaiblir les cultes rivaux' },
+  { key: null, label: "Opposition d'autres cultes",        icon: '⚔️', desc: "Capacité à contrer ou affaiblir les cultes rivaux" },
   { key: null, label: 'Intégration politique ou juridique', icon: '⚖️', desc: 'Influence sur les lois et institutions politiques' },
-  { key: null, label: 'Présence culturelle massive',        icon: '🎭', desc: 'Arts, médias, culture populaire imprégnés de l'influence' },
+  { key: null, label: 'Présence culturelle massive',        icon: '🎭', desc: "Arts, médias, culture populaire imprégnés de l'influence" },
   { key: null, label: 'Héritage idéologique ou scientifique', icon: '🔬', desc: 'Impact sur la pensée, la science et les idéologies' },
   { key: null, label: 'Utilité concrète pour la population', icon: '🤝', desc: 'Services, aides et bénéfices directs aux fidèles' },
   { key: null, label: 'Transmission familiale et sociale',  icon: '👨‍👩‍👧', desc: 'Transmission de génération en génération dans les familles' },
-  { key: null, label: 'Présence matérielle visible',        icon: '🏛️', desc: 'Temples, monuments, symboles visibles dans l'espace public' },
+  { key: null, label: 'Présence matérielle visible',        icon: '🏛️', desc: "Temples, monuments, symboles visibles dans l'espace public" },
   { key: null, label: 'Peur ou menace associée',            icon: '⚡', desc: 'Crainte inspirée, influence par la menace ou le respect' },
 ];
 
