@@ -57,6 +57,7 @@ window.VV.COUNTRY_MAP = {};
 window.VV.attacks     = [];
 window.VV.situations  = [];
 window.VV.showSituations = false;
+window.VV.mapColorMode = 'divine'; // 'divine' | 'faction'
 let histMode = false;
 let histCycle = null;
 let histData  = {}; // cycle -> { territoire_id: proprietaire }
@@ -102,10 +103,26 @@ window.VV.dotColor = function(t) {
   const isAtked = window.VV.attacks.some(a => a.territory === t.id);
   const isCap   = capitulation === t.id;
   const owner   = t.owner && t.owner !== N ? getD(t.owner) : null;
+
+  // Priorités communes aux deux modes
   if (isCap)           return '#cc3030';
   if (isAtked && isMe) return '#2a6aaa';
   if (isAtked)         return '#c87020';
-  if (owner)           return isMe ? '#1a8a4a' : owner.color;
+
+  if (window.VV.mapColorMode === 'faction' && me) {
+    if (!owner) return '#2a4060'; // neutre
+    if (isMe) return '#1a8a4a'; // mes territoires = vert
+    const myFaction  = getFaction(me.id);
+    const ownFaction = getFaction(owner.id);
+    if (!ownFaction) return '#2a4060';
+    if (ownFaction.name === myFaction?.name) return '#c8901a'; // alliés faction = orange
+    // Couleur par faction ennemie
+    const FC = { 'Sovereign':'#3a7acc', 'Olympiens':'#c8901a', 'Shemning':'#b02828' };
+    return FC[ownFaction.name] || owner.color;
+  }
+
+  // Mode divin (défaut)
+  if (owner) return isMe ? '#1a8a4a' : owner.color;
   return '#2a4060';
 };
 
@@ -1580,6 +1597,18 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   $('btn-fandom')?.addEventListener('click', () => window.open(CFG.FANDOM_URL, '_blank'));
+
+  // Mode couleur carte
+  $('btn-mapmode')?.addEventListener('click', function() {
+    window.VV.mapColorMode = window.VV.mapColorMode === 'divine' ? 'faction' : 'divine';
+    const isFacton = window.VV.mapColorMode === 'faction';
+    this.classList.toggle('active', isFacton);
+    this.title = isFacton ? 'Mode : Faction (cliquer pour Divin)' : 'Mode : Divin (cliquer pour Faction)';
+    // Mettre à jour tooltip
+    this.querySelector('i').className = isFacton ? 'ti ti-flag' : 'ti ti-palette';
+    window.VV.globe.buildDots();
+    window.VV.globe.buildBadges();
+  });
 
   // Situations
   $('btn-situation')?.addEventListener('click', function() {
