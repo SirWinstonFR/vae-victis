@@ -22,6 +22,7 @@ const CFG = {
     situations:   '1166964994',
     nations:      '1443319453',
     historique:   '1432315292',
+    points:       '0',
   },
 };
 
@@ -412,6 +413,195 @@ function selectHistCycle(cycle) {
   enterHistMode(cycle);
 }
 
+
+// ---- INFLUENCE SOCIETALE -----------------------------------
+let pointsData = []; // Toutes les lignes du sheet Points
+
+const INFLUENCE_CRITERIA = [
+  { key: null, label: 'Célébrations récurrentes',           icon: '🕯️', desc: 'Fêtes, rituels, célébrations régulières dans la société' },
+  { key: null, label: 'Enseignement obligatoire',           icon: '📚', desc: 'Présence dans les cursus scolaires et universitaires' },
+  { key: null, label: 'Opposition d'autres cultes',        icon: '⚔️', desc: 'Capacité à contrer ou affaiblir les cultes rivaux' },
+  { key: null, label: 'Intégration politique ou juridique', icon: '⚖️', desc: 'Influence sur les lois et institutions politiques' },
+  { key: null, label: 'Présence culturelle massive',        icon: '🎭', desc: 'Arts, médias, culture populaire imprégnés de l'influence' },
+  { key: null, label: 'Héritage idéologique ou scientifique', icon: '🔬', desc: 'Impact sur la pensée, la science et les idéologies' },
+  { key: null, label: 'Utilité concrète pour la population', icon: '🤝', desc: 'Services, aides et bénéfices directs aux fidèles' },
+  { key: null, label: 'Transmission familiale et sociale',  icon: '👨‍👩‍👧', desc: 'Transmission de génération en génération dans les familles' },
+  { key: null, label: 'Présence matérielle visible',        icon: '🏛️', desc: 'Temples, monuments, symboles visibles dans l'espace public' },
+  { key: null, label: 'Peur ou menace associée',            icon: '⚡', desc: 'Crainte inspirée, influence par la menace ou le respect' },
+];
+
+async function loadPointsData() {
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${CFG.SHEET_ID}/gviz/tq?tqx=out:json&gid=${CFG.GIDS.points}`;
+    const r = await fetch(url);
+    const raw = await r.text();
+    const m = raw.match(/setResponse\(([\s\S]*)\)/);
+    if (!m) return;
+    const data = JSON.parse(m[1]);
+    const cols = data.table.cols.map(c => (c.label||'').trim());
+    const rows = data.table.rows || [];
+    pointsData = rows.map(r => Object.fromEntries(cols.map((col,i) => [col, String(r?.c?.[i]?.v??'').trim()])));
+    // Map criteria to column keys from AG onwards
+    const agCols = cols.slice(32); // AG = index 32
+    INFLUENCE_CRITERIA.forEach((c, i) => { c.key = agCols[i] || null; });
+    console.log('[VV] Points chargés:', pointsData.length, 'divinités, critères:', agCols.slice(0,10));
+  } catch(e) {
+    console.warn('[VV] Points:', e);
+  }
+}
+
+function openInfluenceModal(deityId) {
+  const d = getD(deityId);
+  const faction = getFaction(deityId);
+  const row = pointsData.find(r => (r.id||r.ID||Object.values(r)[0])?.toLowerCase() === deityId.toLowerCase()) || {};
+
+  // Get scores
+  const scores = INFLUENCE_CRITERIA.map(c => ({
+    ...c,
+    val: Number(row[c.key] || 0),
+  }));
+  const total = scores.reduce((s, c) => s + c.val, 0);
+  const maxScore = 20;
+  const pct = Math.round(total / maxScore * 100);
+  const scoreColor = total >= 16 ? '#f0c060' : total >= 12 ? '#c8901a' : total >= 6 ? '#3a7acc' : '#cc3030';
+  const scoreLabel = total >= 16 ? 'Dominant' : total >= 12 ? 'Majeur' : total >= 6 ? 'Émergent' : 'Marginal';
+
+  // Radar points (10 criteria in a circle)
+  const radarSize = 120;
+  const cx = radarSize, cy = radarSize;
+  const maxR = 90;
+  const radarPoints = scores.map((s, i) => {
+    const angle = (i / scores.length) * Math.PI * 2 - Math.PI / 2;
+    const r = (s.val / 2) * maxR;
+    return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), lx: cx + (maxR + 18) * Math.cos(angle), ly: cy + (maxR + 18) * Math.sin(angle) };
+  });
+  const radarPath = radarPoints.map((p, i) => `${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') + ' Z';
+  const gridPath = [1,2].map(g => {
+    const r = (g/2) * maxR;
+    return scores.map((_, i) => {
+      const angle = (i / scores.length) * Math.PI * 2 - Math.PI / 2;
+      return `${i===0?'M':'L'}${(cx + r*Math.cos(angle)).toFixed(1)},${(cy + r*Math.sin(angle)).toFixed(1)}`;
+    }).join(' ') + ' Z';
+  }).join(' ');
+  const gridLines = scores.map((_, i) => {
+    const angle = (i / scores.length) * Math.PI * 2 - Math.PI / 2;
+    return `<line x1="${cx}" y1="${cy}" x2="${(cx + maxR*Math.cos(angle)).toFixed(1)}" y2="${(cy + maxR*Math.sin(angle)).toFixed(1)}" stroke="#1a2e4a" stroke-width=".8"/>`;
+  }).join('');
+
+  let modal = document.getElementById('modal-influence');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-influence';
+    modal.className = 'modal-bg';
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+  }
+
+  modal.innerHTML = `
+    <div style="
+      background:linear-gradient(160deg,#04080f,#060d1a,#08101e);
+      border:1px solid ${d.color}44;
+      border-radius:12px;
+      width:700px;max-width:95vw;max-height:90vh;
+      overflow-y:auto;
+      box-shadow:0 0 40px ${d.color}22,0 24px 60px rgba(0,0,0,.8);
+      font-family:'Rajdhani',sans-serif;
+      position:relative;
+    ">
+      <!-- Ligne déco -->
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,${d.color},transparent);border-radius:12px 12px 0 0"></div>
+
+      <!-- HEADER -->
+      <div style="padding:18px 22px 14px;border-bottom:1px solid #1a2e4a;display:flex;align-items:center;gap:14px">
+        <div style="width:44px;height:44px;border-radius:50%;overflow:hidden;border:2px solid ${d.color}66;background:#0d2040;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          ${d.avatar?`<img src="${d.avatar}" style="width:100%;height:100%;object-fit:cover">`:`<span style="font-size:14px;font-weight:700;color:${d.color}">${d.name.slice(0,2).toUpperCase()}</span>`}
+        </div>
+        <div>
+          <div style="font-size:16px;font-weight:700;color:#cfe4f7;letter-spacing:.06em">${d.name}</div>
+          <div style="font-size:10px;color:${faction?.color||'#6a8aaa'};letter-spacing:.08em;text-transform:uppercase">${faction?.name||''} · Influence Sociétale</div>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-size:28px;font-weight:700;color:${scoreColor};line-height:1">${total}<span style="font-size:14px;color:#3a5a7a">/${maxScore}</span></div>
+          <div style="font-size:10px;font-weight:700;color:${scoreColor};letter-spacing:.08em;text-transform:uppercase">${scoreLabel}</div>
+        </div>
+        <button onclick="document.getElementById('modal-influence').classList.remove('open')"
+          style="background:none;border:1px solid #1a2e4a;border-radius:6px;color:#6a8aaa;padding:5px 10px;cursor:pointer;font-family:Rajdhani,sans-serif;font-size:11px;margin-left:10px">✕</button>
+      </div>
+
+      <!-- JAUGE GLOBALE -->
+      <div style="padding:14px 22px;border-bottom:1px solid #1a2e4a;background:#040810">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:#3a5a7a;text-transform:uppercase;white-space:nowrap">Emprise sur la société</div>
+          <div style="flex:1;height:10px;background:#0a1628;border-radius:5px;border:1px solid #1a2e4a;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,${d.color},${scoreColor});border-radius:5px;transition:width .6s ease;position:relative">
+              <div style="position:absolute;right:0;top:0;bottom:0;width:20px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25));border-radius:0 5px 5px 0"></div>
+            </div>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:${scoreColor};white-space:nowrap">${pct}%</div>
+        </div>
+      </div>
+
+      <!-- CORPS : CRITÈRES + RADAR -->
+      <div style="display:grid;grid-template-columns:1fr 260px;gap:0;padding:0">
+
+        <!-- CRITÈRES -->
+        <div style="padding:16px 22px;border-right:1px solid #1a2e4a">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:#3a5a7a;text-transform:uppercase;margin-bottom:12px">Critères d'influence</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            ${scores.map(s => {
+              const dotColor = s.val === 2 ? '#f0c060' : s.val === 1 ? d.color : '#1a2e4a';
+              const bgColor  = s.val === 2 ? '#f0c06012' : s.val === 1 ? d.color+'0e' : 'transparent';
+              const label    = s.val === 2 ? 'STRONGHOLD' : s.val === 1 ? 'PRÉSENT' : 'ABSENT';
+              const lColor   = s.val === 2 ? '#f0c060' : s.val === 1 ? d.color : '#1a2e4a';
+              return `<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;border:1px solid ${s.val>0?dotColor+'33':'#0d1828'};background:${bgColor}">
+                <span style="font-size:16px;flex-shrink:0">${s.icon}</span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:12px;font-weight:600;color:${s.val>0?'#cfe4f7':'#2a4a6a'}">${s.label}</div>
+                  <div style="font-size:9px;color:#2a4a6a;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.desc}</div>
+                </div>
+                <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+                  <div style="width:9px;height:9px;border-radius:50%;background:${s.val>=1?dotColor:'#0a1628'};border:1px solid ${s.val>=1?dotColor:'#1a2e4a'};box-shadow:${s.val>=1?'0 0 4px '+dotColor+'88':'none'}"></div>
+                  <div style="width:9px;height:9px;border-radius:50%;background:${s.val>=2?dotColor:'#0a1628'};border:1px solid ${s.val>=2?dotColor:'#1a2e4a'};box-shadow:${s.val>=2?'0 0 4px '+dotColor+'88':'none'}"></div>
+                </div>
+                <div style="font-size:8px;font-weight:700;letter-spacing:.06em;color:${lColor};width:62px;text-align:right">${label}</div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- RADAR -->
+        <div style="padding:16px;display:flex;flex-direction:column;align-items:center;gap:12px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:#3a5a7a;text-transform:uppercase">Profil d'influence</div>
+          <svg viewBox="0 0 ${radarSize*2} ${radarSize*2}" style="width:220px;height:220px" xmlns="http://www.w3.org/2000/svg">
+            <!-- Grille -->
+            <path d="${gridPath}" fill="none" stroke="#1a2e4a" stroke-width=".8" opacity=".6"/>
+            ${gridLines}
+            <!-- Zone remplie -->
+            <path d="${radarPath}" fill="${d.color}33" stroke="${d.color}" stroke-width="1.5" stroke-linejoin="round"/>
+            <!-- Points -->
+            ${radarPoints.map((p,i) => scores[i].val > 0 ? `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="${scores[i].val===2?'#f0c060':d.color}" stroke="#04080f" stroke-width="1"/>` : '').join('')}
+            <!-- Icônes au bord -->
+            ${radarPoints.map((p,i) => `<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="12">${scores[i].icon}</text>`).join('')}
+          </svg>
+          <!-- Légende niveaux -->
+          <div style="display:flex;flex-direction:column;gap:6px;width:100%">
+            ${[{v:2,label:'Stronghold',color:'#f0c060'},{v:1,label:'Présent',color:d.color},{v:0,label:'Absent',color:'#1a2e4a'}].map(l=>`
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="display:flex;gap:3px">
+                  <div style="width:8px;height:8px;border-radius:50%;background:${l.v>=1?l.color:'#0a1628'};border:1px solid ${l.color}"></div>
+                  <div style="width:8px;height:8px;border-radius:50%;background:${l.v>=2?l.color:'#0a1628'};border:1px solid ${l.color}"></div>
+                </div>
+                <span style="font-size:10px;font-weight:600;color:${l.color};letter-spacing:.06em">${l.label}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  modal.classList.add('open');
+}
+
 // ---- APPS SCRIPT -------------------------------------------
 async function postScript(payload) {
   try {
@@ -532,7 +722,8 @@ function renderDeityPanel(d) {
     </div>
     <div class="info-row"><span class="ik">Attaques reçues</span><span class="iv" style="color:${n>0?'var(--c-danger)':'var(--c-text1)'}">${n}/2</span></div>
     ${n>=2?`<div class="notif notif-warn" style="margin-top:6px">Verrouillé — 2 attaques reçues</div>`:''}
-    ${canA?`<button class="btn btn-danger btn-full" style="margin-top:10px" id="panel-atk-btn"><i class="ti ti-sword"></i> Déclarer une attaque</button>`:''}
+    <button class="btn btn-info btn-full" style="margin-top:10px" onclick="openInfluenceModal('${d.id}')"><i class="ti ti-chart-radar"></i> Influence Sociétale</button>
+    ${canA?`<button class="btn btn-danger btn-full" style="margin-top:6px" id="panel-atk-btn"><i class="ti ti-sword"></i> Déclarer une attaque</button>`:''}
     ${!me?`<div style="font-size:10px;color:var(--c-text4);text-align:center;margin-top:10px">Connectez-vous pour interagir</div>`:''}
     <div class="divider"></div>
     <div class="sec">Territoires (${myT.length})</div>
@@ -980,19 +1171,6 @@ function openAtkModalDirect(ownerId, terrId) {
 async function confirmAttack() {
   const sel = $('atk-terr');
   if (!sel?.value) { alert('Choisissez un territoire cible'); return; }
-
-  // Mode tutoriel : simuler l'attaque sans appel réseau
-  if (window.VVTutorial?.active) {
-    window.VV.attacks.push({ attacker:me.id, target:pendingAtk.target, territory:sel.value, _tuto:true });
-    closeModal('modal-atk');
-    renderDock(); window.VV.globe.buildDots();
-    if (selZone) renderZonePanel(selZone);
-    else if (selTrans) renderTransPanel(selTrans);
-    else renderPlayerPanel();
-    updateWarningTicker();
-    return;
-  }
-
   const btn = $('atk-confirm');
   btn.disabled = true; btn.textContent = 'Envoi…';
   const res = await postScript({ action:'add_attack', cycle:CYCLE, attaquant:me.id, cible:pendingAtk.target, territoire_id:sel.value });
@@ -1161,7 +1339,7 @@ window.loginScreenSubmit = function() {
     screen.style.opacity = '0';
     setTimeout(() => {
       screen.style.display = 'none';
-      me = d; window.VV.me = d;
+      me = d;
       const bl = $('btn-login');
       if (bl) bl.innerHTML = `<i class="ti ti-user-check"></i> ${d.name}`;
       const ba = $('btn-admin');
@@ -1183,7 +1361,7 @@ function doLogin() {
   const pw = $('login-pw').value;
   const d  = getD(id);
   if (!d?.pass || d.pass !== pw) { $('login-err').textContent = 'Identifiants incorrects'; return; }
-  me = d; window.VV.me = d;
+  me = d;
   closeModal('modal-login');
   const bl = $('btn-login');
   if (bl) bl.innerHTML = `<i class="ti ti-user-check"></i> ${d.name}`;
@@ -1289,23 +1467,10 @@ async function fullRefresh() {
   else               showPrompt();
 }
 
-// ---- TUTORIAL BRIDGE (accès depuis tutorial.js) -------------------
-window.VV.setMe = function(d) {
-  me = d;
-  window.VV.me = d;
-};
-window.VV.refreshUI = function() {
-  renderDock();
-  if (me) renderPlayerPanel(); else showPrompt();
-  if (window.VV.globe?.buildDots) window.VV.globe.buildDots();
-  if (window.VV.globe?.buildBadges) window.VV.globe.buildBadges();
-  updateWarningTicker();
-};
-
 // ---- INIT --------------------------------------------------
 async function init() {
   const [, world] = await Promise.all([
-    loadData(),
+    loadData().then(() => loadPointsData()),
     fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r=>r.json()),
   ]);
 
