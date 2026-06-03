@@ -1611,21 +1611,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Mettre à jour la légende du globe
     const leg = document.getElementById('legend');
     if (leg) {
-      leg.innerHTML = isFaction ? \`
-        <div class="li"><div class="ld" style="background:#1a8a4a"></div>Vos territoires</div>
-        <div class="li"><div class="ld" style="background:#c8901a"></div>Votre faction</div>
-        <div class="li"><div class="ld" style="background:#3a7acc"></div>Sovereign</div>
-        <div class="li"><div class="ld" style="background:#b02828"></div>Shemning</div>
-        <div class="li"><div class="ld" style="background:#2a4060"></div>Neutre</div>
-        <div class="li"><div class="ld" style="background:#c87020"></div>Sous attaque</div>
-      \` : \`
-        <div class="li"><div class="ld" style="background:#1a8a4a"></div>Votre divinité</div>
-        <div class="li"><div class="ld" style="background:#3a7acc"></div>Autre divinité</div>
-        <div class="li"><div class="ld" style="background:#3d6480"></div>Neutre</div>
-        <div class="li"><div class="ld" style="background:#c87020"></div>Sous attaque</div>
-        <div class="li"><div class="ld" style="background:#cc3030"></div>Capitulation</div>
-        <div class="li"><div class="ld" style="background:#3a7acc"></div>Organisation</div>
-      \`;
+      if (isFaction) {
+        leg.innerHTML = '<div class="li"><div class="ld" style="background:#1a8a4a"></div>Vos territoires</div>'
+          + '<div class="li"><div class="ld" style="background:#c8901a"></div>Votre faction</div>'
+          + '<div class="li"><div class="ld" style="background:#3a7acc"></div>Sovereign</div>'
+          + '<div class="li"><div class="ld" style="background:#b02828"></div>Shemning</div>'
+          + '<div class="li"><div class="ld" style="background:#2a4060"></div>Neutre</div>'
+          + '<div class="li"><div class="ld" style="background:#c87020"></div>Sous attaque</div>';
+      } else {
+        leg.innerHTML = '<div class="li"><div class="ld" style="background:#1a8a4a"></div>Votre divinité</div>'
+          + '<div class="li"><div class="ld" style="background:#3a7acc"></div>Autre divinité</div>'
+          + '<div class="li"><div class="ld" style="background:#3d6480"></div>Neutre</div>'
+          + '<div class="li"><div class="ld" style="background:#c87020"></div>Sous attaque</div>'
+          + '<div class="li"><div class="ld" style="background:#cc3030"></div>Capitulation</div>'
+          + '<div class="li"><div class="ld" style="background:#3a7acc"></div>Organisation</div>';
+      }
     }
   });
 
