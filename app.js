@@ -22,8 +22,6 @@ const CFG = {
     situations:   '1166964994',
     nations:      '1443319453',
     historique:   '1432315292',
-    points:       '0',
-    points:       '0',
   },
 };
 
@@ -103,25 +101,19 @@ window.VV.dotColor = function(t) {
   const isAtked = window.VV.attacks.some(a => a.territory === t.id);
   const isCap   = capitulation === t.id;
   const owner   = t.owner && t.owner !== N ? getD(t.owner) : null;
-
-  // Priorités communes aux deux modes
   if (isCap)           return '#cc3030';
   if (isAtked && isMe) return '#2a6aaa';
   if (isAtked)         return '#c87020';
-
   if (window.VV.mapColorMode === 'faction' && me) {
-    if (!owner) return '#2a4060'; // neutre
-    if (isMe) return '#1a8a4a'; // mes territoires = vert
+    if (!owner) return '#2a4060';
+    if (isMe) return '#1a8a4a';
     const myFaction  = getFaction(me.id);
     const ownFaction = getFaction(owner.id);
     if (!ownFaction) return '#2a4060';
-    if (ownFaction.name === myFaction?.name) return '#c8901a'; // alliés faction = orange
-    // Couleur par faction ennemie
+    if (ownFaction.name === myFaction?.name) return '#c8901a';
     const FC = { 'Sovereign':'#3a7acc', 'Olympiens':'#c8901a', 'Shemning':'#b02828' };
     return FC[ownFaction.name] || owner.color;
   }
-
-  // Mode divin (défaut)
   if (owner) return isMe ? '#1a8a4a' : owner.color;
   return '#2a4060';
 };
@@ -286,8 +278,6 @@ async function loadData() {
         dieu1:    (r.dieu1 || '').trim(),
         dieu2:    (r.dieu2 || '').trim(),
         bio:      (r.leader_bio || '').trim(),
-        idees:    (() => { try { return JSON.parse(r.idees_nationales || '[]'); } catch(e) { return []; } })(),
-        idees:    (() => { try { return JSON.parse(r.idees_nationales || '[]'); } catch(e) { return []; } })(),
       };
     });
 
@@ -436,195 +426,6 @@ function selectHistCycle(cycle) {
   enterHistMode(cycle);
 }
 
-
-// ---- INFLUENCE SOCIETALE -----------------------------------
-let pointsData = []; // Toutes les lignes du sheet Points
-
-const INFLUENCE_CRITERIA = [
-  { key: null, label: 'Célébrations récurrentes',           icon: '🕯️', desc: 'Fêtes, rituels, célébrations régulières dans la société' },
-  { key: null, label: 'Enseignement obligatoire',           icon: '📚', desc: 'Présence dans les cursus scolaires et universitaires' },
-  { key: null, label: "Opposition d'autres cultes",        icon: '⚔️', desc: "Capacité à contrer ou affaiblir les cultes rivaux" },
-  { key: null, label: 'Intégration politique ou juridique', icon: '⚖️', desc: 'Influence sur les lois et institutions politiques' },
-  { key: null, label: 'Présence culturelle massive',        icon: '🎭', desc: "Arts, médias, culture populaire imprégnés de l'influence" },
-  { key: null, label: 'Héritage idéologique ou scientifique', icon: '🔬', desc: 'Impact sur la pensée, la science et les idéologies' },
-  { key: null, label: 'Utilité concrète pour la population', icon: '🤝', desc: 'Services, aides et bénéfices directs aux fidèles' },
-  { key: null, label: 'Transmission familiale et sociale',  icon: '👨‍👩‍👧', desc: 'Transmission de génération en génération dans les familles' },
-  { key: null, label: 'Présence matérielle visible',        icon: '🏛️', desc: "Temples, monuments, symboles visibles dans l'espace public" },
-  { key: null, label: 'Peur ou menace associée',            icon: '⚡', desc: 'Crainte inspirée, influence par la menace ou le respect' },
-];
-
-async function loadPointsData() {
-  try {
-    const url = `https://docs.google.com/spreadsheets/d/${CFG.SHEET_ID}/gviz/tq?tqx=out:json&gid=${CFG.GIDS.points}`;
-    const r = await fetch(url);
-    const raw = await r.text();
-    const m = raw.match(/setResponse\(([\s\S]*)\)/);
-    if (!m) return;
-    const data = JSON.parse(m[1]);
-    const cols = data.table.cols.map(c => (c.label||'').trim());
-    const rows = data.table.rows || [];
-    pointsData = rows.map(r => Object.fromEntries(cols.map((col,i) => [col, String(r?.c?.[i]?.v??'').trim()])));
-    // Map criteria to column keys from AG onwards
-    const agCols = cols.slice(32); // AG = index 32
-    INFLUENCE_CRITERIA.forEach((c, i) => { c.key = agCols[i] || null; });
-    console.log('[VV] Points chargés:', pointsData.length, 'divinités, critères:', agCols.slice(0,10));
-  } catch(e) {
-    console.warn('[VV] Points:', e);
-  }
-}
-
-function openInfluenceModal(deityId) {
-  const d = getD(deityId);
-  const faction = getFaction(deityId);
-  const row = pointsData.find(r => (r.id||r.ID||Object.values(r)[0])?.toLowerCase() === deityId.toLowerCase()) || {};
-
-  // Get scores
-  const scores = INFLUENCE_CRITERIA.map(c => ({
-    ...c,
-    val: Number(row[c.key] || 0),
-  }));
-  const total = scores.reduce((s, c) => s + c.val, 0);
-  const maxScore = 20;
-  const pct = Math.round(total / maxScore * 100);
-  const scoreColor = total >= 16 ? '#f0c060' : total >= 12 ? '#c8901a' : total >= 6 ? '#3a7acc' : '#cc3030';
-  const scoreLabel = total >= 16 ? 'Dominant' : total >= 12 ? 'Majeur' : total >= 6 ? 'Émergent' : 'Marginal';
-
-  // Radar points (10 criteria in a circle)
-  const radarSize = 120;
-  const cx = radarSize, cy = radarSize;
-  const maxR = 90;
-  const radarPoints = scores.map((s, i) => {
-    const angle = (i / scores.length) * Math.PI * 2 - Math.PI / 2;
-    const r = (s.val / 2) * maxR;
-    return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), lx: cx + (maxR + 18) * Math.cos(angle), ly: cy + (maxR + 18) * Math.sin(angle) };
-  });
-  const radarPath = radarPoints.map((p, i) => `${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') + ' Z';
-  const gridPath = [1,2].map(g => {
-    const r = (g/2) * maxR;
-    return scores.map((_, i) => {
-      const angle = (i / scores.length) * Math.PI * 2 - Math.PI / 2;
-      return `${i===0?'M':'L'}${(cx + r*Math.cos(angle)).toFixed(1)},${(cy + r*Math.sin(angle)).toFixed(1)}`;
-    }).join(' ') + ' Z';
-  }).join(' ');
-  const gridLines = scores.map((_, i) => {
-    const angle = (i / scores.length) * Math.PI * 2 - Math.PI / 2;
-    return `<line x1="${cx}" y1="${cy}" x2="${(cx + maxR*Math.cos(angle)).toFixed(1)}" y2="${(cy + maxR*Math.sin(angle)).toFixed(1)}" stroke="#1a2e4a" stroke-width=".8"/>`;
-  }).join('');
-
-  let modal = document.getElementById('modal-influence');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'modal-influence';
-    modal.className = 'modal-bg';
-    document.body.appendChild(modal);
-    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
-  }
-
-  modal.innerHTML = `
-    <div style="
-      background:linear-gradient(160deg,#04080f,#060d1a,#08101e);
-      border:1px solid ${d.color}44;
-      border-radius:12px;
-      width:700px;max-width:95vw;max-height:90vh;
-      overflow-y:auto;
-      box-shadow:0 0 40px ${d.color}22,0 24px 60px rgba(0,0,0,.8);
-      font-family:'Rajdhani',sans-serif;
-      position:relative;
-    ">
-      <!-- Ligne déco -->
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,${d.color},transparent);border-radius:12px 12px 0 0"></div>
-
-      <!-- HEADER -->
-      <div style="padding:18px 22px 14px;border-bottom:1px solid #1a2e4a;display:flex;align-items:center;gap:14px">
-        <div style="width:44px;height:44px;border-radius:50%;overflow:hidden;border:2px solid ${d.color}66;background:#0d2040;flex-shrink:0;display:flex;align-items:center;justify-content:center">
-          ${d.avatar?`<img src="${d.avatar}" style="width:100%;height:100%;object-fit:cover">`:`<span style="font-size:14px;font-weight:700;color:${d.color}">${d.name.slice(0,2).toUpperCase()}</span>`}
-        </div>
-        <div>
-          <div style="font-size:16px;font-weight:700;color:#cfe4f7;letter-spacing:.06em">${d.name}</div>
-          <div style="font-size:10px;color:${faction?.color||'#6a8aaa'};letter-spacing:.08em;text-transform:uppercase">${faction?.name||''} · Influence Sociétale</div>
-        </div>
-        <div style="margin-left:auto;text-align:right">
-          <div style="font-size:28px;font-weight:700;color:${scoreColor};line-height:1">${total}<span style="font-size:14px;color:#3a5a7a">/${maxScore}</span></div>
-          <div style="font-size:10px;font-weight:700;color:${scoreColor};letter-spacing:.08em;text-transform:uppercase">${scoreLabel}</div>
-        </div>
-        <button onclick="document.getElementById('modal-influence').classList.remove('open')"
-          style="background:none;border:1px solid #1a2e4a;border-radius:6px;color:#6a8aaa;padding:5px 10px;cursor:pointer;font-family:Rajdhani,sans-serif;font-size:11px;margin-left:10px">✕</button>
-      </div>
-
-      <!-- JAUGE GLOBALE -->
-      <div style="padding:14px 22px;border-bottom:1px solid #1a2e4a;background:#040810">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:#3a5a7a;text-transform:uppercase;white-space:nowrap">Emprise sur la société</div>
-          <div style="flex:1;height:10px;background:#0a1628;border-radius:5px;border:1px solid #1a2e4a;overflow:hidden">
-            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,${d.color},${scoreColor});border-radius:5px;transition:width .6s ease;position:relative">
-              <div style="position:absolute;right:0;top:0;bottom:0;width:20px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25));border-radius:0 5px 5px 0"></div>
-            </div>
-          </div>
-          <div style="font-size:13px;font-weight:700;color:${scoreColor};white-space:nowrap">${pct}%</div>
-        </div>
-      </div>
-
-      <!-- CORPS : CRITÈRES + RADAR -->
-      <div style="display:grid;grid-template-columns:1fr 260px;gap:0;padding:0">
-
-        <!-- CRITÈRES -->
-        <div style="padding:16px 22px;border-right:1px solid #1a2e4a">
-          <div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:#3a5a7a;text-transform:uppercase;margin-bottom:12px">Critères d'influence</div>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            ${scores.map(s => {
-              const dotColor = s.val === 2 ? '#f0c060' : s.val === 1 ? d.color : '#1a2e4a';
-              const bgColor  = s.val === 2 ? '#f0c06012' : s.val === 1 ? d.color+'0e' : 'transparent';
-              const label    = s.val === 2 ? 'STRONGHOLD' : s.val === 1 ? 'PRÉSENT' : 'ABSENT';
-              const lColor   = s.val === 2 ? '#f0c060' : s.val === 1 ? d.color : '#1a2e4a';
-              return `<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;border:1px solid ${s.val>0?dotColor+'33':'#0d1828'};background:${bgColor}">
-                <span style="font-size:16px;flex-shrink:0">${s.icon}</span>
-                <div style="flex:1;min-width:0">
-                  <div style="font-size:12px;font-weight:600;color:${s.val>0?'#cfe4f7':'#2a4a6a'}">${s.label}</div>
-                  <div style="font-size:9px;color:#2a4a6a;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.desc}</div>
-                </div>
-                <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
-                  <div style="width:9px;height:9px;border-radius:50%;background:${s.val>=1?dotColor:'#0a1628'};border:1px solid ${s.val>=1?dotColor:'#1a2e4a'};box-shadow:${s.val>=1?'0 0 4px '+dotColor+'88':'none'}"></div>
-                  <div style="width:9px;height:9px;border-radius:50%;background:${s.val>=2?dotColor:'#0a1628'};border:1px solid ${s.val>=2?dotColor:'#1a2e4a'};box-shadow:${s.val>=2?'0 0 4px '+dotColor+'88':'none'}"></div>
-                </div>
-                <div style="font-size:8px;font-weight:700;letter-spacing:.06em;color:${lColor};width:62px;text-align:right">${label}</div>
-              </div>`;
-            }).join('')}
-          </div>
-        </div>
-
-        <!-- RADAR -->
-        <div style="padding:16px;display:flex;flex-direction:column;align-items:center;gap:12px">
-          <div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:#3a5a7a;text-transform:uppercase">Profil d'influence</div>
-          <svg viewBox="0 0 ${radarSize*2} ${radarSize*2}" style="width:220px;height:220px" xmlns="http://www.w3.org/2000/svg">
-            <!-- Grille -->
-            <path d="${gridPath}" fill="none" stroke="#1a2e4a" stroke-width=".8" opacity=".6"/>
-            ${gridLines}
-            <!-- Zone remplie -->
-            <path d="${radarPath}" fill="${d.color}33" stroke="${d.color}" stroke-width="1.5" stroke-linejoin="round"/>
-            <!-- Points -->
-            ${radarPoints.map((p,i) => scores[i].val > 0 ? `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="${scores[i].val===2?'#f0c060':d.color}" stroke="#04080f" stroke-width="1"/>` : '').join('')}
-            <!-- Icônes au bord -->
-            ${radarPoints.map((p,i) => `<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="12">${scores[i].icon}</text>`).join('')}
-          </svg>
-          <!-- Légende niveaux -->
-          <div style="display:flex;flex-direction:column;gap:6px;width:100%">
-            ${[{v:2,label:'Stronghold',color:'#f0c060'},{v:1,label:'Présent',color:d.color},{v:0,label:'Absent',color:'#1a2e4a'}].map(l=>`
-              <div style="display:flex;align-items:center;gap:8px">
-                <div style="display:flex;gap:3px">
-                  <div style="width:8px;height:8px;border-radius:50%;background:${l.v>=1?l.color:'#0a1628'};border:1px solid ${l.color}"></div>
-                  <div style="width:8px;height:8px;border-radius:50%;background:${l.v>=2?l.color:'#0a1628'};border:1px solid ${l.color}"></div>
-                </div>
-                <span style="font-size:10px;font-weight:600;color:${l.color};letter-spacing:.06em">${l.label}</span>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-  modal.classList.add('open');
-}
-
 // ---- APPS SCRIPT -------------------------------------------
 async function postScript(payload) {
   try {
@@ -745,8 +546,7 @@ function renderDeityPanel(d) {
     </div>
     <div class="info-row"><span class="ik">Attaques reçues</span><span class="iv" style="color:${n>0?'var(--c-danger)':'var(--c-text1)'}">${n}/2</span></div>
     ${n>=2?`<div class="notif notif-warn" style="margin-top:6px">Verrouillé — 2 attaques reçues</div>`:''}
-    <button class="btn btn-info btn-full" style="margin-top:10px" onclick="openDeityHub('${d.id}')"><i class="ti ti-chart-donut"></i> Tableau de bord</button>
-    ${canA?`<button class="btn btn-danger btn-full" style="margin-top:6px" id="panel-atk-btn"><i class="ti ti-sword"></i> Déclarer une attaque</button>`:''}
+    ${canA?`<button class="btn btn-danger btn-full" style="margin-top:10px" id="panel-atk-btn"><i class="ti ti-sword"></i> Déclarer une attaque</button>`:''}
     ${!me?`<div style="font-size:10px;color:var(--c-text4);text-align:center;margin-top:10px">Connectez-vous pour interagir</div>`:''}
     <div class="divider"></div>
     <div class="sec">Territoires (${myT.length})</div>
@@ -843,14 +643,6 @@ function renderZonePanel(zoneName) {
   $('back-btn')?.addEventListener('click', clearZone);
   bindTerrButtons();
   renderRankingPanel(); // Update active state
-  // Idées nationales + crises
-  if (typeof window.VV?.crisis?.renderInPanel === 'function') {
-    window.VV.crisis.renderInPanel(zoneName);
-  }
-  // Idées nationales + crises
-  if (typeof window.VV?.crisis?.renderInPanel === 'function') {
-    window.VV.crisis.renderInPanel(zoneName);
-  }
 }
 
 function renderAlignTriangle(ax=0.5, ay=0.5) {
@@ -974,19 +766,6 @@ function bindTerrButtons() {
   );
 }
 
-function getDeityPoints(deityId) {
-  // Find row in pointsData by deity id (first column)
-  const row = pointsData.find(r => {
-    const firstVal = Object.values(r)[0];
-    return firstVal?.toLowerCase?.() === deityId.toLowerCase();
-  }) || {};
-  return {
-    territoire: Number(row['Territoire'] || row['territoire'] || 0),
-    organisation: Number(row['Organisation'] || row['organisation'] || 0),
-    societal: Number(row['Sociétal'] || row['societal'] || row['Societal'] || 0),
-  };
-}
-
 function renderPlayerPanel() {
   if (!me) return;
   const myT = allT().filter(t => t.owner===me.id);
@@ -1007,41 +786,6 @@ function renderPlayerPanel() {
         <div style="font-family:Rajdhani,sans-serif;font-size:15px;font-weight:700;color:var(--c-text1)">${me.name}</div>
         <div style="font-size:10px;color:${faction?faction.color:'var(--c-text3)'}">${faction?.name||''}</div>
         <div style="font-size:10px;color:var(--c-text3)">${me.pi}PI · ${myT.length} territoire${myT.length>1?'s':''}</div>
-        <button class="btn btn-info" style="margin-top:5px;font-size:10px;padding:3px 8px" onclick="openDeityHub('${me.id}')"><i class="ti ti-chart-donut"></i> Mon tableau de bord</button>
-      </div>
-    </div>
-
-    ${(() => {
-      const pts = getDeityPoints(me.id);
-      const total = pts.territoire + pts.organisation + pts.societal;
-      const maxVal = Math.max(pts.territoire, pts.organisation, pts.societal, 1);
-      const bars = [
-        { label: 'Territoires', icon: 'ti-map-pin', val: pts.territoire, color: '#3a7acc' },
-        { label: 'Organisations', icon: 'ti-building', val: pts.organisation, color: '#c8901a' },
-        { label: 'Sociétal', icon: 'ti-users', val: pts.societal, color: '#2a9a4a' },
-      ];
-      return `<div style="background:var(--c-bg2);border:1px solid var(--c-border);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px">
-        <div style="font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--c-text3);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
-          <span><i class="ti ti-chart-bar" style="margin-right:4px"></i>Décomposition des points</span>
-          <span style="color:var(--c-text1);font-size:13px">${total} PI total</span>
-        </div>
-        ${bars.map(b => `
-          <div style="margin-bottom:8px">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
-              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--c-text2)">
-                <i class="ti ${b.icon}" style="font-size:12px;color:${b.color}"></i>
-                ${b.label}
-              </div>
-              <span style="font-size:12px;font-weight:600;color:${b.color}">${b.val} PI</span>
-            </div>
-            <div style="height:5px;background:var(--c-bg);border-radius:3px;overflow:hidden;border:1px solid var(--c-border)">
-              <div style="height:100%;width:${Math.round(b.val/maxVal*100)}%;background:${b.color};border-radius:3px;transition:width .4s ease"></div>
-            </div>
-          </div>
-        `).join('')}
-      </div>`;
-    })()}
-    <div style="display:none">
       </div>
     </div>
 
@@ -1250,6 +994,19 @@ function openAtkModalDirect(ownerId, terrId) {
 async function confirmAttack() {
   const sel = $('atk-terr');
   if (!sel?.value) { alert('Choisissez un territoire cible'); return; }
+
+  // Mode tutoriel : simuler sans appel réseau
+  if (window.VVTutorial?.active) {
+    window.VV.attacks.push({ attacker:me.id, target:pendingAtk.target, territory:sel.value, _tuto:true });
+    closeModal('modal-atk');
+    renderDock(); window.VV.globe.buildDots();
+    if (selZone) renderZonePanel(selZone);
+    else if (selTrans) renderTransPanel(selTrans);
+    else renderPlayerPanel();
+    updateWarningTicker();
+    return;
+  }
+
   const btn = $('atk-confirm');
   btn.disabled = true; btn.textContent = 'Envoi…';
   const res = await postScript({ action:'add_attack', cycle:CYCLE, attaquant:me.id, cible:pendingAtk.target, territoire_id:sel.value });
@@ -1418,7 +1175,7 @@ window.loginScreenSubmit = function() {
     screen.style.opacity = '0';
     setTimeout(() => {
       screen.style.display = 'none';
-      me = d;
+      me = d; window.VV.me = d;
       const bl = $('btn-login');
       if (bl) bl.innerHTML = `<i class="ti ti-user-check"></i> ${d.name}`;
       const ba = $('btn-admin');
@@ -1440,7 +1197,7 @@ function doLogin() {
   const pw = $('login-pw').value;
   const d  = getD(id);
   if (!d?.pass || d.pass !== pw) { $('login-err').textContent = 'Identifiants incorrects'; return; }
-  me = d;
+  me = d; window.VV.me = d;
   closeModal('modal-login');
   const bl = $('btn-login');
   if (bl) bl.innerHTML = `<i class="ti ti-user-check"></i> ${d.name}`;
@@ -1546,10 +1303,26 @@ async function fullRefresh() {
   else               showPrompt();
 }
 
+// ---- TUTORIAL BRIDGE --------------------------------------------------
+window.VV.setMe = function(d) {
+  me = d;
+  window.VV.me = d;
+  // Mettre à jour selDeity pour que canA soit recalculé correctement
+  if (d) selDeity = d.id;
+};
+window.VV.refreshUI = function() {
+  renderDock();
+  if (me) renderPlayerPanel(); else showPrompt();
+  if (window.VV.globe?.buildDots)   window.VV.globe.buildDots();
+  if (window.VV.globe?.buildBadges) window.VV.globe.buildBadges();
+  updateWarningTicker();
+  if (me && typeof showFactionOrgBtn === 'function') showFactionOrgBtn(me.id);
+};
+
 // ---- INIT --------------------------------------------------
 async function init() {
   const [, world] = await Promise.all([
-    loadData().then(() => loadPointsData()),
+    loadData(),
     fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r=>r.json()),
   ]);
 
@@ -1591,21 +1364,14 @@ document.addEventListener('DOMContentLoaded', () => {
     openHistModal(cycles);
   });
 
-  // News
-  $('btn-news')?.addEventListener('click', () => {
-    if (typeof openNews === 'function') openNews();
-  });
-
   $('btn-fandom')?.addEventListener('click', () => window.open(CFG.FANDOM_URL, '_blank'));
 
   // Mode couleur carte
   $('btn-mapmode')?.addEventListener('click', function() {
     window.VV.mapColorMode = window.VV.mapColorMode === 'divine' ? 'faction' : 'divine';
-    const isFacton = window.VV.mapColorMode === 'faction';
-    this.classList.toggle('active', isFacton);
-    this.title = isFacton ? 'Mode : Faction (cliquer pour Divin)' : 'Mode : Divin (cliquer pour Faction)';
-    // Mettre à jour tooltip
-    this.querySelector('i').className = isFacton ? 'ti ti-flag' : 'ti ti-palette';
+    const isFaction = window.VV.mapColorMode === 'faction';
+    this.classList.toggle('active', isFaction);
+    this.querySelector('i').className = isFaction ? 'ti ti-flag' : 'ti ti-palette';
     window.VV.globe.buildDots();
     window.VV.globe.buildBadges();
   });
@@ -1709,342 +1475,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
   init();
 });
-
-// ============================================================
-// DEITY HUB — Tableau de bord personnel
-// ============================================================
-
-let _hubDeityId = null;
-let _hubView    = 'main'; // 'main' | 'territoires' | 'organisations' | 'societal'
-
-function openDeityHub(deityId) {
-  _hubDeityId = deityId;
-  _hubView    = 'main';
-
-  let modal = document.getElementById('hub-modal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'hub-modal';
-    modal.className = 'modal-bg';
-    document.body.appendChild(modal);
-    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
-  }
-
-  if (!document.getElementById('hub-style')) {
-    const s = document.createElement('style');
-    s.id = 'hub-style';
-    s.textContent = `
-      #hub-modal .modal { width:820px; max-width:96vw; max-height:88vh; overflow-y:auto; padding:0; border-radius:12px; }
-      .hub-back { background:none;border:none;color:var(--c-text3);cursor:pointer;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:600;letter-spacing:.08em;padding:0;display:flex;align-items:center;gap:5px;transition:color .12s; }
-      .hub-back:hover { color:var(--c-text1); }
-      .hub-terr-card { border:1px solid var(--c-border);border-radius:var(--radius);overflow:hidden;cursor:default;transition:border-color .12s; }
-      .hub-terr-card:hover { border-color:var(--c-border2); }
-      @keyframes hub-in { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
-      .hub-anim { animation:hub-in .2s ease; }
-    `;
-    document.head.appendChild(s);
-  }
-
-  modal.classList.add('open');
-  renderHubMain();
-}
-
-// ---- MAIN VIEW ---------------------------------------------
-function renderHubMain() {
-  const modal = document.getElementById('hub-modal');
-  if (!modal) return;
-  _hubView = 'main';
-
-  const d       = getD(_hubDeityId);
-  const faction = getFaction(_hubDeityId);
-  const pts     = getDeityPoints(_hubDeityId);
-  const total   = pts.territoire + pts.organisation + pts.societal || 1;
-
-  // SVG Donut chart — calcul arc correct
-  const cx = 100, cy = 100, R = 75, r = 44;
-  const segments = [
-    { label:'Territoires',   val:pts.territoire,   color:'#3a7acc', icon:'ti-map-pin',   view:'territoires' },
-    { label:'Organisations', val:pts.organisation, color:'#c8901a', icon:'ti-building',  view:'organisations' },
-    { label:'Sociétal',      val:pts.societal,     color:'#2a9a4a', icon:'ti-users',     view:'societal' },
-  ];
-
-  function polarToCart(angle, radius) {
-    return {
-      x: cx + radius * Math.cos(angle - Math.PI / 2),
-      y: cy + radius * Math.sin(angle - Math.PI / 2),
-    };
-  }
-
-  function makeArcPath(startAngle, endAngle, outerR, innerR) {
-    const s1 = polarToCart(startAngle, outerR);
-    const e1 = polarToCart(endAngle,   outerR);
-    const s2 = polarToCart(endAngle,   innerR);
-    const e2 = polarToCart(startAngle, innerR);
-    const large = endAngle - startAngle > Math.PI ? 1 : 0;
-    return [
-      `M ${s1.x.toFixed(2)} ${s1.y.toFixed(2)}`,
-      `A ${outerR} ${outerR} 0 ${large} 1 ${e1.x.toFixed(2)} ${e1.y.toFixed(2)}`,
-      `L ${s2.x.toFixed(2)} ${s2.y.toFixed(2)}`,
-      `A ${innerR} ${innerR} 0 ${large} 0 ${e2.x.toFixed(2)} ${e2.y.toFixed(2)}`,
-      'Z'
-    ].join(' ');
-  }
-
-  // Add tiny gap to avoid degenerate arcs when a segment = 100% or 0%
-  const GAP = 0.001;
-  const nonZero = segments.filter(s => s.val > 0);
-  let startAngle = 0;
-  const paths = segments.map(seg => {
-    if (seg.val === 0) return { ...seg, path: null, lx:0, ly:0, pct:0, sweep:0 };
-    const pct      = seg.val / total;
-    // If only one segment, draw almost-full circle (gap at top)
-    const sweep    = nonZero.length === 1
-      ? 2 * Math.PI - GAP
-      : pct * 2 * Math.PI - GAP;
-    const endAngle = startAngle + sweep;
-    const midAngle = startAngle + sweep / 2;
-    const labelR   = (R + r) / 2;
-    const lp       = polarToCart(midAngle, labelR);
-    const path     = makeArcPath(startAngle, endAngle, R, r);
-    startAngle     = startAngle + pct * 2 * Math.PI; // advance by full slice
-    return { ...seg, path, lx: lp.x, ly: lp.y, pct, sweep };
-  });
-
-  modal.innerHTML = `
-    <div class="modal hub-anim" style="background:var(--c-bg1)">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,${d.color},transparent);border-radius:12px 12px 0 0"></div>
-
-      <!-- Header -->
-      <div style="padding:16px 22px;border-bottom:1px solid var(--c-border);display:flex;align-items:center;gap:14px">
-        <div style="width:46px;height:46px;border-radius:50%;overflow:hidden;border:2px solid ${d.color}55;background:var(--c-bg3);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          ${d.avatar?`<img src="${d.avatar}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:`<span style="font-size:14px;font-weight:700;color:${d.color}">${d.name.slice(0,2).toUpperCase()}</span>`}
-        </div>
-        <div>
-          <div style="font-family:Rajdhani,sans-serif;font-size:17px;font-weight:700;color:var(--c-text1)">${d.name}</div>
-          <div style="font-size:11px;color:${faction?.color||'var(--c-text3)'};">${faction?.name||''} · ${total} PI total</div>
-        </div>
-        <button onclick="document.getElementById('hub-modal').classList.remove('open')"
-          style="margin-left:auto;background:none;border:1px solid var(--c-border);border-radius:6px;color:var(--c-text3);padding:5px 12px;cursor:pointer;font-family:Rajdhani,sans-serif;font-size:11px">FERMER</button>
-      </div>
-
-      <!-- Corps -->
-      <div style="padding:22px;display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:start">
-
-        <!-- Camembert -->
-        <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
-          <svg viewBox="0 0 200 200" style="width:200px;height:200px;overflow:visible" xmlns="http://www.w3.org/2000/svg">
-            ${paths.filter(p=>p.path).map(p => `
-              <path d="${p.path}" fill="${p.color}" opacity=".85" stroke="var(--c-bg1)" stroke-width="2"
-                style="cursor:pointer;transition:opacity .15s"
-                onmouseover="this.style.opacity='1'"
-                onmouseout="this.style.opacity='.85'"
-                onclick="hubGoTo('${p.view}')"/>
-              ${p.val > 0 && p.sweep > 0.3 ? `<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="700" fill="white" pointer-events="none">${Math.round(p.pct*100)}%</text>` : ''}
-            `).join('')}
-            <!-- Centre -->
-            <circle cx="100" cy="100" r="40" fill="var(--c-bg1)" stroke="var(--c-border)" stroke-width="1"/>
-            <text x="100" y="94" text-anchor="middle" font-size="18" font-weight="700" fill="var(--c-text1)" font-family="Rajdhani,sans-serif">${total}</text>
-            <text x="100" y="110" text-anchor="middle" font-size="9" fill="var(--c-text3)" font-family="Rajdhani,sans-serif" letter-spacing=".06em">PI TOTAL</text>
-          </svg>
-          <div style="font-size:10px;color:var(--c-text4);font-family:Rajdhani,sans-serif;letter-spacing:.06em;text-align:center">Cliquez une part pour le détail</div>
-        </div>
-
-        <!-- Détails + accès -->
-        <div style="display:flex;flex-direction:column;gap:10px">
-          ${segments.map(seg => `
-            <div onclick="hubGoTo('${seg.view}')"
-              style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:var(--radius);border:1px solid var(--c-border);background:var(--c-bg2);cursor:pointer;transition:all .15s"
-              onmouseover="this.style.borderColor='${seg.color}55';this.style.background='var(--c-bg3)'"
-              onmouseout="this.style.borderColor='var(--c-border)';this.style.background='var(--c-bg2)'">
-              <div style="width:36px;height:36px;border-radius:50%;background:${seg.color}18;border:1px solid ${seg.color}44;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                <i class="ti ${seg.icon}" style="font-size:16px;color:${seg.color}"></i>
-              </div>
-              <div style="flex:1">
-                <div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:var(--c-text1);margin-bottom:3px">${seg.label}</div>
-                <div style="height:5px;background:var(--c-bg);border-radius:3px;overflow:hidden;border:1px solid var(--c-border)">
-                  <div style="height:100%;width:${Math.round(seg.val/total*100)}%;background:${seg.color};border-radius:3px"></div>
-                </div>
-              </div>
-              <div style="text-align:right;flex-shrink:0">
-                <div style="font-size:18px;font-weight:700;color:${seg.color};font-family:Rajdhani,sans-serif">${seg.val}</div>
-                <div style="font-size:9px;color:var(--c-text4)">PI</div>
-              </div>
-              <i class="ti ti-chevron-right" style="font-size:14px;color:var(--c-text4)"></i>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-// ---- TERRITOIRES VIEW --------------------------------------
-function hubGoTo(view) {
-  _hubView = view;
-  if (view === 'societal')      { renderHubSocietal(); return; }
-  if (view === 'territoires')   { renderHubTerritoires(); return; }
-  if (view === 'organisations') { renderHubOrganisations(); return; }
-}
-
-function hubHeader(title, icon) {
-  return `
-    <div style="padding:14px 22px;border-bottom:1px solid var(--c-border);display:flex;align-items:center;gap:12px;flex-shrink:0">
-      <button class="hub-back" onclick="renderHubMain()"><i class="ti ti-arrow-left"></i> Retour</button>
-      <div style="width:1px;height:20px;background:var(--c-border);margin:0 4px"></div>
-      <i class="ti ${icon}" style="font-size:16px;color:var(--c-accent)"></i>
-      <span style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:var(--c-text1);letter-spacing:.06em">${title}</span>
-      <button onclick="document.getElementById('hub-modal').classList.remove('open')"
-        style="margin-left:auto;background:none;border:1px solid var(--c-border);border-radius:6px;color:var(--c-text3);padding:4px 10px;cursor:pointer;font-family:Rajdhani,sans-serif;font-size:11px">✕</button>
-    </div>
-  `;
-}
-
-function renderHubTerritoires() {
-  const modal = document.getElementById('hub-modal');
-  if (!modal) return;
-  const d    = getD(_hubDeityId);
-  const myT  = allT().filter(t => t.owner === _hubDeityId && t.type === 'city');
-
-  modal.innerHTML = `
-    <div class="modal hub-anim" style="background:var(--c-bg1);display:flex;flex-direction:column">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#3a7acc,transparent);border-radius:12px 12px 0 0"></div>
-      ${hubHeader(`Territoires de ${d.name} (${myT.length})`, 'ti-map-pin')}
-      <div style="padding:18px 22px;overflow-y:auto;flex:1">
-        ${myT.length === 0
-          ? `<div style="text-align:center;color:var(--c-text4);font-family:Rajdhani,sans-serif;font-size:13px;padding:40px">Aucun territoire contrôlé</div>`
-          : `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
-              ${myT.map(t => {
-                const zone = Object.entries(window.VV.ZONES||{}).find(([,z])=>z.territories.some(x=>x.id===t.id))?.[0]||'';
-                return `<div class="hub-terr-card">
-                  ${t.img
-                    ? `<img src="${t.img}" style="width:100%;height:80px;object-fit:cover;display:block" loading="lazy" onerror="this.style.display='none'">`
-                    : `<div style="height:80px;background:var(--c-bg3);display:flex;align-items:center;justify-content:center"><i class="ti ti-building-skyscraper" style="font-size:24px;color:var(--c-text4)"></i></div>`
-                  }
-                  <div style="padding:8px 10px;background:var(--c-bg2)">
-                    <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
-                      <div style="width:7px;height:7px;border-radius:50%;background:#3a7acc;box-shadow:0 0 4px #3a7acc88;flex-shrink:0"></div>
-                      <span style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:var(--c-text1);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</span>
-                      ${t.pi>1?`<span style="font-size:9px;color:var(--c-accent);background:var(--c-bg);border:1px solid var(--c-border2);border-radius:3px;padding:1px 5px">×${t.pi}</span>`:''}
-                    </div>
-                    <div style="font-size:10px;color:var(--c-text3)">${zone}</div>
-                  </div>
-                </div>`;
-              }).join('')}
-            </div>`
-        }
-      </div>
-    </div>
-  `;
-}
-
-function renderHubOrganisations() {
-  const modal = document.getElementById('hub-modal');
-  if (!modal) return;
-  const d    = getD(_hubDeityId);
-  const myO  = allT().filter(t => t.owner === _hubDeityId && t.type === 'org');
-
-  modal.innerHTML = `
-    <div class="modal hub-anim" style="background:var(--c-bg1);display:flex;flex-direction:column">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#c8901a,transparent);border-radius:12px 12px 0 0"></div>
-      ${hubHeader(`Organisations de ${d.name} (${myO.length})`, 'ti-building')}
-      <div style="padding:18px 22px;overflow-y:auto;flex:1">
-        ${myO.length === 0
-          ? `<div style="text-align:center;color:var(--c-text4);font-family:Rajdhani,sans-serif;font-size:13px;padding:40px">Aucune organisation contrôlée</div>`
-          : `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
-              ${myO.map(t => {
-                const zone = Object.entries(window.VV.ZONES||{}).find(([,z])=>z.territories.some(x=>x.id===t.id))?.[0]||'';
-                return `<div class="hub-terr-card">
-                  ${t.img
-                    ? `<img src="${t.img}" style="width:100%;height:80px;object-fit:cover;display:block" loading="lazy" onerror="this.style.display='none'">`
-                    : `<div style="height:80px;background:var(--c-bg3);display:flex;align-items:center;justify-content:center">
-                        <div style="width:18px;height:18px;background:#c8901a44;clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);border:none"></div>
-                      </div>`
-                  }
-                  <div style="padding:8px 10px;background:var(--c-bg2)">
-                    <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
-                      <div style="width:7px;height:7px;background:#c8901a;clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);flex-shrink:0"></div>
-                      <span style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:var(--c-text1);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</span>
-                      ${t.pi>1?`<span style="font-size:9px;color:#c8901a;background:var(--c-bg);border:1px solid var(--c-border2);border-radius:3px;padding:1px 5px">×${t.pi}</span>`:''}
-                    </div>
-                    <div style="font-size:10px;color:var(--c-text3)">${zone}</div>
-                  </div>
-                </div>`;
-              }).join('')}
-            </div>`
-        }
-      </div>
-    </div>
-  `;
-}
-
-function renderHubSocietal() {
-  const modal = document.getElementById('hub-modal');
-  if (!modal) return;
-  const d = getD(_hubDeityId);
-  const faction = getFaction(_hubDeityId);
-  const row = pointsData.find(r => Object.values(r)[0]?.toLowerCase?.() === _hubDeityId.toLowerCase()) || {};
-  const scores = INFLUENCE_CRITERIA.map(c => ({ ...c, val: Number(row[c.key] || 0) }));
-  const total  = scores.reduce((s,c) => s + c.val, 0);
-  const pct    = Math.round(total / 20 * 100);
-  const scoreColor = total>=16?'#f0c060':total>=12?'#c8901a':total>=6?'#3a7acc':'#cc3030';
-  const scoreLabel = total>=16?'Dominant':total>=12?'Majeur':total>=6?'Émergent':'Marginal';
-
-  // Radar
-  const radarSize=110,cx=110,cy=110,maxR=82;
-  const radarPoints = scores.map((s,i)=>{
-    const angle=(i/scores.length)*Math.PI*2-Math.PI/2;
-    const r=(s.val/2)*maxR;
-    return { x:cx+r*Math.cos(angle), y:cy+r*Math.sin(angle), lx:cx+(maxR+18)*Math.cos(angle), ly:cy+(maxR+18)*Math.sin(angle) };
-  });
-  const radarPath = radarPoints.map((p,i)=>`${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')+' Z';
-  const gridPath  = [1,2].map(g=>{
-    const rg=g/2*maxR;
-    return scores.map((_,i)=>{const a=(i/scores.length)*Math.PI*2-Math.PI/2;return `${i===0?'M':'L'}${(cx+rg*Math.cos(a)).toFixed(1)},${(cy+rg*Math.sin(a)).toFixed(1)}`;}).join(' ')+' Z';
-  }).join(' ');
-  const gridLines = scores.map((_,i)=>{const a=(i/scores.length)*Math.PI*2-Math.PI/2;return `<line x1="${cx}" y1="${cy}" x2="${(cx+maxR*Math.cos(a)).toFixed(1)}" y2="${(cy+maxR*Math.sin(a)).toFixed(1)}" stroke="var(--c-border)" stroke-width=".8"/>`;}).join('');
-
-  modal.innerHTML = `
-    <div class="modal hub-anim" style="background:var(--c-bg1);display:flex;flex-direction:column">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#2a9a4a,transparent);border-radius:12px 12px 0 0"></div>
-      ${hubHeader(`Influence Sociétale — ${d.name}`, 'ti-chart-radar')}
-      <div style="padding:14px 22px 6px;background:var(--c-bg2);border-bottom:1px solid var(--c-border);display:flex;align-items:center;gap:12px">
-        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--c-text3);text-transform:uppercase;white-space:nowrap">Emprise sur la société</div>
-        <div style="flex:1;height:8px;background:var(--c-bg);border-radius:4px;border:1px solid var(--c-border);overflow:hidden">
-          <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#2a9a4a,${scoreColor});border-radius:4px"></div>
-        </div>
-        <div style="font-size:13px;font-weight:700;color:${scoreColor};white-space:nowrap">${total}/20 — ${scoreLabel}</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 240px;flex:1;overflow:hidden;min-height:0">
-        <div style="padding:14px 22px;overflow-y:auto;display:flex;flex-direction:column;gap:7px">
-          ${scores.map(s=>{
-            const dotColor=s.val===2?'#f0c060':s.val===1?d.color:'var(--c-border)';
-            const bg=s.val===2?'#f0c06012':s.val===1?d.color+'0e':'transparent';
-            const label=s.val===2?'STRONGHOLD':s.val===1?'PRÉSENT':'ABSENT';
-            return `<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:var(--radius);border:1px solid ${s.val>0?dotColor+'33':'var(--c-border)'};background:${bg}">
-              <span style="font-size:15px;flex-shrink:0">${s.icon}</span>
-              <div style="flex:1;min-width:0">
-                <div style="font-size:12px;font-weight:600;color:${s.val>0?'var(--c-text1)':'var(--c-text4)'}">${s.label}</div>
-                <div style="font-size:9px;color:var(--c-text4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.desc}</div>
-              </div>
-              <div style="display:flex;gap:4px;flex-shrink:0">
-                <div style="width:8px;height:8px;border-radius:50%;background:${s.val>=1?dotColor:'var(--c-bg)'};border:1px solid ${s.val>=1?dotColor:'var(--c-border)'}"></div>
-                <div style="width:8px;height:8px;border-radius:50%;background:${s.val>=2?dotColor:'var(--c-bg)'};border:1px solid ${s.val>=2?dotColor:'var(--c-border)'}"></div>
-              </div>
-              <div style="font-size:8px;font-weight:700;color:${dotColor};width:60px;text-align:right;font-family:Rajdhani,sans-serif;letter-spacing:.05em">${label}</div>
-            </div>`;
-          }).join('')}
-        </div>
-        <div style="border-left:1px solid var(--c-border);padding:16px;display:flex;flex-direction:column;align-items:center;gap:12px">
-          <div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--c-text3);text-transform:uppercase">Profil radar</div>
-          <svg viewBox="0 0 ${radarSize*2} ${radarSize*2}" style="width:200px;height:200px" xmlns="http://www.w3.org/2000/svg">
-            <path d="${gridPath}" fill="none" stroke="var(--c-border)" stroke-width=".8" opacity=".6"/>
-            ${gridLines}
-            <path d="${radarPath}" fill="${d.color}33" stroke="${d.color}" stroke-width="1.5" stroke-linejoin="round"/>
-            ${radarPoints.map((p,i)=>scores[i].val>0?`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="${scores[i].val===2?'#f0c060':d.color}" stroke="var(--c-bg1)" stroke-width="1"/>`:'').join('')}
-            ${radarPoints.map((p,i)=>`<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="11">${scores[i].icon}</text>`).join('')}
-          </svg>
-        </div>
-      </div>
-    </div>
-  `;
-}
