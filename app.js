@@ -121,8 +121,9 @@ window.VV.dotColor = function(t) {
   }
 
   // Mode divin (défaut)
-   if (owner) return '#7ab8f5';
-   return '#2a4060';
+  if (owner) return isMe ? '#1a8a4a' : owner.color;
+  return '#2a4060';
+};
 
 // ---- GOOGLE SHEETS -----------------------------------------
 function gvizUrl(tab) {
