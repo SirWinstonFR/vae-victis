@@ -286,8 +286,22 @@ async function loadData() {
         dieu1:    (r.dieu1 || '').trim(),
         dieu2:    (r.dieu2 || '').trim(),
         bio:      (r.leader_bio || '').trim(),
-        idees:    (() => { try { return JSON.parse(r.idees_nationales || '[]'); } catch(e) { return []; } })(),
-        idees:    (() => { try { return JSON.parse(r.idees_nationales || '[]'); } catch(e) { return []; } })(),
+        idees:    [1,2,3,4].map(i => ({
+          img:   (r[`idee${i}_img`]   || '').trim(),
+          nom:   (r[`idee${i}_nom`]   || '').trim(),
+          type:  (r[`idee${i}_type`]  || '').trim(),
+          court: (r[`idee${i}_court`] || '').trim(),
+          long:  (r[`idee${i}_long`]  || '').trim(),
+          effet: (r[`idee${i}_effet`] || '').trim(),
+        })).filter(i => i.nom),
+        idees:    [1,2,3,4].map(i => ({
+          img:   (r[`idee${i}_img`]   || '').trim(),
+          nom:   (r[`idee${i}_nom`]   || '').trim(),
+          type:  (r[`idee${i}_type`]  || '').trim(),
+          court: (r[`idee${i}_court`] || '').trim(),
+          long:  (r[`idee${i}_long`]  || '').trim(),
+          effet: (r[`idee${i}_effet`] || '').trim(),
+        })).filter(i => i.nom),
       };
     });
 
