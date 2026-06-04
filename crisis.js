@@ -617,8 +617,8 @@ document.addEventListener('click', e => {
 });
 
 // ---- EXPORT GLOBAL -------------------------------------------
-window.VV.crises = {
+window.VV.crises = Object.assign(window.VV.crises || {}, {
   renderInPanel: renderCrisesInPanel,
   loadNotifs:    loadNotifications,
   injectNotifBtn: injectNotifButton,
-};
+});
