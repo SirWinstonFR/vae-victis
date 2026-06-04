@@ -211,7 +211,7 @@ function buildDots() {
     if (Math.hypot(px - cx, py - cy) > r * 1.01) return;
 
     const fill  = window.VV.dotColor(t);
-    const baseR = t.pi >= 3 ? 3.2 : t.pi >= 2 ? 2.6 : 2.0;
+    const baseR = t.pi >= 3 ? 4.2 : t.pi >= 2 ? 3.6 : 3.0;
 
     // Halo
     gDots.append('circle').datum(t)
