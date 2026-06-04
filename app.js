@@ -852,7 +852,18 @@ function renderZonePanel(zoneName) {
   renderRankingPanel(); // Update active state
   // Idées nationales + crises
   if (typeof window.VV?.crises?.renderInPanel === 'function') {
-    window.VV.crises.renderInPanel(zoneName);
+    const criseHTML = window.VV.crises.renderInPanel(zoneName);
+    if (criseHTML) {
+      const panelInner = document.getElementById('panel-inner');
+      if (panelInner) {
+        let criseSection = panelInner.querySelector('.crise-section');
+        if (!criseSection) {
+          const div = document.createElement('div');
+          div.innerHTML = criseHTML;
+          panelInner.appendChild(div);
+        }
+      }
+    }
   }
 }
 
