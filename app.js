@@ -838,7 +838,40 @@ function renderZonePanel(zoneName) {
           </div>
         </div>
       </div>
-    </div>`;
+    </div>
+    \${(() => {
+      const idees = nation.idees || [];
+      const TYPE_COLOR = { bonus: '#2a9a4a', malus: '#cc3030', neutre: '#3a7acc' };
+      const PENTAGON = 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)';
+      const slots = [0,1,2,3].map(i => {
+        const id = idees[i];
+        const col = id ? (TYPE_COLOR[id.type] || '#3a5a7a') : '#1a2e4a';
+        if (!id) return \`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+          <div style="width:48px;height:48px;clip-path:\${PENTAGON};background:#0a1422;display:flex;align-items:center;justify-content:center">
+            <span style="font-size:13px;opacity:.2;color:#3a5a7a">?</span>
+          </div>
+          <div style="font-size:8px;color:#1a2e4a;font-family:Rajdhani,sans-serif">Vide</div>
+        </div>\`;
+        return \`<div style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer"
+          onclick="(function(el){const d=el.nextElementSibling;d.style.display=d.style.display==='none'?'block':'none'})(this)"
+          title="\${id.nom}">
+          <div style="width:48px;height:48px;clip-path:\${PENTAGON};background:\${col}55;display:flex;align-items:center;justify-content:center">
+            \${id.img?\`<img src="\${id.img}" style="width:38px;height:38px;object-fit:cover;clip-path:\${PENTAGON}" onerror="this.style.display='none'">\`:\`<span style="font-size:18px">\${id.type==='bonus'?'★':id.type==='malus'?'✕':'○'}</span>\`}
+          </div>
+          <div style="font-size:8px;color:\${col};font-family:Rajdhani,sans-serif;text-align:center;max-width:52px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">\${id.nom}</div>
+        </div>
+        <div style="display:none;grid-column:1/-1;padding:7px 9px;border-radius:var(--radius);border:1px solid \${col}33;background:\${col}0a;font-size:10px;color:var(--c-text2);line-height:1.6;margin-top:2px">
+          <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:\${col};margin-bottom:3px">\${id.nom}</div>
+          \${id.court?\`<div>\${id.court}</div>\`:''}
+          \${id.effet?\`<div style="color:\${col};margin-top:2px">▲ \${id.effet}</div>\`:''}
+        </div>\`;
+      }).join('');
+      return \`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--c-border)">
+        <div class="sec" style="margin-bottom:8px"><i class="ti ti-star"></i> Idées nationales</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">\${slots}</div>
+      </div>\`;
+    })()}`;
+
 
   setPanel(`
     <button class="back-btn" id="back-btn"><i class="ti ti-arrow-left"></i> Vue globale</button>
@@ -850,19 +883,24 @@ function renderZonePanel(zoneName) {
   $('back-btn')?.addEventListener('click', clearZone);
   bindTerrButtons();
   renderRankingPanel(); // Update active state
-  // Idées nationales — 4 slots pentagone
+  // Idées nationales — 4 slots pentagone (après pyramide)
   const nationData = nations[zoneName] || {};
   const idees = (nationData.idees || []);
   const panelInner = document.getElementById('panel-inner');
   if (panelInner && !panelInner.querySelector('.idees-nationales-section')) {
     const TYPE_COLOR = { bonus: '#2a9a4a', malus: '#cc3030', neutre: '#3a7acc' };
     const PENTAGON = 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)';
+
+    // Trouver le bon endroit pour insérer — après .nation-bottom-row
+    const nationBottom = panelInner.querySelector('.nation-bottom-row');
+    const insertAfter = nationBottom || panelInner.querySelector('.nation-header');
+
     const slots = [0,1,2,3].map(i => {
       const id = idees[i];
       const col = id ? (TYPE_COLOR[id.type] || '#3a5a7a') : '#1a2e4a';
       if (!id) return `
         <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
-          <div style="width:52px;height:52px;clip-path:${PENTAGON};background:#0d1828;border:none;display:flex;align-items:center;justify-content:center">
+          <div style="width:52px;height:52px;clip-path:${PENTAGON};background:#0d1828;display:flex;align-items:center;justify-content:center">
             <div style="width:46px;height:46px;clip-path:${PENTAGON};background:#0a1422;display:flex;align-items:center;justify-content:center">
               <span style="font-size:16px;opacity:.2">?</span>
             </div>
@@ -871,18 +909,16 @@ function renderZonePanel(zoneName) {
         </div>`;
       return `
         <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer"
-          onclick="document.getElementById('idee-detail-${zoneName}-${i}').style.display=document.getElementById('idee-detail-${zoneName}-${i}').style.display==='none'?'block':'none'"
+          onclick="(function(el){const d=el.nextElementSibling;d.style.display=d.style.display==='none'?'block':'none'})(this)"
           title="${id.nom}">
-          <div style="width:52px;height:52px;clip-path:${PENTAGON};background:${col}44;display:flex;align-items:center;justify-content:center;position:relative">
+          <div style="width:52px;height:52px;clip-path:${PENTAGON};background:${col}44;display:flex;align-items:center;justify-content:center">
             <div style="width:46px;height:46px;clip-path:${PENTAGON};background:#0a1422;overflow:hidden;display:flex;align-items:center;justify-content:center">
-              ${id.img
-                ? `<img src="${id.img}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`
-                : `<span style="font-size:16px">${id.type==='bonus'?'★':id.type==='malus'?'✕':'○'}</span>`}
+              ${id.img ? `<img src="${id.img}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">` : `<span style="font-size:16px">${id.type==='bonus'?'★':id.type==='malus'?'✕':'○'}</span>`}
             </div>
           </div>
           <div style="font-size:9px;color:${col};font-family:Rajdhani,sans-serif;text-align:center;max-width:56px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${id.nom}</div>
         </div>
-        <div id="idee-detail-${zoneName}-${i}" style="display:none;grid-column:1/-1;padding:8px 10px;border-radius:var(--radius);border:1px solid ${col}33;background:${col}0a;font-size:11px;color:var(--c-text2);line-height:1.6">
+        <div style="display:none;grid-column:1/-1;padding:8px 10px;border-radius:var(--radius);border:1px solid ${col}33;background:${col}0a;font-size:11px;color:var(--c-text2);line-height:1.6">
           <div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:${col};margin-bottom:4px">${id.nom}</div>
           ${id.court ? `<div style="margin-bottom:3px">${id.court}</div>` : ''}
           ${id.effet ? `<div style="color:${col};font-size:10px">▲ ${id.effet}</div>` : ''}
@@ -894,12 +930,22 @@ function renderZonePanel(zoneName) {
     sec.innerHTML = `
       <div class="divider"></div>
       <div class="sec"><i class="ti ti-star"></i> Idées nationales</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:4px 2px">
-        ${slots}
-      </div>`;
-    panelInner.appendChild(sec);
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:4px 2px">${slots}</div>`;
+
+    // Insérer après .nation-bottom-row si possible, sinon après .nation-header
+    if (insertAfter && insertAfter.nextSibling) {
+      panelInner.insertBefore(sec, insertAfter.nextSibling);
+    } else if (insertAfter) {
+      insertAfter.parentNode.insertBefore(sec, insertAfter.nextSibling);
+    } else {
+      // Fallback : insérer avant le premier .sec des territoires
+      const terrSec = panelInner.querySelector('.sec');
+      if (terrSec) panelInner.insertBefore(sec, terrSec);
+      else panelInner.appendChild(sec);
+    }
   }
 }
+
 
 function renderAlignTriangle(ax=0.5, ay=0.5) {
   const W=130, H=112;
@@ -908,26 +954,22 @@ function renderAlignTriangle(ax=0.5, ay=0.5) {
   const px=Math.max(12,Math.min(W-12, top[0]*wO+left[0]*wS+right[0]*wSh));
   const py=Math.max(12,Math.min(H-12, top[1]*wO+left[1]*wS+right[1]*wSh));
   const pts=`${top[0]},${top[1]} ${left[0]},${left[1]} ${right[0]},${right[1]}`;
-
   return `<svg class="align-triangle" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
     <defs>
       <clipPath id="tc"><polygon points="${pts}"/></clipPath>
       <radialGradient id="gO" cx="${top[0]/W}" cy="${top[1]/H}" r="0.85" gradientUnits="objectBoundingBox">
-        <stop offset="0%" stop-color="#c8901a" stop-opacity=".9"/>
-        <stop offset="100%" stop-color="#c8901a" stop-opacity="0"/>
+        <stop offset="0%" stop-color="#c8901a" stop-opacity=".9"/><stop offset="100%" stop-color="#c8901a" stop-opacity="0"/>
       </radialGradient>
       <radialGradient id="gS" cx="${left[0]/W}" cy="${left[1]/H}" r="0.85" gradientUnits="objectBoundingBox">
-        <stop offset="0%" stop-color="#3a7acc" stop-opacity=".9"/>
-        <stop offset="100%" stop-color="#3a7acc" stop-opacity="0"/>
+        <stop offset="0%" stop-color="#3a7acc" stop-opacity=".9"/><stop offset="100%" stop-color="#3a7acc" stop-opacity="0"/>
       </radialGradient>
       <radialGradient id="gSh" cx="${right[0]/W}" cy="${right[1]/H}" r="0.85" gradientUnits="objectBoundingBox">
-        <stop offset="0%" stop-color="#b02828" stop-opacity=".9"/>
-        <stop offset="100%" stop-color="#b02828" stop-opacity="0"/>
+        <stop offset="0%" stop-color="#b02828" stop-opacity=".9"/><stop offset="100%" stop-color="#b02828" stop-opacity="0"/>
       </radialGradient>
     </defs>
     <polygon points="${pts}" fill="#06101e" stroke="#1e3048" stroke-width="1"/>
-    <polygon points="${pts}" fill="url(#gO)"  clip-path="url(#tc)"/>
-    <polygon points="${pts}" fill="url(#gS)"  clip-path="url(#tc)"/>
+    <polygon points="${pts}" fill="url(#gO)" clip-path="url(#tc)"/>
+    <polygon points="${pts}" fill="url(#gS)" clip-path="url(#tc)"/>
     <polygon points="${pts}" fill="url(#gSh)" clip-path="url(#tc)"/>
     <text x="${top[0]}" y="${top[1]-4}" text-anchor="middle" font-size="9" fill="#c8901a" font-family="Rajdhani,sans-serif" font-weight="700">Olympiens</text>
     <text x="${left[0]-2}" y="${left[1]+10}" text-anchor="start" font-size="8" fill="#3a7acc" font-family="Rajdhani,sans-serif" font-weight="700">Sovereign</text>
@@ -939,12 +981,10 @@ function renderAlignTriangle(ax=0.5, ay=0.5) {
 function terrCard(t) {
   const owner   = t.owner && t.owner!==N ? getD(t.owner) : null;
   const isAtked = window.VV.attacks.some(a => a.territory===t.id);
-  // Chercher la capitulation directement dans toutes les attaques
-  const capAtk = window.VV.attacks.find(a => a.capitulation && a.capitulation === t.id);
+  const capAtk  = window.VV.attacks.find(a => a.capitulation && a.capitulation === t.id);
   const myCapAtk = me ? window.VV.attacks.find(a => a.attacker===me.id && a.capitulation) : null;
   const capTerr  = myCapAtk ? myCapAtk.capitulation : (capitulation || null);
   const isCap    = capTerr === t.id || (capAtk && me && capAtk.attacker === me.id);
-  if (t.id === 'cn_entreprises') console.log('[CAP DEBUG]', t.id, 'capTerr:', capTerr, 'isCap:', isCap, 'me:', me?.id, 'myCapAtk:', myCapAtk, 'capitulation var:', capitulation);
   const isMyT   = me && t.owner===me.id;
   const canA    = me && owner && owner.id!==me.id && myAtks().length<2 && atkOn(owner.id)<2;
   const dc      = window.VV.dotColor(t);
@@ -997,7 +1037,6 @@ function terrCard(t) {
     </div>`;
   }
 
-  // Org chip avec shatter si capitulation
   const orgShatter = (capTerr === t.id) ? `
     <div style="position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden;border-radius:6px">
       <img src="https://i.imgur.com/Arc20Xl.png" style="width:100%;height:100%;object-fit:cover;mix-blend-mode:screen;opacity:.85">
@@ -1023,27 +1062,26 @@ function bindTerrButtons() {
 }
 
 function getDeityPoints(deityId) {
-  // Find row in pointsData by deity id (first column)
   const row = pointsData.find(r => {
     const firstVal = Object.values(r)[0];
     return firstVal?.toLowerCase?.() === deityId.toLowerCase();
   }) || {};
   return {
-    territoire: Number(row['Territoire'] || row['territoire'] || 0),
+    territoire:   Number(row['Territoire']  || row['territoire']  || 0),
     organisation: Number(row['Organisation'] || row['organisation'] || 0),
-    societal: Number(row['Sociétal'] || row['societal'] || row['Societal'] || 0),
+    societal:     Number(row['Sociétal']    || row['societal']    || row['Societal'] || 0),
   };
 }
 
 function renderPlayerPanel() {
   if (!me) return;
-  const myT = allT().filter(t => t.owner===me.id);
-  const atks = myAtks();
+  const myT      = allT().filter(t => t.owner===me.id);
+  const atks     = myAtks();
   const incoming = window.VV.attacks.filter(a => a.target===me.id);
-  const atkdT = Object.values(window.VV.ZONES).flatMap(z=>z.territories).filter(t=>t.owner===me.id&&incoming.some(a=>a.territory===t.id));
-  const needCap = incoming.length>=2 && atks.length>=2 && !capitulation;
-  const autoDef = incoming.length>0 && !(incoming.length>=2 && atks.length>=2);
-  const faction = getFaction(me.id);
+  const atkdT    = Object.values(window.VV.ZONES).flatMap(z=>z.territories).filter(t=>t.owner===me.id&&incoming.some(a=>a.territory===t.id));
+  const needCap  = incoming.length>=2 && atks.length>=2 && !capitulation;
+  const autoDef  = incoming.length>0 && !(incoming.length>=2 && atks.length>=2);
+  const faction  = getFaction(me.id);
 
   setPanel(`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
@@ -1064,9 +1102,9 @@ function renderPlayerPanel() {
       const total = pts.territoire + pts.organisation + pts.societal;
       const maxVal = Math.max(pts.territoire, pts.organisation, pts.societal, 1);
       const bars = [
-        { label: 'Territoires', icon: 'ti-map-pin', val: pts.territoire, color: '#3a7acc' },
-        { label: 'Organisations', icon: 'ti-building', val: pts.organisation, color: '#c8901a' },
-        { label: 'Sociétal', icon: 'ti-users', val: pts.societal, color: '#2a9a4a' },
+        { label:'Territoires',   icon:'ti-map-pin', val:pts.territoire,   color:'#3a7acc' },
+        { label:'Organisations', icon:'ti-building', val:pts.organisation, color:'#c8901a' },
+        { label:'Sociétal',      icon:'ti-users',    val:pts.societal,     color:'#2a9a4a' },
       ];
       return `<div style="background:var(--c-bg2);border:1px solid var(--c-border);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px">
         <div style="font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--c-text3);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
@@ -1089,9 +1127,6 @@ function renderPlayerPanel() {
         `).join('')}
       </div>`;
     })()}
-    <div style="display:none">
-      </div>
-    </div>
 
     ${needCap?`<div class="notif notif-warn"><b>Choix requis !</b> Sélectionnez le territoire à capituler.</div>`:''}
     ${autoDef?`<div class="notif notif-info">Défense automatique active</div>`:''}
@@ -1113,7 +1148,7 @@ function renderPlayerPanel() {
       ${atkdT.map(t=>{
         const isChosen = capitulation===t.id;
         const isLocked = capitulation && !isChosen;
-        return `<button class="cap-choice${isChosen?' chosen':''}" 
+        return `<button class="cap-choice${isChosen?' chosen':''}"
           data-tid="${t.id}"
           ${isLocked?'disabled style="opacity:.3;cursor:not-allowed"':''}
         >${isChosen?'⚑ ':''}${t.name}</button>`;
@@ -1148,7 +1183,6 @@ function renderPlayerPanel() {
 function openLeaderModal(zoneName) {
   const nation = nations[zoneName] || {};
   if (!nation.leader) return;
-
   let modal = document.getElementById('modal-leader');
   if (!modal) {
     modal = document.createElement('div');
@@ -1158,38 +1192,29 @@ function openLeaderModal(zoneName) {
     document.body.appendChild(modal);
     modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
   }
-
   const d1 = nation.dieu1 ? getD(nation.dieu1) : null;
   const d2 = nation.dieu2 ? getD(nation.dieu2) : null;
-
   document.getElementById('modal-leader-inner').innerHTML = `
     <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:14px">
       <div style="width:72px;height:72px;border-radius:50%;overflow:hidden;border:2px solid var(--c-border3);flex-shrink:0;background:var(--c-bg3)">
-        ${nation.portrait
-          ? `<img src="${nation.portrait}" alt="${nation.leader}" style="width:100%;height:100%;object-fit:cover">`
-          : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--c-text4)"><i class="ti ti-user"></i></div>`
-        }
+        ${nation.portrait?`<img src="${nation.portrait}" alt="${nation.leader}" style="width:100%;height:100%;object-fit:cover">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--c-text4)"><i class="ti ti-user"></i></div>`}
       </div>
       <div style="flex:1;min-width:0">
         <div style="font-family:Rajdhani,sans-serif;font-size:18px;font-weight:700;color:var(--c-text1);margin-bottom:2px">${nation.leader}</div>
         <div style="font-family:Rajdhani,sans-serif;font-size:12px;color:var(--c-text3);margin-bottom:6px">Leader — ${zoneName}</div>
-        ${(d1||d2) ? `<div style="display:flex;gap:6px;align-items:center">
+        ${(d1||d2)?`<div style="display:flex;gap:6px;align-items:center">
           <span style="font-size:9px;color:var(--c-text4);font-family:Rajdhani,sans-serif;letter-spacing:.06em">INFLUENCES</span>
           ${d1?`<span style="font-size:10px;color:${d1.color};font-family:Rajdhani,sans-serif;font-weight:600">${d1.name}</span>`:''}
           ${d1&&d2?`<span style="color:var(--c-text4)">·</span>`:''}
           ${d2?`<span style="font-size:10px;color:${d2.color};font-family:Rajdhani,sans-serif;font-weight:600">${d2.name}</span>`:''}
-        </div>` : ''}
+        </div>`:''}
       </div>
     </div>
-    ${nation.bio
-      ? `<div style="font-size:11px;color:var(--c-text2);line-height:1.7;border-top:1px solid var(--c-border);padding-top:12px">${nation.bio}</div>`
-      : `<div style="font-size:10px;color:var(--c-text4);text-align:center;padding:8px 0;border-top:1px solid var(--c-border)">Aucune biographie disponible</div>`
-    }
+    ${nation.bio?`<div style="font-size:11px;color:var(--c-text2);line-height:1.7;border-top:1px solid var(--c-border);padding-top:12px">${nation.bio}</div>`:`<div style="font-size:10px;color:var(--c-text4);text-align:center;padding:8px 0;border-top:1px solid var(--c-border)">Aucune biographie disponible</div>`}
     <div style="margin-top:14px;display:flex;justify-content:flex-end">
       <button class="btn" onclick="document.getElementById('modal-leader').classList.remove('open')">Fermer</button>
     </div>
   `;
-
   modal.classList.add('open');
 }
 
@@ -1204,7 +1229,6 @@ function clearZone() {
   renderRankingPanel();
 }
 
-// ---- onZoneClick (appelé par globe.js) ---------------------
 window.VV.onZoneClick = function(zoneName) {
   if (!zoneName) return;
   window.VV.globe.highlightZone(zoneName);
@@ -1214,17 +1238,14 @@ window.VV.onZoneClick = function(zoneName) {
   renderZonePanel(zoneName);
 };
 
-// ---- TICKER ------------------------------------------------
 function updateWarningTicker() {
   const ticker = $('warning-ticker');
   if (!ticker) return;
   if (!me) { ticker.className = 'ticker-calm'; ticker.style.display='none'; return; }
-
-  const incoming = window.VV.attacks.filter(a => a.target===me.id);
+  const incoming  = window.VV.attacks.filter(a => a.target===me.id);
   const myAtkList = window.VV.attacks.filter(a => a.attacker===me.id);
   const tc = ticker.querySelector('.ticker-content');
   ticker.style.display = 'flex';
-
   if (!incoming.length && !myAtkList.length) {
     ticker.className = 'ticker-calm';
     if (tc) tc.textContent = `Aucune menace · CYCLE ${CYCLE} · Situation stable · `.repeat(4);
@@ -1259,7 +1280,6 @@ function updateSituationLegend() {
   }).join('');
 }
 
-// ---- ATTACKS -----------------------------------------------
 function openAtkModal(targetId) {
   if (histMode) { alert('Mode historique actif — retournez au cycle actuel pour attaquer.'); return; }
   if (!me || myAtks().length>=2) return;
@@ -1301,7 +1321,7 @@ async function confirmAttack() {
   const btn = $('atk-confirm');
   btn.disabled = true; btn.textContent = 'Envoi…';
   const res = await postScript({ action:'add_attack', cycle:CYCLE, attaquant:me.id, cible:pendingAtk.target, territoire_id:sel.value });
-  btn.disabled = false; btn.innerHTML = '<i class="ti ti-sword"></i> Confirmer l\'attaque';
+  btn.disabled = false; btn.innerHTML = "<i class='ti ti-sword'></i> Confirmer l'attaque";
   if (!res.ok) { alert(`Erreur : ${res.error}`); return; }
   window.VV.attacks.push({ attacker:me.id, target:pendingAtk.target, territory:sel.value });
   capitulation = null;
@@ -1326,15 +1346,6 @@ async function setCapitulation(tid) {
   capitulation = tid;
   await postScript({ action:'set_capitulation', cycle:CYCLE, attaquant:me.id, territoire_id:tid });
   renderPlayerPanel(); window.VV.globe.buildDots();
-}
-
-// ---- AUTH --------------------------------------------------
-function openLogin() {
-  $('login-sel').innerHTML = '<option value="">— Votre divinité —</option>' +
-    window.VV.DEITIES.map(d=>`<option value="${d.id}">${d.name}${d.player?` (${d.player})`:''}</option>`).join('');
-  $('login-pw').value = '';
-  $('login-err').textContent = '';
-  openModal('modal-login');
 }
 
 function openLogin() {
@@ -1411,7 +1422,7 @@ function openLogin() {
   `;
 
   const cycleEl = document.getElementById('ls-cycle');
-  if (cycleEl) cycleEl.textContent = window.VV?.CYCLE || '—';
+  if (cycleEl) cycleEl.textContent = window.VV?.CYCLE || CYCLE || '—';
   window._loginSelId = null;
 }
 
@@ -1419,27 +1430,24 @@ window.loginSelectDeity = function(id, color) {
   window._loginSelId = id;
   document.querySelectorAll('[id^="lcard-"]').forEach(c => {
     c.style.borderColor = '#1a2e4a';
-    c.style.background = 'rgba(255,255,255,.02)';
-    c.style.boxShadow = 'none';
+    c.style.background  = 'rgba(255,255,255,.02)';
+    c.style.boxShadow   = 'none';
   });
   const card = document.getElementById('lcard-' + id);
   if (card) {
     card.style.borderColor = color;
-    card.style.background = 'rgba(10,15,25,1)';
-    card.style.boxShadow = '0 0 10px ' + color + '55, inset 0 -2px 0 ' + color;
+    card.style.background  = 'rgba(10,15,25,1)';
+    card.style.boxShadow   = '0 0 10px ' + color + '55, inset 0 -2px 0 ' + color;
   }
-  const d = window.VV.DEITIES.find(x => x.id === id);
+  const d    = window.VV.DEITIES.find(x => x.id === id);
   const disp = document.getElementById('ls-display');
   if (disp && d) disp.textContent = d.name + (d.player ? ' · ' + d.player : '');
   const btn = document.getElementById('ls-btn');
   if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.boxShadow = '0 4px 20px ' + color + '66'; }
-  // Subtle color accent on border only, no background change
-  const screen = document.getElementById('vv-login-screen');
-  if (screen) screen.style.borderTop = '2px solid ' + color;
 };
 
 window.loginTogglePw = function() {
-  const pw = document.getElementById('ls-pw');
+  const pw  = document.getElementById('ls-pw');
   const eye = document.getElementById('ls-eye');
   if (!pw) return;
   pw.type = pw.type === 'password' ? 'text' : 'password';
@@ -1447,8 +1455,8 @@ window.loginTogglePw = function() {
 };
 
 window.loginScreenSubmit = function() {
-  const id = window._loginSelId;
-  const pw = document.getElementById('ls-pw')?.value;
+  const id  = window._loginSelId;
+  const pw  = document.getElementById('ls-pw')?.value;
   const err = document.getElementById('ls-err');
   const btn = document.getElementById('ls-btn');
   if (!id) { if (err) err.textContent = 'Sélectionnez votre divinité.'; return; }
@@ -1483,11 +1491,12 @@ window.loginScreenSubmit = function() {
     }, 500);
   }
 };
+
 function doLogin() {
-  const id = $('login-sel').value;
-  const pw = $('login-pw').value;
+  const id = $('login-sel')?.value;
+  const pw = $('login-pw')?.value;
   const d  = getD(id);
-  if (!d?.pass || d.pass !== pw) { $('login-err').textContent = 'Identifiants incorrects'; return; }
+  if (!d?.pass || d.pass !== pw) { if ($('login-err')) $('login-err').textContent = 'Identifiants incorrects'; return; }
   me = d;
   closeModal('modal-login');
   const bl = $('btn-login');
@@ -1495,39 +1504,31 @@ function doLogin() {
   const ba = $('btn-admin');
   if (ba) ba.style.display = 'inline-flex';
   selDeity = d.id;
-  // Restaurer la capitulation depuis le sheet
   const myCapRow = window.VV.attacks.find(a => a.attacker === d.id && a.capitulation);
   capitulation = myCapRow ? myCapRow.capitulation : null;
   renderDock();
   window.VV.globe.buildDots();
   renderPlayerPanel();
   updateWarningTicker();
-  // Afficher le bouton de faction
   showFactionOrgBtn(d.id);
 }
 
 function showFactionOrgBtn(deityId) {
-  const faction = getFaction(deityId);
-  const trigger = document.getElementById('faction-dropdown-trigger');
-  const dot = document.getElementById('faction-trigger-dot');
-  const label = document.getElementById('faction-trigger-label');
-
+  const faction  = getFaction(deityId);
+  const trigger  = document.getElementById('faction-dropdown-trigger');
+  const dot      = document.getElementById('faction-trigger-dot');
+  const label    = document.getElementById('faction-trigger-label');
   if (!faction) {
-    // Verrouiller tout
     if (trigger) trigger.classList.add('locked');
     ['btn-grande-societe','btn-experreducti','btn-cercle-asimov'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) { el.classList.add('locked'); el.querySelector('.lock-icon')?.style && (el.querySelector('.lock-icon').style.display=''); }
+      if (el) { el.classList.add('locked'); }
     });
     return;
   }
-
-  // Déverrouiller le trigger
   if (trigger) trigger.classList.remove('locked');
-  if (dot) dot.style.background = faction.color;
+  if (dot)   dot.style.background = faction.color;
   if (label) label.textContent = faction.name;
-
-  // Déverrouiller uniquement le bon bouton
   const map = { 'Sovereign':'btn-grande-societe', 'Olympiens':'btn-experreducti', 'Shemning':'btn-cercle-asimov' };
   ['btn-grande-societe','btn-experreducti','btn-cercle-asimov'].forEach(id => {
     const el = document.getElementById(id);
@@ -1544,7 +1545,6 @@ function showFactionOrgBtn(deityId) {
   });
 }
 
-// ---- ADMIN -------------------------------------------------
 function openAdminPanel() {
   $('admin-body').innerHTML = `
     <div style="font-size:10px;color:var(--c-text2);margin-bottom:10px">Cycle ${CYCLE} · ${window.VV.attacks.length} attaque(s)</div>
@@ -1573,11 +1573,9 @@ async function closeCycle() {
   else alert(`Erreur : ${res.error}`);
 }
 
-// ---- MODALS ------------------------------------------------
 function openModal(id)  { document.getElementById(id)?.classList.add('open'); }
 function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
 
-// ---- REFRESH -----------------------------------------------
 async function fullRefresh() {
   const ok = await loadData();
   if (!ok) return;
@@ -1594,26 +1592,21 @@ async function fullRefresh() {
   else               showPrompt();
 }
 
-// ---- INIT --------------------------------------------------
 async function init() {
   const [, world] = await Promise.all([
     loadData().then(() => loadPointsData()),
     fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r=>r.json()),
   ]);
-
   window.VV.globe.init(world);
   renderDock();
   renderRankingPanel();
   showPrompt();
-  // Ouvrir l'écran de connexion au chargement
   openLogin();
   setInterval(fullRefresh, CFG.REFRESH_MIN * 60 * 1000);
 }
 
-// ---- EVENTS ------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
 
-  // Faction filters
   let activeFaction = null;
   document.querySelectorAll('.faction-btn').forEach(btn =>
     btn.addEventListener('click', () => {
@@ -1631,22 +1624,18 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   );
 
-  // Fandom
-  // Historique
   $('btn-hist')?.addEventListener('click', async () => {
     const cycles = await loadHistorique();
-    if (!cycles.length) { alert('Aucun historique disponible. Les cycles doivent être clôturés pour créer un historique.'); return; }
+    if (!cycles.length) { alert('Aucun historique disponible.'); return; }
     openHistModal(cycles);
   });
 
-  // News
   $('btn-news')?.addEventListener('click', () => {
     if (typeof openNews === 'function') openNews();
   });
 
   $('btn-fandom')?.addEventListener('click', () => window.open(CFG.FANDOM_URL, '_blank'));
 
-  // Mode couleur carte
   $('btn-mapmode')?.addEventListener('click', function() {
     window.VV.mapColorMode = window.VV.mapColorMode === 'divine' ? 'faction' : 'divine';
     const isFaction = window.VV.mapColorMode === 'faction';
@@ -1654,9 +1643,7 @@ document.addEventListener('DOMContentLoaded', () => {
     this.title = isFaction ? 'Mode Faction actif — cliquer pour revenir au mode Divin' : 'Mode Divin — cliquer pour mode Faction';
     const icon = this.querySelector('i');
     if (icon) icon.className = isFaction ? 'ti ti-flag' : 'ti ti-palette';
-    // Mettre à jour la légende dans le panneau zone si ouverte
     window.VV.globe.buildDots();
-    // Mettre à jour la légende du globe
     const leg = document.getElementById('legend');
     if (leg) {
       if (isFaction) {
@@ -1677,24 +1664,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Situations
   $('btn-situation')?.addEventListener('click', function() {
     window.VV.showSituations = !window.VV.showSituations;
     this.classList.toggle('active', window.VV.showSituations);
     if (!window.VV.showSituations) {
-      window.VV.globe.resetCountryColors(); // redraw inclus
+      window.VV.globe.resetCountryColors();
     } else {
       window.VV.globe.drawSituations();
     }
     updateSituationLegend();
   });
 
-  // Login
   $('btn-login')?.addEventListener('click', openLogin);
   $('login-submit')?.addEventListener('click', doLogin);
   $('login-pw')?.addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
 
-  // Admin + refresh (protégé par mot de passe)
   $('btn-admin')?.addEventListener('click', () => {
     const pw = prompt('Mot de passe admin :');
     if (pw !== 'VaeVictis2025!') { alert('Mot de passe incorrect.'); return; }
@@ -1702,15 +1686,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   $('btn-refresh')?.addEventListener('click', fullRefresh);
 
-  // Attaque
   $('atk-confirm')?.addEventListener('click', confirmAttack);
 
-  // Zoom
   $('zoom-in')?.addEventListener('click',    () => window.VV.globe.zoomIn());
   $('zoom-out')?.addEventListener('click',   () => window.VV.globe.zoomOut());
   $('zoom-reset')?.addEventListener('click', () => window.VV.globe.zoomReset());
 
-  // Transnationales
   const TRANS_MEMBERS = {
     'UE':   ['France','Germany','Austria','Belgium','Netherlands','Luxembourg','Italy','Spain','Portugal','Poland','Czech Republic','Hungary','Slovakia','Sweden','Denmark','Finland','Greece','Bulgaria','Romania','Croatia','Slovenia','Estonia','Latvia','Lithuania','Ireland','Cyprus','Malta'],
     'OTAN': ['United States of America','Canada','United Kingdom','France','Germany','Italy','Spain','Netherlands','Belgium','Luxembourg','Norway','Denmark','Iceland','Poland','Czech Republic','Hungary','Turkey','Greece','Portugal','Bulgaria','Romania','Slovakia','Slovenia','Estonia','Latvia','Lithuania','Albania','Croatia','Montenegro','North Macedonia','Finland','Sweden'],
@@ -1729,7 +1710,6 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   );
 
-  // Dropdown faction — position fixe pour passer au-dessus du ticker
   document.getElementById('faction-dropdown-trigger')?.addEventListener('click', function() {
     if (this.classList.contains('locked')) return;
     const menu = document.getElementById('faction-dropdown-menu');
@@ -1740,7 +1720,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       const rect = this.getBoundingClientRect();
       menu.style.position = 'fixed';
-      menu.style.top = (rect.bottom + 6) + 'px';
+      menu.style.top  = (rect.bottom + 6) + 'px';
       menu.style.left = rect.left + 'px';
       menu.style.zIndex = '9999';
       menu.style.display = 'block';
@@ -1753,20 +1733,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Boutons faction (placeholder — fonctionnalité à définir)
   document.getElementById('btn-grande-societe')?.addEventListener('click', () => {
     alert('La Grande Société — fonctionnalité à venir.');
   });
   document.getElementById('btn-experreducti')?.addEventListener('click', () => {
-    if (typeof openExperreducti === 'function') {
-      openExperreducti(me?.id || null);
-    }
+    if (typeof openExperreducti === 'function') openExperreducti(me?.id || null);
   });
   document.getElementById('btn-cercle-asimov')?.addEventListener('click', () => {
     alert("Cercle d'Asimov — fonctionnalité à venir.");
   });
 
-  // Fermer modals
   document.querySelectorAll('[data-close]').forEach(btn =>
     btn.addEventListener('click', () => closeModal(btn.dataset.close))
   );
@@ -1782,12 +1758,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============================================================
 
 let _hubDeityId = null;
-let _hubView    = 'main'; // 'main' | 'territoires' | 'organisations' | 'societal'
+let _hubView    = 'main';
 
 function openDeityHub(deityId) {
   _hubDeityId = deityId;
   _hubView    = 'main';
-
   let modal = document.getElementById('hub-modal');
   if (!modal) {
     modal = document.createElement('div');
@@ -1796,7 +1771,6 @@ function openDeityHub(deityId) {
     document.body.appendChild(modal);
     modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
   }
-
   if (!document.getElementById('hub-style')) {
     const s = document.createElement('style');
     s.id = 'hub-style';
@@ -1811,77 +1785,54 @@ function openDeityHub(deityId) {
     `;
     document.head.appendChild(s);
   }
-
   modal.classList.add('open');
   renderHubMain();
 }
 
-// ---- MAIN VIEW ---------------------------------------------
 function renderHubMain() {
   const modal = document.getElementById('hub-modal');
   if (!modal) return;
   _hubView = 'main';
-
   const d       = getD(_hubDeityId);
   const faction = getFaction(_hubDeityId);
   const pts     = getDeityPoints(_hubDeityId);
   const total   = pts.territoire + pts.organisation + pts.societal || 1;
 
-  // SVG Donut chart — calcul arc correct
   const cx = 100, cy = 100, R = 75, r = 44;
   const segments = [
-    { label:'Territoires',   val:pts.territoire,   color:'#3a7acc', icon:'ti-map-pin',   view:'territoires' },
-    { label:'Organisations', val:pts.organisation, color:'#c8901a', icon:'ti-building',  view:'organisations' },
-    { label:'Sociétal',      val:pts.societal,     color:'#2a9a4a', icon:'ti-users',     view:'societal' },
+    { label:'Territoires',   val:pts.territoire,   color:'#3a7acc', icon:'ti-map-pin',  view:'territoires' },
+    { label:'Organisations', val:pts.organisation, color:'#c8901a', icon:'ti-building', view:'organisations' },
+    { label:'Sociétal',      val:pts.societal,     color:'#2a9a4a', icon:'ti-users',    view:'societal' },
   ];
 
   function polarToCart(angle, radius) {
-    return {
-      x: cx + radius * Math.cos(angle - Math.PI / 2),
-      y: cy + radius * Math.sin(angle - Math.PI / 2),
-    };
+    return { x: cx + radius * Math.cos(angle - Math.PI/2), y: cy + radius * Math.sin(angle - Math.PI/2) };
   }
-
   function makeArcPath(startAngle, endAngle, outerR, innerR) {
-    const s1 = polarToCart(startAngle, outerR);
-    const e1 = polarToCart(endAngle,   outerR);
-    const s2 = polarToCart(endAngle,   innerR);
-    const e2 = polarToCart(startAngle, innerR);
-    const large = endAngle - startAngle > Math.PI ? 1 : 0;
-    return [
-      `M ${s1.x.toFixed(2)} ${s1.y.toFixed(2)}`,
-      `A ${outerR} ${outerR} 0 ${large} 1 ${e1.x.toFixed(2)} ${e1.y.toFixed(2)}`,
-      `L ${s2.x.toFixed(2)} ${s2.y.toFixed(2)}`,
-      `A ${innerR} ${innerR} 0 ${large} 0 ${e2.x.toFixed(2)} ${e2.y.toFixed(2)}`,
-      'Z'
-    ].join(' ');
+    const s1=polarToCart(startAngle,outerR), e1=polarToCart(endAngle,outerR);
+    const s2=polarToCart(endAngle,innerR),   e2=polarToCart(startAngle,innerR);
+    const large = endAngle-startAngle > Math.PI ? 1 : 0;
+    return [`M ${s1.x.toFixed(2)} ${s1.y.toFixed(2)}`,`A ${outerR} ${outerR} 0 ${large} 1 ${e1.x.toFixed(2)} ${e1.y.toFixed(2)}`,`L ${s2.x.toFixed(2)} ${s2.y.toFixed(2)}`,`A ${innerR} ${innerR} 0 ${large} 0 ${e2.x.toFixed(2)} ${e2.y.toFixed(2)}`,'Z'].join(' ');
   }
 
-  // Add tiny gap to avoid degenerate arcs when a segment = 100% or 0%
   const GAP = 0.001;
   const nonZero = segments.filter(s => s.val > 0);
   let startAngle = 0;
   const paths = segments.map(seg => {
-    if (seg.val === 0) return { ...seg, path: null, lx:0, ly:0, pct:0, sweep:0 };
-    const pct      = seg.val / total;
-    // If only one segment, draw almost-full circle (gap at top)
-    const sweep    = nonZero.length === 1
-      ? 2 * Math.PI - GAP
-      : pct * 2 * Math.PI - GAP;
+    if (seg.val === 0) return { ...seg, path:null, lx:0, ly:0, pct:0, sweep:0 };
+    const pct  = seg.val / total;
+    const sweep = nonZero.length === 1 ? 2*Math.PI - GAP : pct * 2*Math.PI - GAP;
     const endAngle = startAngle + sweep;
-    const midAngle = startAngle + sweep / 2;
-    const labelR   = (R + r) / 2;
-    const lp       = polarToCart(midAngle, labelR);
-    const path     = makeArcPath(startAngle, endAngle, R, r);
-    startAngle     = startAngle + pct * 2 * Math.PI; // advance by full slice
-    return { ...seg, path, lx: lp.x, ly: lp.y, pct, sweep };
+    const midAngle = startAngle + sweep/2;
+    const lp   = polarToCart(midAngle, (R+r)/2);
+    const path = makeArcPath(startAngle, endAngle, R, r);
+    startAngle = startAngle + pct * 2*Math.PI;
+    return { ...seg, path, lx:lp.x, ly:lp.y, pct, sweep };
   });
 
   modal.innerHTML = `
     <div class="modal hub-anim" style="background:var(--c-bg1)">
       <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,${d.color},transparent);border-radius:12px 12px 0 0"></div>
-
-      <!-- Header -->
       <div style="padding:16px 22px;border-bottom:1px solid var(--c-border);display:flex;align-items:center;gap:14px">
         <div style="width:46px;height:46px;border-radius:50%;overflow:hidden;border:2px solid ${d.color}55;background:var(--c-bg3);display:flex;align-items:center;justify-content:center;flex-shrink:0">
           ${d.avatar?`<img src="${d.avatar}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:`<span style="font-size:14px;font-weight:700;color:${d.color}">${d.name.slice(0,2).toUpperCase()}</span>`}
@@ -1893,32 +1844,23 @@ function renderHubMain() {
         <button onclick="document.getElementById('hub-modal').classList.remove('open')"
           style="margin-left:auto;background:none;border:1px solid var(--c-border);border-radius:6px;color:var(--c-text3);padding:5px 12px;cursor:pointer;font-family:Rajdhani,sans-serif;font-size:11px">FERMER</button>
       </div>
-
-      <!-- Corps -->
       <div style="padding:22px;display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:start">
-
-        <!-- Camembert -->
         <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
           <svg viewBox="0 0 200 200" style="width:200px;height:200px;overflow:visible" xmlns="http://www.w3.org/2000/svg">
-            ${paths.filter(p=>p.path).map(p => `
+            ${paths.filter(p=>p.path).map(p=>`
               <path d="${p.path}" fill="${p.color}" opacity=".85" stroke="var(--c-bg1)" stroke-width="2"
                 style="cursor:pointer;transition:opacity .15s"
-                onmouseover="this.style.opacity='1'"
-                onmouseout="this.style.opacity='.85'"
+                onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'"
                 onclick="hubGoTo('${p.view}')"/>
-              ${p.val > 0 && p.sweep > 0.3 ? `<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="700" fill="white" pointer-events="none">${Math.round(p.pct*100)}%</text>` : ''}
-            `).join('')}
-            <!-- Centre -->
+              ${p.val>0&&p.sweep>0.3?`<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="700" fill="white" pointer-events="none">${Math.round(p.pct*100)}%</text>`:''}`).join('')}
             <circle cx="100" cy="100" r="40" fill="var(--c-bg1)" stroke="var(--c-border)" stroke-width="1"/>
             <text x="100" y="94" text-anchor="middle" font-size="18" font-weight="700" fill="var(--c-text1)" font-family="Rajdhani,sans-serif">${total}</text>
             <text x="100" y="110" text-anchor="middle" font-size="9" fill="var(--c-text3)" font-family="Rajdhani,sans-serif" letter-spacing=".06em">PI TOTAL</text>
           </svg>
           <div style="font-size:10px;color:var(--c-text4);font-family:Rajdhani,sans-serif;letter-spacing:.06em;text-align:center">Cliquez une part pour le détail</div>
         </div>
-
-        <!-- Détails + accès -->
         <div style="display:flex;flex-direction:column;gap:10px">
-          ${segments.map(seg => `
+          ${segments.map(seg=>`
             <div onclick="hubGoTo('${seg.view}')"
               style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:var(--radius);border:1px solid var(--c-border);background:var(--c-bg2);cursor:pointer;transition:all .15s"
               onmouseover="this.style.borderColor='${seg.color}55';this.style.background='var(--c-bg3)'"
@@ -1945,11 +1887,10 @@ function renderHubMain() {
   `;
 }
 
-// ---- TERRITOIRES VIEW --------------------------------------
 function hubGoTo(view) {
   _hubView = view;
-  if (view === 'societal')      { renderHubSocietal(); return; }
-  if (view === 'territoires')   { renderHubTerritoires(); return; }
+  if (view === 'societal')      { renderHubSocietal();     return; }
+  if (view === 'territoires')   { renderHubTerritoires();  return; }
   if (view === 'organisations') { renderHubOrganisations(); return; }
 }
 
@@ -1969,24 +1910,20 @@ function hubHeader(title, icon) {
 function renderHubTerritoires() {
   const modal = document.getElementById('hub-modal');
   if (!modal) return;
-  const d    = getD(_hubDeityId);
-  const myT  = allT().filter(t => t.owner === _hubDeityId && t.type === 'city');
-
+  const d   = getD(_hubDeityId);
+  const myT = allT().filter(t => t.owner === _hubDeityId && t.type === 'city');
   modal.innerHTML = `
     <div class="modal hub-anim" style="background:var(--c-bg1);display:flex;flex-direction:column">
       <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#3a7acc,transparent);border-radius:12px 12px 0 0"></div>
       ${hubHeader(`Territoires de ${d.name} (${myT.length})`, 'ti-map-pin')}
       <div style="padding:18px 22px;overflow-y:auto;flex:1">
-        ${myT.length === 0
+        ${myT.length===0
           ? `<div style="text-align:center;color:var(--c-text4);font-family:Rajdhani,sans-serif;font-size:13px;padding:40px">Aucun territoire contrôlé</div>`
           : `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
               ${myT.map(t => {
                 const zone = Object.entries(window.VV.ZONES||{}).find(([,z])=>z.territories.some(x=>x.id===t.id))?.[0]||'';
                 return `<div class="hub-terr-card">
-                  ${t.img
-                    ? `<img src="${t.img}" style="width:100%;height:80px;object-fit:cover;display:block" loading="lazy" onerror="this.style.display='none'">`
-                    : `<div style="height:80px;background:var(--c-bg3);display:flex;align-items:center;justify-content:center"><i class="ti ti-building-skyscraper" style="font-size:24px;color:var(--c-text4)"></i></div>`
-                  }
+                  ${t.img?`<img src="${t.img}" style="width:100%;height:80px;object-fit:cover;display:block" loading="lazy" onerror="this.style.display='none'">`:`<div style="height:80px;background:var(--c-bg3);display:flex;align-items:center;justify-content:center"><i class="ti ti-building-skyscraper" style="font-size:24px;color:var(--c-text4)"></i></div>`}
                   <div style="padding:8px 10px;background:var(--c-bg2)">
                     <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
                       <div style="width:7px;height:7px;border-radius:50%;background:#3a7acc;box-shadow:0 0 4px #3a7acc88;flex-shrink:0"></div>
@@ -1997,36 +1934,28 @@ function renderHubTerritoires() {
                   </div>
                 </div>`;
               }).join('')}
-            </div>`
-        }
+            </div>`}
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
 function renderHubOrganisations() {
   const modal = document.getElementById('hub-modal');
   if (!modal) return;
-  const d    = getD(_hubDeityId);
-  const myO  = allT().filter(t => t.owner === _hubDeityId && t.type === 'org');
-
+  const d   = getD(_hubDeityId);
+  const myO = allT().filter(t => t.owner === _hubDeityId && t.type === 'org');
   modal.innerHTML = `
     <div class="modal hub-anim" style="background:var(--c-bg1);display:flex;flex-direction:column">
       <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#c8901a,transparent);border-radius:12px 12px 0 0"></div>
       ${hubHeader(`Organisations de ${d.name} (${myO.length})`, 'ti-building')}
       <div style="padding:18px 22px;overflow-y:auto;flex:1">
-        ${myO.length === 0
+        ${myO.length===0
           ? `<div style="text-align:center;color:var(--c-text4);font-family:Rajdhani,sans-serif;font-size:13px;padding:40px">Aucune organisation contrôlée</div>`
           : `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
               ${myO.map(t => {
                 const zone = Object.entries(window.VV.ZONES||{}).find(([,z])=>z.territories.some(x=>x.id===t.id))?.[0]||'';
                 return `<div class="hub-terr-card">
-                  ${t.img
-                    ? `<img src="${t.img}" style="width:100%;height:80px;object-fit:cover;display:block" loading="lazy" onerror="this.style.display='none'">`
-                    : `<div style="height:80px;background:var(--c-bg3);display:flex;align-items:center;justify-content:center">
-                        <div style="width:18px;height:18px;background:#c8901a44;clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);border:none"></div>
-                      </div>`
-                  }
+                  ${t.img?`<img src="${t.img}" style="width:100%;height:80px;object-fit:cover;display:block" loading="lazy" onerror="this.style.display='none'">`:`<div style="height:80px;background:var(--c-bg3);display:flex;align-items:center;justify-content:center"><div style="width:18px;height:18px;background:#c8901a44;clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%)"></div></div>`}
                   <div style="padding:8px 10px;background:var(--c-bg2)">
                     <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
                       <div style="width:7px;height:7px;background:#c8901a;clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);flex-shrink:0"></div>
@@ -2037,27 +1966,24 @@ function renderHubOrganisations() {
                   </div>
                 </div>`;
               }).join('')}
-            </div>`
-        }
+            </div>`}
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
 function renderHubSocietal() {
   const modal = document.getElementById('hub-modal');
   if (!modal) return;
-  const d = getD(_hubDeityId);
+  const d       = getD(_hubDeityId);
   const faction = getFaction(_hubDeityId);
-  const row = pointsData.find(r => Object.values(r)[0]?.toLowerCase?.() === _hubDeityId.toLowerCase()) || {};
-  const scores = INFLUENCE_CRITERIA.map(c => ({ ...c, val: Number(row[c.key] || 0) }));
-  const total  = scores.reduce((s,c) => s + c.val, 0);
-  const pct    = Math.round(total / 20 * 100);
+  const row     = pointsData.find(r => Object.values(r)[0]?.toLowerCase?.() === _hubDeityId.toLowerCase()) || {};
+  const scores  = INFLUENCE_CRITERIA.map(c => ({ ...c, val: Number(row[c.key] || 0) }));
+  const total   = scores.reduce((s,c) => s + c.val, 0);
+  const pct     = Math.round(total / 20 * 100);
   const scoreColor = total>=16?'#f0c060':total>=12?'#c8901a':total>=6?'#3a7acc':'#cc3030';
   const scoreLabel = total>=16?'Dominant':total>=12?'Majeur':total>=6?'Émergent':'Marginal';
 
-  // Radar
-  const radarSize=110,cx=110,cy=110,maxR=82;
+  const radarSize=110, cx=110, cy=110, maxR=82;
   const radarPoints = scores.map((s,i)=>{
     const angle=(i/scores.length)*Math.PI*2-Math.PI/2;
     const r=(s.val/2)*maxR;
