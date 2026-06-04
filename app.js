@@ -850,18 +850,49 @@ function renderZonePanel(zoneName) {
   $('back-btn')?.addEventListener('click', clearZone);
   bindTerrButtons();
   renderRankingPanel(); // Update active state
-  // Idées nationales + crises
+  // Idées nationales
+  const nationData = nations[zoneName] || {};
+  const idees = (nationData.idees || []).filter(Boolean);
+  if (idees.length > 0) {
+    const panelInner = document.getElementById('panel-inner');
+    if (panelInner && !panelInner.querySelector('.idees-nationales-section')) {
+      const TYPE_COLOR = { bonus: '#2a9a4a', malus: '#cc3030', neutre: '#3a7acc' };
+      const div = document.createElement('div');
+      div.className = 'idees-nationales-section';
+      div.style.cssText = 'margin-top:10px';
+      div.innerHTML = `
+        <div class="sec"><i class="ti ti-star"></i> Idées nationales</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 0">
+          ${idees.map(id => {
+            const col = TYPE_COLOR[id.type] || '#3a5a7a';
+            return `<div style="display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:var(--radius);border:1px solid ${col}33;background:${col}0e;cursor:pointer;flex:1;min-width:120px"
+              title="${id.long || id.court || ''}"
+              onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+              ${id.img ? `<img src="${id.img}" style="width:32px;height:32px;border-radius:4px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">` : ''}
+              <div style="min-width:0">
+                <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:600;color:var(--c-text1)">${id.nom}</div>
+                <div style="font-size:9px;color:${col};text-transform:uppercase;letter-spacing:.06em">${id.type || ''}</div>
+              </div>
+            </div>
+            <div style="display:none;padding:6px 8px;font-size:10px;color:var(--c-text2);line-height:1.5;border:1px solid ${col}22;border-radius:var(--radius);margin-bottom:4px">
+              ${id.court ? `<div style="margin-bottom:3px">${id.court}</div>` : ''}
+              ${id.effet ? `<div style="color:${col}">▲ ${id.effet}</div>` : ''}
+            </div>`;
+          }).join('')}
+        </div>`;
+      panelInner.appendChild(div);
+    }
+  }
+
+  // Crises actives
   if (typeof window.VV?.crises?.renderInPanel === 'function') {
     const criseHTML = window.VV.crises.renderInPanel(zoneName);
     if (criseHTML) {
       const panelInner = document.getElementById('panel-inner');
-      if (panelInner) {
-        let criseSection = panelInner.querySelector('.crise-section');
-        if (!criseSection) {
-          const div = document.createElement('div');
-          div.innerHTML = criseHTML;
-          panelInner.appendChild(div);
-        }
+      if (panelInner && !panelInner.querySelector('.crise-section')) {
+        const div = document.createElement('div');
+        div.innerHTML = criseHTML;
+        panelInner.appendChild(div);
       }
     }
   }
