@@ -720,7 +720,8 @@ window.confirmCrise      = confirmCrise;
 
 // Appeler au login via app.js
 window.VV = window.VV || {};
-window.VV.crises = {
+// Fusionner avec les exports existants de crisis.js
+window.VV.crises = Object.assign(window.VV.crises || {}, {
   loadNotifs:    loadNotifications,
   injectNotifBtn: injectNotifButton,
-};
+});
