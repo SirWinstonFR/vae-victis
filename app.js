@@ -23,7 +23,6 @@ const CFG = {
     nations:      '1443319453',
     historique:   '1432315292',
     points:       '0',
-    points:       '0',
   },
 };
 
@@ -286,14 +285,6 @@ async function loadData() {
         dieu1:    (r.dieu1 || '').trim(),
         dieu2:    (r.dieu2 || '').trim(),
         bio:      (r.leader_bio || '').trim(),
-        idees:    [1,2,3,4].map(i => ({
-          img:   (r[`idee${i}_img`]   || '').trim(),
-          nom:   (r[`idee${i}_nom`]   || '').trim(),
-          type:  (r[`idee${i}_type`]  || '').trim(),
-          court: (r[`idee${i}_court`] || '').trim(),
-          long:  (r[`idee${i}_long`]  || '').trim(),
-          effet: (r[`idee${i}_effet`] || '').trim(),
-        })).filter(i => i.nom),
         idees:    [1,2,3,4].map(i => ({
           img:   (r[`idee${i}_img`]   || '').trim(),
           nom:   (r[`idee${i}_nom`]   || '').trim(),
@@ -859,10 +850,6 @@ function renderZonePanel(zoneName) {
   $('back-btn')?.addEventListener('click', clearZone);
   bindTerrButtons();
   renderRankingPanel(); // Update active state
-  // Idées nationales + crises
-  if (typeof window.VV?.crises?.renderInPanel === 'function') {
-    window.VV.crises.renderInPanel(zoneName);
-  }
   // Idées nationales + crises
   if (typeof window.VV?.crises?.renderInPanel === 'function') {
     window.VV.crises.renderInPanel(zoneName);
