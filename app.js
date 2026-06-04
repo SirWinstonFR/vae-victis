@@ -919,22 +919,20 @@ function renderZonePanel(zoneName) {
       return card;
     }).join('');
 
-    const nationBottom = panelInner.querySelector('.nation-bottom-row');
-    const insertAfter  = nationBottom || panelInner.querySelector('.nation-header');
-
     const sec = document.createElement('div');
     sec.className = 'idees-nationales-section';
     sec.innerHTML = '<div class="divider"></div>'
       + '<div class="sec"><i class="ti ti-star"></i> Idées nationales</div>'
       + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:4px 2px">' + slots + '</div>';
 
-    if (insertAfter && insertAfter.nextSibling) {
-      panelInner.insertBefore(sec, insertAfter.nextSibling);
-    } else if (insertAfter) {
-      insertAfter.parentNode.insertBefore(sec, insertAfter.nextSibling);
+    // .nation-header est enfant direct de panelInner — on insère juste après
+    const nationHeader = panelInner.querySelector('.nation-header');
+    if (nationHeader && nationHeader.parentNode === panelInner) {
+      panelInner.insertBefore(sec, nationHeader.nextSibling);
     } else {
-      const terrSec = panelInner.querySelector('.sec');
-      if (terrSec) panelInner.insertBefore(sec, terrSec);
+      // Fallback : avant le premier .sec (titre territoires)
+      const firstSec = panelInner.querySelector('.sec');
+      if (firstSec) panelInner.insertBefore(sec, firstSec);
       else panelInner.appendChild(sec);
     }
   }
