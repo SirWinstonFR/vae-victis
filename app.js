@@ -850,51 +850,54 @@ function renderZonePanel(zoneName) {
   $('back-btn')?.addEventListener('click', clearZone);
   bindTerrButtons();
   renderRankingPanel(); // Update active state
-  // Idées nationales
+  // Idées nationales — 4 slots pentagone
   const nationData = nations[zoneName] || {};
-  const idees = (nationData.idees || []).filter(Boolean);
-  if (idees.length > 0) {
-    const panelInner = document.getElementById('panel-inner');
-    if (panelInner && !panelInner.querySelector('.idees-nationales-section')) {
-      const TYPE_COLOR = { bonus: '#2a9a4a', malus: '#cc3030', neutre: '#3a7acc' };
-      const div = document.createElement('div');
-      div.className = 'idees-nationales-section';
-      div.style.cssText = 'margin-top:10px';
-      div.innerHTML = `
-        <div class="sec"><i class="ti ti-star"></i> Idées nationales</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 0">
-          ${idees.map(id => {
-            const col = TYPE_COLOR[id.type] || '#3a5a7a';
-            return `<div style="display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:var(--radius);border:1px solid ${col}33;background:${col}0e;cursor:pointer;flex:1;min-width:120px"
-              title="${id.long || id.court || ''}"
-              onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
-              ${id.img ? `<img src="${id.img}" style="width:32px;height:32px;border-radius:4px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">` : ''}
-              <div style="min-width:0">
-                <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:600;color:var(--c-text1)">${id.nom}</div>
-                <div style="font-size:9px;color:${col};text-transform:uppercase;letter-spacing:.06em">${id.type || ''}</div>
-              </div>
+  const idees = (nationData.idees || []);
+  const panelInner = document.getElementById('panel-inner');
+  if (panelInner && !panelInner.querySelector('.idees-nationales-section')) {
+    const TYPE_COLOR = { bonus: '#2a9a4a', malus: '#cc3030', neutre: '#3a7acc' };
+    const PENTAGON = 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)';
+    const slots = [0,1,2,3].map(i => {
+      const id = idees[i];
+      const col = id ? (TYPE_COLOR[id.type] || '#3a5a7a') : '#1a2e4a';
+      if (!id) return `
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+          <div style="width:52px;height:52px;clip-path:${PENTAGON};background:#0d1828;border:none;display:flex;align-items:center;justify-content:center">
+            <div style="width:46px;height:46px;clip-path:${PENTAGON};background:#0a1422;display:flex;align-items:center;justify-content:center">
+              <span style="font-size:16px;opacity:.2">?</span>
             </div>
-            <div style="display:none;padding:6px 8px;font-size:10px;color:var(--c-text2);line-height:1.5;border:1px solid ${col}22;border-radius:var(--radius);margin-bottom:4px">
-              ${id.court ? `<div style="margin-bottom:3px">${id.court}</div>` : ''}
-              ${id.effet ? `<div style="color:${col}">▲ ${id.effet}</div>` : ''}
-            </div>`;
-          }).join('')}
+          </div>
+          <div style="font-size:9px;color:#1a2e4a;font-family:Rajdhani,sans-serif;text-align:center">Vide</div>
         </div>`;
-      panelInner.appendChild(div);
-    }
-  }
+      return `
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer"
+          onclick="document.getElementById('idee-detail-${zoneName}-${i}').style.display=document.getElementById('idee-detail-${zoneName}-${i}').style.display==='none'?'block':'none'"
+          title="${id.nom}">
+          <div style="width:52px;height:52px;clip-path:${PENTAGON};background:${col}44;display:flex;align-items:center;justify-content:center;position:relative">
+            <div style="width:46px;height:46px;clip-path:${PENTAGON};background:#0a1422;overflow:hidden;display:flex;align-items:center;justify-content:center">
+              ${id.img
+                ? `<img src="${id.img}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`
+                : `<span style="font-size:16px">${id.type==='bonus'?'★':id.type==='malus'?'✕':'○'}</span>`}
+            </div>
+          </div>
+          <div style="font-size:9px;color:${col};font-family:Rajdhani,sans-serif;text-align:center;max-width:56px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${id.nom}</div>
+        </div>
+        <div id="idee-detail-${zoneName}-${i}" style="display:none;grid-column:1/-1;padding:8px 10px;border-radius:var(--radius);border:1px solid ${col}33;background:${col}0a;font-size:11px;color:var(--c-text2);line-height:1.6">
+          <div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:${col};margin-bottom:4px">${id.nom}</div>
+          ${id.court ? `<div style="margin-bottom:3px">${id.court}</div>` : ''}
+          ${id.effet ? `<div style="color:${col};font-size:10px">▲ ${id.effet}</div>` : ''}
+        </div>`;
+    }).join('');
 
-  // Crises actives
-  if (typeof window.VV?.crises?.renderInPanel === 'function') {
-    const criseHTML = window.VV.crises.renderInPanel(zoneName);
-    if (criseHTML) {
-      const panelInner = document.getElementById('panel-inner');
-      if (panelInner && !panelInner.querySelector('.crise-section')) {
-        const div = document.createElement('div');
-        div.innerHTML = criseHTML;
-        panelInner.appendChild(div);
-      }
-    }
+    const sec = document.createElement('div');
+    sec.className = 'idees-nationales-section';
+    sec.innerHTML = `
+      <div class="divider"></div>
+      <div class="sec"><i class="ti ti-star"></i> Idées nationales</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:4px 2px">
+        ${slots}
+      </div>`;
+    panelInner.appendChild(sec);
   }
 }
 
