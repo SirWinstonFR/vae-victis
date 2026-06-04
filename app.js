@@ -307,6 +307,8 @@ async function loadData() {
 
     // Exposer nations sur window.VV pour mapmode-influence.js
     window.VV.NATIONS = nations;
+    // Exposer aussi sur window pour crisis.js
+    window.nations = nations;
 
     // Situations
     window.VV.situations = situ.filter(r => r.zone && r.type).map(r => ({
