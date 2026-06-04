@@ -860,12 +860,12 @@ function renderZonePanel(zoneName) {
   bindTerrButtons();
   renderRankingPanel(); // Update active state
   // Idées nationales + crises
-  if (typeof window.VV?.crisis?.renderInPanel === 'function') {
-    window.VV.crisis.renderInPanel(zoneName);
+  if (typeof window.VV?.crises?.renderInPanel === 'function') {
+    window.VV.crises.renderInPanel(zoneName);
   }
   // Idées nationales + crises
-  if (typeof window.VV?.crisis?.renderInPanel === 'function') {
-    window.VV.crisis.renderInPanel(zoneName);
+  if (typeof window.VV?.crises?.renderInPanel === 'function') {
+    window.VV.crises.renderInPanel(zoneName);
   }
 }
 
