@@ -839,39 +839,7 @@ function renderZonePanel(zoneName) {
         </div>
       </div>
     </div>
-    \${(() => {
-      const idees = nation.idees || [];
-      const TYPE_COLOR = { bonus: '#2a9a4a', malus: '#cc3030', neutre: '#3a7acc' };
-      const PENTAGON = 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)';
-      const slots = [0,1,2,3].map(i => {
-        const id = idees[i];
-        const col = id ? (TYPE_COLOR[id.type] || '#3a5a7a') : '#1a2e4a';
-        if (!id) return \`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-          <div style="width:48px;height:48px;clip-path:\${PENTAGON};background:#0a1422;display:flex;align-items:center;justify-content:center">
-            <span style="font-size:13px;opacity:.2;color:#3a5a7a">?</span>
-          </div>
-          <div style="font-size:8px;color:#1a2e4a;font-family:Rajdhani,sans-serif">Vide</div>
-        </div>\`;
-        return \`<div style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer"
-          onclick="(function(el){const d=el.nextElementSibling;d.style.display=d.style.display==='none'?'block':'none'})(this)"
-          title="\${id.nom}">
-          <div style="width:48px;height:48px;clip-path:\${PENTAGON};background:\${col}55;display:flex;align-items:center;justify-content:center">
-            \${id.img?\`<img src="\${id.img}" style="width:38px;height:38px;object-fit:cover;clip-path:\${PENTAGON}" onerror="this.style.display='none'">\`:\`<span style="font-size:18px">\${id.type==='bonus'?'★':id.type==='malus'?'✕':'○'}</span>\`}
-          </div>
-          <div style="font-size:8px;color:\${col};font-family:Rajdhani,sans-serif;text-align:center;max-width:52px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">\${id.nom}</div>
-        </div>
-        <div style="display:none;grid-column:1/-1;padding:7px 9px;border-radius:var(--radius);border:1px solid \${col}33;background:\${col}0a;font-size:10px;color:var(--c-text2);line-height:1.6;margin-top:2px">
-          <div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:\${col};margin-bottom:3px">\${id.nom}</div>
-          \${id.court?\`<div>\${id.court}</div>\`:''}
-          \${id.effet?\`<div style="color:\${col};margin-top:2px">▲ \${id.effet}</div>\`:''}
-        </div>\`;
-      }).join('');
-      return \`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--c-border)">
-        <div class="sec" style="margin-bottom:8px"><i class="ti ti-star"></i> Idées nationales</div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">\${slots}</div>
-      </div>\`;
-    })()}`;
-
+  `;
 
   const ideesHTML = window.VV.renderIdeesHTML ? window.VV.renderIdeesHTML(nation.idees) : '';
 
